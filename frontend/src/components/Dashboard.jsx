@@ -489,7 +489,8 @@ const Dashboard = () => {
                                     <button
                                         onClick={() => {
                                             const qr = qrCodes[0];
-                                            const shortUrl = `${window.location.origin}/r/${qr.short_id}`;
+                                            const baseUrl = import.meta.env.VITE_BASE_URL || import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+                                            const shortUrl = `${baseUrl}/r/${qr.short_id}`;
                                             navigator.clipboard.writeText(shortUrl);
                                         }}
                                         className="flex items-center gap-2 px-4 py-2 bg-white border border-green-200 text-green-700 rounded-lg font-medium text-sm hover:bg-green-50 transition-colors"
