@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Search, ScanLine, Zap, MousePointer2, PlusCircle, ChevronDown, QrCode, Download,
-    MoreHorizontal, Loader2, Trash2, Edit2, Calendar, Folder, ExternalLink, PencilLine,
+    MoreHorizontal, Loader2, Trash2, Edit2, Calendar, Folder, ExternalLink, PencilLine, Image as ImageIcon,
     Square, CheckSquare, Palette, ArrowRightLeft, Copy, PauseCircle, X, Check, Share,
     Globe, FileText, Contact, Share2, MessageCircle, Film,
     PartyPopper, Link as LinkIcon, LogOut, CreditCard, Settings
@@ -85,7 +85,7 @@ const Dashboard = () => {
         try {
             setLoading(true);
             const { data } = await api.get('/qrcodes/myqrs');
-            setQrCodes(data);
+            setQrCodes(Array.isArray(data) ? data : []);
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to load QR codes');
         } finally {
@@ -930,7 +930,7 @@ const Dashboard = () => {
                                             `}
                                         >
                                             {format === 'PNG' || format === 'JPEG' ? (
-                                                <Image className={`w-5 h-5 mb-1.5 ${isSelected ? 'text-[#23a8f2]' : 'text-slate-400'}`} />
+                                                <ImageIcon className={`w-5 h-5 mb-1.5 ${isSelected ? 'text-[#23a8f2]' : 'text-slate-400'}`} />
                                             ) : format === 'Print' ? (
                                                 <QrCode className={`w-5 h-5 mb-1.5 ${isSelected ? 'text-[#23a8f2]' : 'text-slate-400'}`} />
                                             ) : (
