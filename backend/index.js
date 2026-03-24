@@ -25,13 +25,24 @@ app.use(cors({
     origin: function(origin, callback) {
         // Allow requests with no origin (like mobile apps or curl)
         if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
+
+        // In development, allow any localhost
+        if (process.env.NODE_ENV !== 'production' && origin && origin.includes('localhost')) {
+            return callback(null, true);
         }
+
+        // Allow configured origins
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        // Log CORS violations for debugging
+        console.warn(`CORS blocked origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
+        callback(new Error(`Not allowed by CORS. Origin: ${origin}`));
     },
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use(cookieParser());

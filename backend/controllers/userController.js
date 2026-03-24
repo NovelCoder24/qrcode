@@ -85,8 +85,11 @@ export const googleAuth = async (req, res) => {
     try {
         const { accessToken } = req.body;
         console.log('[GoogleAuth] Received request, accessToken present:', !!accessToken);
+        console.log('[GoogleAuth] Request origin:', req.get('Origin') || req.get('origin'));
+        console.log('[GoogleAuth] Request method:', req.method);
 
         if (!accessToken) {
+            console.log('[GoogleAuth] No access token provided');
             return res.status(400).json({ message: "No access token provided" });
         }
 
@@ -117,8 +120,15 @@ export const googleAuth = async (req, res) => {
             sendTokens(res, user, 201);
         }
     } catch (error) {
-        console.error('[GoogleAuth] Error:', error.message, error.stack);
-        res.status(401).json({ message: "Google authentication failed", error: error.message });
+        console.error('[GoogleAuth] Error:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
+        res.status(500).json({
+            message: "Google authentication failed",
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
     }
 };
 
