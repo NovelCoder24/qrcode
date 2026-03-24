@@ -27,7 +27,7 @@ const PDFViewPage = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen min-h-[100dvh] bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
+            <div className="w-full min-h-screen min-h-[100dvh] bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
                 <div className="text-center">
                     <Loader2 className="w-12 h-12 animate-spin text-indigo-500 mx-auto mb-4" />
                     <p className="text-slate-500 text-sm">Loading document...</p>
@@ -38,7 +38,7 @@ const PDFViewPage = () => {
 
     if (error || !qrData) {
         return (
-            <div className="min-h-screen min-h-[100dvh] bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
+            <div className="w-full min-h-screen min-h-[100dvh] bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
                 <div className="bg-white rounded-3xl shadow-2xl p-8 sm:p-10 max-w-sm w-full text-center">
                     <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5">
                         <AlertCircle className="w-8 h-8 text-red-500" />
@@ -52,7 +52,7 @@ const PDFViewPage = () => {
 
     if (!qrData.isActive) {
         return (
-            <div className="min-h-screen min-h-[100dvh] bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
+            <div className=" w-full min-h-screen min-h-[100dvh] bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
                 <div className="bg-white rounded-3xl shadow-2xl p-8 sm:p-10 max-w-sm w-full text-center">
                     <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-5">
                         <AlertCircle className="w-8 h-8 text-amber-500" />
@@ -69,7 +69,7 @@ const PDFViewPage = () => {
     const downloadUrl = qrData.target_url.replace('/upload/', '/upload/fl_attachment/');
 
     return (
-        <div className="h-screen h-[100dvh] bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col overflow-hidden">
+        <div className="w-full h-screen h-[100dvh] bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col overflow-hidden">
             {/* Header */}
             <header className="bg-white/90 backdrop-blur-md border-b border-slate-200 px-3 sm:px-4 py-3 flex-shrink-0">
                 <div className="max-w-5xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
