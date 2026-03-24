@@ -59,69 +59,53 @@ const PDFViewPage = () => {
 
     const primaryColor = qrData.customization?.fgColor || '#4F46E5';
 
+    // Get the PDF URL for viewing (remove fl_attachment if present)
+    const pdfViewUrl = qrData.target_url.replace('/fl_attachment/', '/');
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 flex flex-col">
-            {/* Main Content */}
-            <div className="flex-1 flex flex-col items-center justify-center p-6">
-                <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
-
-                    {/* Top Color Band */}
-                    <div
-                        className="h-2 w-full"
-                        style={{ background: `linear-gradient(90deg, ${primaryColor}, #6366f1)` }}
-                    />
-
-                    {/* Content */}
-                    <div className="p-8 sm:p-10 text-center">
-                        {/* Company */}
-                        {qrData.company && (
-                            <p className="text-xs font-bold tracking-[0.2em] uppercase text-slate-400 mb-6">
-                                {qrData.company}
-                            </p>
-                        )}
-
-                        {/* PDF Icon */}
-                        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center"
+            {/* Header */}
+            <div className="bg-white border-b border-slate-200 px-4 py-3">
+                <div className="max-w-4xl mx-auto flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center"
                             style={{ backgroundColor: `${primaryColor}15` }}
                         >
-                            <FileText className="w-10 h-10" style={{ color: primaryColor }} />
+                            <FileText className="w-5 h-5" style={{ color: primaryColor }} />
                         </div>
-
-                        {/* Title */}
-                        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3 leading-tight">
-                            {qrData.title}
-                        </h1>
-
-                        {/* Description */}
-                        {qrData.description && (
-                            <p className="text-slate-500 text-sm leading-relaxed mb-8 max-w-xs mx-auto">
-                                {qrData.description}
-                            </p>
-                        )}
-
-                        {!qrData.description && <div className="mb-8" />}
-
-                        {/* Download Button */}
-                        <a
-                            href={qrData.target_url.replace('/upload/', '/upload/fl_attachment/')}
-                            download
-                            className="inline-flex items-center justify-center gap-3 w-full py-4 px-6 rounded-2xl text-white font-bold text-base shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
-                            style={{ backgroundColor: primaryColor }}
-                        >
-                            <Download className="w-5 h-5" />
-                            Download PDF
-                        </a>
-
-                        {/* File info */}
-                        <p className="text-[11px] text-slate-400 mt-4">
-                            PDF Document • Tap to download
-                        </p>
+                        <div>
+                            <h1 className="text-lg font-bold text-slate-900 leading-tight">
+                                {qrData.title}
+                            </h1>
+                            {qrData.company && (
+                                <p className="text-xs text-slate-500">{qrData.company}</p>
+                            )}
+                        </div>
                     </div>
+                    <a
+                        href={qrData.target_url.replace('/upload/', '/upload/fl_attachment/')}
+                        download
+                        className="inline-flex items-center gap-2 py-2 px-4 rounded-xl text-white font-semibold text-sm shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+                        style={{ backgroundColor: primaryColor }}
+                    >
+                        <Download className="w-4 h-4" />
+                        Download
+                    </a>
                 </div>
             </div>
 
+            {/* PDF Viewer */}
+            <div className="flex-1 flex flex-col">
+                <iframe
+                    src={`${pdfViewUrl}#toolbar=1&navpanes=0`}
+                    className="flex-1 w-full border-0"
+                    title={qrData.title}
+                    style={{ minHeight: 'calc(100vh - 80px)' }}
+                />
+            </div>
+
             {/* Footer Branding */}
-            <footer className="py-6 text-center">
+            <footer className="py-3 text-center bg-white border-t border-slate-200">
                 <div className="flex items-center justify-center gap-1.5 text-slate-400">
                     <div className="bg-indigo-600 p-1 rounded">
                         <QrCode className="w-3 h-3 text-white" />
