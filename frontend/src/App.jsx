@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loadUser } from './redux/authSlice';
 
@@ -51,6 +51,11 @@ const CreateWizardLayout = ({ isSidebarOpen, onToggle }) => (
 const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const dispatch = useDispatch();
+  const location = useLocation();
+  
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location]);
 
   useEffect(() => {
     dispatch(loadUser());
