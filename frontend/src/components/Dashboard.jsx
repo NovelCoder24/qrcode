@@ -305,20 +305,6 @@ const Dashboard = () => {
         <>
         {/* Mobile View */}
         <div className="md:hidden min-h-screen bg-slate-50 font-sans text-slate-900 pb-24">
-            {/* Header */}
-            <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 py-3 flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                    <div className="bg-indigo-600 p-1.5 rounded-lg flex items-center justify-center">
-                        <QrCode size={20} className="text-white" />
-                    </div>
-                    <span className="font-bold text-xl tracking-tight">QR<span className="text-indigo-600">Vibe</span></span>
-                </div>
-                <div className="flex items-center gap-3">
-                    <button onClick={() => navigate('/settings')} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                        <Menu size={22} className="text-slate-600" />
-                    </button>
-                </div>
-            </header>
 
             <main className="max-w-md mx-auto px-4 pt-6">
                 {/* Welcome Section */}
