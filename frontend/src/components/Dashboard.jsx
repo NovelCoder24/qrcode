@@ -461,21 +461,7 @@ const Dashboard = () => {
                 </section>
             </main>
 
-            {/* Floating Bottom Nav for Mobile UX */}
-            <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-6 py-4 flex justify-between items-center shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)] z-50">
-                <div className="flex flex-col items-center gap-1 text-indigo-600 cursor-pointer" onClick={() => navigate('/qrcodes')}>
-                    <Layers size={22} />
-                    <span className="text-[10px] font-bold">Dashboard</span>
-                </div>
-                <div className="flex flex-col items-center gap-1 text-slate-400 cursor-pointer" onClick={() => navigate('/analytics')}>
-                    <BarChart3 size={22} />
-                    <span className="text-[10px] font-bold">Analytics</span>
-                </div>
-                <div className="flex flex-col items-center gap-1 text-slate-400 cursor-pointer" onClick={() => navigate('/account')}>
-                    <User size={22} />
-                    <span className="text-[10px] font-bold">Profile</span>
-                </div>
-            </nav>
+            
         </div>
 
         {/* Desktop View */}
