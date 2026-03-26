@@ -208,7 +208,7 @@ const PDFViewPage = () => {
                         <QrCode className="w-2.5 h-2.5 text-white" />
                     </div>
                     <span className="text-[10px] sm:text-xs font-medium">
-                        Powered by <span className="text-indigo-600 font-semibold">QRVibe</span>
+                        Powered by <span className="text-indigo-600 font-semibold">Qrio</span>
                     </span>
                 </div>
             </footer>

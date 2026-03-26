@@ -3,11 +3,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { login, googleLogin, clearError } from '../redux/authSlice';
 import { useNavigate, Link } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
-import { Mail, Lock, Loader, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, Loader, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 const LoginPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -82,7 +83,7 @@ const LoginPage = () => {
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Email Address</label>
                         <div className="relative group">
                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-                            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="john@example.com" className="w-full bg-slate-50 border border-slate-100 pl-11 pr-4 py-3.5 rounded-2xl outline-none focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium text-slate-900" />
+                            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="rohan@example.com" className="w-full bg-slate-50 border border-slate-100 pl-11 pr-4 py-3.5 rounded-2xl outline-none focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium text-slate-900" />
                         </div>
                     </div>
                     <div>
@@ -92,7 +93,14 @@ const LoginPage = () => {
                         </label>
                         <div className="relative group">
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-                            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" className="w-full bg-slate-50 border border-slate-100 pl-11 pr-4 py-3.5 rounded-2xl outline-none focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium text-slate-900" />
+                            <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" className="w-full bg-slate-50 border border-slate-100 pl-11 pr-12 py-3.5 rounded-2xl outline-none focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium text-slate-900" />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors focus:outline-none"
+                            >
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
                         </div>
                     </div>
 

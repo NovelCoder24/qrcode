@@ -5,7 +5,7 @@ import {
     MoreHorizontal, Loader2, Trash2, Edit2, Calendar, Folder, ExternalLink, PencilLine, Image as ImageIcon,
     Square, CheckSquare, Palette, ArrowRightLeft, Copy, PauseCircle, X, Check, Share,
     Globe, FileText, Contact, Share2, MessageCircle, Film,
-    PartyPopper, Link as LinkIcon, LogOut, CreditCard, Settings
+    PartyPopper, Link as LinkIcon, LogOut, CreditCard, Settings, User, BarChart3, Layers, Menu, ChevronRight
 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { logout } from '../redux/authSlice';
@@ -302,7 +302,198 @@ const Dashboard = () => {
     ];
 
     return (
-        <div className="p-6 md:p-10 bg-slate-50 min-h-full">
+        <>
+        {/* Mobile View */}
+        <div className="md:hidden min-h-screen bg-slate-50 font-sans text-slate-900 pb-24">
+            {/* Header */}
+            <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 py-3 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                    <div className="bg-indigo-600 p-1.5 rounded-lg flex items-center justify-center">
+                        <QrCode size={20} className="text-white" />
+                    </div>
+                    <span className="font-bold text-xl tracking-tight">QR<span className="text-indigo-600">Vibe</span></span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button onClick={() => navigate('/settings')} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                        <Menu size={22} className="text-slate-600" />
+                    </button>
+                </div>
+            </header>
+
+            <main className="max-w-md mx-auto px-4 pt-6">
+                {/* Welcome Section */}
+                <section className="mb-6">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <h1 className="text-2xl font-extrabold tracking-tight">Welcome back, {user?.name ? user.name.split(' ')[0] : 'User'}!</h1>
+                            <p className="text-slate-500 text-sm font-medium">You have {totalCodes} QR codes across {totalScans.toLocaleString()} total scans.</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold border-2 border-white shadow-sm shrink-0">
+                            {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                    </div>
+                </section>
+
+                {/* Stats Grid */}
+                <section className="grid grid-cols-3 gap-3 mb-8">
+                    <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center text-center">
+                        <div className="bg-indigo-50 text-indigo-600 p-2 rounded-xl mb-2 flex items-center justify-center">
+                            <BarChart3 size={18} />
+                        </div>
+                        <span className="text-xl font-bold leading-none mb-1">{totalScans.toLocaleString()}</span>
+                        <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Total Scans</span>
+                    </div>
+                    <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center text-center">
+                        <div className="bg-purple-50 text-purple-600 p-2 rounded-xl mb-2 flex items-center justify-center">
+                            <Zap size={18} />
+                        </div>
+                        <span className="text-xl font-bold leading-none mb-1">{activeCodes}</span>
+                        <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Active</span>
+                    </div>
+                    <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center text-center">
+                        <div className="bg-blue-50 text-blue-600 p-2 rounded-xl mb-2 flex items-center justify-center">
+                            <Layers size={18} />
+                        </div>
+                        <span className="text-xl font-bold leading-none mb-1">{totalCodes}</span>
+                        <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Codes</span>
+                    </div>
+                </section>
+
+                {/* Action Bar */}
+                <section className="mb-6 space-y-4">
+                    <button onClick={() => navigate('/create')} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                        <PlusCircle size={20} strokeWidth={3} />
+                        Create New Code
+                    </button>
+
+                    <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Search your codes..."
+                            className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                </section>
+
+                {/* QR List Section */}
+                <section>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="font-bold text-lg">Your Recent Codes</h2>
+                        <button className="text-indigo-600 text-sm font-bold flex items-center" onClick={() => navigate('/analytics')}>
+                            View All <ChevronRight size={16} />
+                        </button>
+                    </div>
+
+                    <div className="space-y-3">
+                        {filteredQRCodes.map((qr) => {
+                            const typeLower = qr.qr_type?.toLowerCase() || 'url';
+                            const typeIconMap = {
+                                url: <Globe size={24} />,
+                                pdf: <FileText size={24} />,
+                                vcard: <Contact size={24} />,
+                                whatsapp: <MessageCircle size={24} />,
+                                social: <Share2 size={24} />,
+                                media: <Film size={24} />
+                            };
+                            const TypeIcon = typeIconMap[typeLower] || <Globe size={24} />;
+
+                            const formatTypeColors = {
+                                url: 'text-indigo-500',
+                                pdf: 'text-rose-500',
+                                vcard: 'text-emerald-500',
+                                whatsapp: 'text-green-500',
+                                social: 'text-blue-500',
+                                media: 'text-purple-500'
+                            };
+                            const iconColorClass = formatTypeColors[typeLower] || 'text-indigo-500';
+
+                            return (
+                                <div key={qr._id} onClick={() => navigate(`/qrcodes/${qr._id}`)} className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow group flex cursor-pointer">
+                                    <div className="flex gap-4 w-full">
+                                        {/* Visual Preview Area */}
+                                        <div className="w-16 h-16 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center relative shrink-0">
+                                            <QrCode size={32} className="text-slate-200" />
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                {React.cloneElement(TypeIcon, { size: 24, className: iconColorClass })}
+                                            </div>
+                                        </div>
+
+                                        {/* Content Area */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex justify-between items-start mb-1">
+                                                <h3 className="font-bold text-slate-900 truncate pr-2">{qr.metadata?.title || 'Untitled QR Code'}</h3>
+                                                <button onClick={(e) => { e.stopPropagation(); navigate(`/qrcodes/${qr._id}`); }} className="p-1 hover:bg-slate-50 rounded-lg text-slate-400">
+                                                    <MoreHorizontal size={18} />
+                                                </button>
+                                            </div>
+
+                                            <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium mb-3">
+                                                <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wide">
+                                                    {qr.qr_type || 'URL'}
+                                                </span>
+                                                <span>•</span>
+                                                <span className="truncate max-w-[120px]">{qr.original_url?.replace('https://', '')}</span>
+                                            </div>
+
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Scans</span>
+                                                        <span className="text-sm font-extrabold text-indigo-600">{qr.stats?.total_scans || 0}</span>
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Created</span>
+                                                        <span className="text-sm font-medium text-slate-600">{new Date(qr.createdAt).toLocaleDateString()}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-2 shrink-0">
+                                                    <button onClick={(e) => { e.stopPropagation(); setDownloadModal(qr); }} className="p-2 bg-slate-50 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 rounded-xl transition-colors border border-slate-100">
+                                                        <Download size={18} />
+                                                    </button>
+                                                    <button onClick={(e) => { e.stopPropagation(); window.open(qr.original_url, '_blank'); }} className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-colors border border-indigo-100">
+                                                        <ExternalLink size={18} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {filteredQRCodes.length === 0 && (
+                            <div className="text-center py-8 text-slate-500">No QR codes found.</div>
+                        )}
+                    </div>
+
+                    <div className="mt-8 text-center text-slate-400 text-xs font-medium pb-8">
+                        Showing {filteredQRCodes.length} of {qrCodes.length} results
+                    </div>
+                </section>
+            </main>
+
+            {/* Floating Bottom Nav for Mobile UX */}
+            <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-6 py-4 flex justify-between items-center shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)] z-50">
+                <div className="flex flex-col items-center gap-1 text-indigo-600 cursor-pointer" onClick={() => navigate('/qrcodes')}>
+                    <Layers size={22} />
+                    <span className="text-[10px] font-bold">Dashboard</span>
+                </div>
+                <div className="flex flex-col items-center gap-1 text-slate-400 cursor-pointer" onClick={() => navigate('/analytics')}>
+                    <BarChart3 size={22} />
+                    <span className="text-[10px] font-bold">Analytics</span>
+                </div>
+                <div className="flex flex-col items-center gap-1 text-slate-400 cursor-pointer" onClick={() => navigate('/account')}>
+                    <User size={22} />
+                    <span className="text-[10px] font-bold">Profile</span>
+                </div>
+            </nav>
+        </div>
+
+        {/* Desktop View */}
+        <div className="hidden md:block p-6 md:p-10 bg-slate-50 min-h-full">
             {/* Top Header */}
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
                 <div>
@@ -984,6 +1175,7 @@ const Dashboard = () => {
                 </div>
             )}
         </div>
+        </>
     );
 };
 

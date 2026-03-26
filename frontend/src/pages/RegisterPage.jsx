@@ -3,12 +3,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import { register, googleLogin, clearError } from '../redux/authSlice';
 import { useNavigate, Link } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
-import { User, Mail, Lock, Loader, QrCode, ArrowLeft } from 'lucide-react';
+import { User, Mail, Lock, Loader, QrCode, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 const RegisterPage = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -96,7 +97,14 @@ const RegisterPage = () => {
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Password</label>
                         <div className="relative group">
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-                            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" className="w-full bg-slate-50 border border-slate-100 pl-11 pr-4 py-3.5 rounded-2xl outline-none focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium text-slate-900" />
+                            <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" className="w-full bg-slate-50 border border-slate-100 pl-11 pr-12 py-3.5 rounded-2xl outline-none focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium text-slate-900" />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors focus:outline-none"
+                            >
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
                         </div>
                     </div>
 
