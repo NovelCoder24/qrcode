@@ -114,7 +114,6 @@ const LandingPage = () => {
                                             <path d="M48 48h4v4h-4z" fill={themeColor} className="transition-all duration-300" />
                                         </svg>
                                     </div>
-                                    <p className="mt-4 text-[10px] text-slate-400 font-mono tracking-tighter bg-slate-100 px-2 py-1 rounded">LIVE_PREVIEW</p>
                                 </div>
 
                                 <div className="space-y-6">
