@@ -3,7 +3,7 @@ import {
     QrCode, Globe, FileText, List, Contact, Briefcase, Video, Image as ImageIcon,
     Facebook, Instagram, Share2, MessageCircle, Music
 } from 'lucide-react';
-import { QRCode } from 'react-qrcode-logo';
+import StyledQRCode from '../StyledQRCode';
 
 const typeConfig = {
     URL: { label: 'Website', icon: <Globe size={48} />, desc: 'Link to any website URL' },
@@ -119,20 +119,16 @@ const PhoneMockup = ({ type, data, step, design }) => {
                         <div className="flex flex-col items-center justify-center h-full p-6 bg-white">
                             <h3 className="text-slate-800 font-bold mb-8">Scan to View</h3>
                             <div className="p-4 bg-white rounded-xl shadow-sm border border-slate-100">
-                                <QRCode
-                                    value={data?.url || data?.pdfUrl || 'https://qr-code.io'}
+                                <StyledQRCode
+                                    data={data?.url || data?.pdfUrl || 'https://qr-code.io'}
                                     size={180}
                                     ecLevel="H"
-                                    fgColor={design?.fgColor}
-                                    bgColor={design?.bgColor}
-                                    qrStyle={design?.qrStyle}
-                                    eyeRadius={design?.eyeShape === 'circle' ? 10 : 0}
-                                    logoImage={design?.logoUrl || undefined}
-                                    logoWidth={30}
-                                    logoHeight={30}
-                                    logoPaddingStyle="circle"
-                                    logoPadding={2}
-                                    removeQrCodeBehindLogo={true}
+                                    primaryColor={design?.fgColor || '#000000'}
+                                    bgColor={design?.bgColor || '#ffffff'}
+                                    dotStyle={design?.qrStyle || 'square'}
+                                    cornerSquareStyle={design?.eyeShape === 'circle' ? 'dot' : 'square'}
+                                    cornerDotStyle={design?.eyeShape === 'circle' ? 'dot' : 'square'}
+                                    logo={design?.logoUrl || undefined}
                                 />
                             </div>
                             <p className="text-xs text-slate-400 mt-6 text-center max-w-[200px]">

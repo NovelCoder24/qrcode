@@ -10,7 +10,7 @@ import {
 import { useDispatch } from 'react-redux';
 import { logout } from '../redux/authSlice';
 import { useSelector } from 'react-redux';
-import { QRCode } from 'react-qrcode-logo';
+import StyledQRCode from './StyledQRCode';
 import api from '../api/axios';
 
 // Helper: format a date string to relative time
@@ -340,113 +340,51 @@ const Dashboard = () => {
             const size = getSizePixels();
             const title = qr.metadata?.title || 'QRCode';
 
-            // Pre-convert cross-origin logo to a local data URL to avoid canvas tainting
-            let localLogoUrl = undefined;
-            if (design.logoUrl) {
-                try {
-                    const res = await fetch(design.logoUrl, { mode: 'cors' });
-                    const blob = await res.blob();
-                    localLogoUrl = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result);
-                        reader.readAsDataURL(blob);
-                    });
-                } catch {
-                    // Fallback: try loading via Image + canvas
-                    localLogoUrl = await new Promise((resolve) => {
-                        const img = new Image();
-                        img.crossOrigin = 'anonymous';
-                        img.onload = () => {
-                            const c = document.createElement('canvas');
-                            c.width = img.naturalWidth;
-                            c.height = img.naturalHeight;
-                            c.getContext('2d').drawImage(img, 0, 0);
-                            try { resolve(c.toDataURL('image/png')); } catch { resolve(undefined); }
-                        };
-                        img.onerror = () => resolve(undefined);
-                        img.src = design.logoUrl;
-                    });
-                }
-            }
+            // Map download format
+            const formatMap = { PNG: 'png', JPEG: 'jpeg', SVG: 'svg' };
+            const extension = formatMap[downloadFormat] || 'png';
 
-            // Create a temporary off-screen container to render a QR at the chosen size
-            const tempContainer = document.createElement('div');
-            tempContainer.style.position = 'fixed';
-            tempContainer.style.left = '-9999px';
-            tempContainer.style.top = '-9999px';
-            document.body.appendChild(tempContainer);
+            // Create a temporary QRCodeStyling instance for download at the desired size
+            const QRCodeStyling = (await import('qr-code-styling')).default;
+            const downloadInstance = new QRCodeStyling({
+                width: size,
+                height: size,
+                type: extension === 'svg' ? 'svg' : 'canvas',
+                data: shortUrl,
+                image: design.logoUrl || undefined,
+                dotsOptions: {
+                    color: design.fgColor || '#000000',
+                    type: design.qrStyle === 'dots' ? 'dots' : 'square',
+                },
+                backgroundOptions: {
+                    color: design.bgColor || '#ffffff',
+                },
+                cornersSquareOptions: {
+                    type: design.eyeShape === 'circle' ? 'dot' : 'square',
+                },
+                cornersDotOptions: {
+                    type: design.eyeShape === 'circle' ? 'dot' : 'square',
+                },
+                imageOptions: {
+                    crossOrigin: 'anonymous',
+                    margin: 4,
+                    imageSize: 0.35,
+                    hideBackgroundDots: true,
+                },
+                qrOptions: {
+                    errorCorrectionLevel: 'H',
+                },
+            });
 
-            const { createRoot } = await import('react-dom/client');
-            const root = createRoot(tempContainer);
+            await downloadInstance.download({
+                name: title,
+                extension: extension,
+            });
 
-            root.render(
-                React.createElement(QRCode, {
-                    id: 'qr-download-temp',
-                    value: shortUrl,
-                    size: size,
-                    ecLevel: 'H',
-                    qrStyle: design.qrStyle || 'squares',
-                    fgColor: design.fgColor || '#000000',
-                    bgColor: design.bgColor || '#ffffff',
-                    eyeRadius: design.eyeShape === 'circle' ? 10 : 0,
-                    logoImage: localLogoUrl || undefined,
-                    logoWidth: Math.round(size * 0.15),
-                    logoHeight: Math.round(size * 0.15),
-                    removeQrCodeBehindLogo: true,
-                    quietZone: 10,
-                })
-            );
-
-            // Give the canvas time to render
-            setTimeout(() => {
-                try {
-                    const canvas = document.getElementById('qr-download-temp');
-                    if (!canvas) {
-                        throw new Error('Canvas element not found. Generation failed.');
-                    }
-
-                    if (downloadFormat === 'SVG') {
-                        const imgData = canvas.toDataURL('image/png');
-                        const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  <rect width="100%" height="100%" fill="${design.bgColor || '#ffffff'}"/>
-  <image href="${imgData}" x="0" y="0" width="${size}" height="${size}"/>
-</svg>`;
-                        const blob = new Blob([svgContent], { type: 'image/svg+xml' });
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = `${title}.svg`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        URL.revokeObjectURL(url);
-                    } else {
-                        const mimeType = downloadFormat === 'JPEG' ? 'image/jpeg' : 'image/png';
-                        const ext = downloadFormat === 'JPEG' ? 'jpg' : 'png';
-                        const imgData = canvas.toDataURL(mimeType, 1.0);
-                        const link = document.createElement('a');
-                        link.href = imgData;
-                        link.download = `${title}.${ext}`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                    }
-
-                    // Cleanup
-                    root.unmount();
-                    document.body.removeChild(tempContainer);
-                    setDownloadModal(null);
-                    setPreviewModal(null);
-                } catch (err) {
-                    console.error('Download Rendering Error:', err);
-                    alert(`Error generating file: ${err.message}. If you have a logo, ensure it is from a reliable source.`);
-                    root.unmount();
-                    document.body.removeChild(tempContainer);
-                }
-            }, 1500);
+            setDownloadModal(null);
+            setPreviewModal(null);
         } catch (err) {
-            console.error('Download Trigger Error:', err);
+            console.error('Download Error:', err);
             alert('An unexpected error occurred while starting the download.');
         }
     };
@@ -1210,20 +1148,16 @@ const Dashboard = () => {
 
                             {/* QR Canvas Container */}
                             <div className="bg-slate-50 p-6 rounded-3xl mb-8 flex items-center justify-center shadow-sm border border-slate-100">
-                                <QRCode
-                                    id={`qr-preview-${previewModal._id}`}
-                                    value={shortUrl}
-                                    size={300} // Same relative size as screenshot
+                                <StyledQRCode
+                                    data={shortUrl}
+                                    size={300}
                                     ecLevel="Q"
-                                    qrStyle={design.qrStyle || 'squares'}
-                                    fgColor={design.fgColor || '#000000'}
+                                    dotStyle={design.qrStyle || 'square'}
+                                    primaryColor={design.fgColor || '#000000'}
                                     bgColor={design.bgColor || '#ffffff'}
-                                    eyeRadius={design.eyeShape === 'circle' ? 10 : 0}
-                                    logoImage={design.logoUrl || undefined}
-                                    logoWidth={50}
-                                    logoHeight={50}
-                                    removeQrCodeBehindLogo={true}
-                                    crossOrigin="anonymous"
+                                    cornerSquareStyle={design.eyeShape === 'circle' ? 'dot' : 'square'}
+                                    cornerDotStyle={design.eyeShape === 'circle' ? 'dot' : 'square'}
+                                    logo={design.logoUrl || undefined}
                                 />
                             </div>
 
