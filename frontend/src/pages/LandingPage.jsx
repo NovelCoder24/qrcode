@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { 
     QrCode, ArrowRight, RefreshCw, BarChart3, Palette, Check, 
     Twitter, Instagram, Linkedin, Star, ShieldCheck, X, Zap, 
-    Smartphone, Camera
+    Smartphone, Camera, Utensils, Building, Package, FileText,
+    HeadphonesIcon, Calculator, Lock, MessageCircle, MapPin, 
+    IndianRupee, Activity
 } from 'lucide-react';
 
 const LandingPage = () => {
@@ -60,19 +62,13 @@ const LandingPage = () => {
                 
                 <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
                     {/* Left Copy block - Utilizing Von Restorff Effect for high contrast */}
-                    <div className="relative z-10 text-center lg:text-left">
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-6 bg-white border border-slate-200 rounded-full shadow-sm">
-                            <span className="flex h-2 w-2 relative">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                            </span>
-                        </div>
-                        <h1 className="text-4xl sm:text-5xl lg:text-[4rem] font-extrabold leading-[1.1] mb-6 tracking-tight">
-                            Boring QR Codes are <br />
-                            <span className="gradient-text uppercase">Extinct.</span>
+                    <div className="relative z-10 text-center lg:text-left"> 
+                        <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold leading-[1.1] mb-6 tracking-tight">
+                            Smart QR Solutions for <br />
+                            <span className="gradient-text">Growing Indian Businesses</span>
                         </h1>
                         <p className="text-lg lg:text-xl text-slate-600 mb-10 max-w-lg mx-auto lg:mx-0 font-medium leading-relaxed">
-                            Create stunning, high-converting dynamic QR codes. Change the destination link anytime without reprinting. Track exactly who scans.
+                            Track, analyze, and optimize your offline-to-online marketing. Join 6,000+ Indian businesses driving measurable ROI.
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -139,19 +135,30 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* Social Proof Bar (Bandwagon Effect) */}
+            {/* Social Proof & Trust Badges (Add Indian Context) */}
             <div className="bg-slate-900 py-6 border-y border-slate-800">
-                <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-center gap-6 text-center">
-                    <div className="flex -space-x-3">
-                        <img className="w-10 h-10 rounded-full border-2 border-slate-900" src="https://i.pravatar.cc/100?img=1" alt="user" />
-                        <img className="w-10 h-10 rounded-full border-2 border-slate-900" src="https://i.pravatar.cc/100?img=2" alt="user" />
-                        <img className="w-10 h-10 rounded-full border-2 border-slate-900" src="https://i.pravatar.cc/100?img=3" alt="user" />
-                        <img className="w-10 h-10 rounded-full border-2 border-slate-900" src="https://i.pravatar.cc/100?img=4" alt="user" />
-                        <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-indigo-600 flex items-center justify-center text-xs text-white font-bold">+5k</div>
-                    </div>
-                    <p className="text-white/80 font-medium tracking-wide text-sm sm:text-base">
-                        Join <span className="text-white font-bold">5,000+</span> creators & businesses tracking millions of QR campaigns globally.
+                <div className="max-w-7xl mx-auto px-6">
+                    <p className="text-white/80 font-medium tracking-wide text-sm sm:text-base text-center mb-6">
+                        Trusted by <span className="text-white font-bold">6,000+ Indian SMBs</span> across 15+ industries
                     </p>
+                    <div className="flex flex-wrap justify-center gap-6 md:gap-12 items-center text-slate-400 text-sm font-semibold">
+                        <div className="flex items-center gap-2">
+                            <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                            <span>Made in India</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Lock className="w-5 h-5 text-indigo-400" />
+                            <span>ISO 27001 Certified</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <ShieldCheck className="w-5 h-5 text-blue-400" />
+                            <span>GDPR Compliant</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Activity className="w-5 h-5 text-amber-400" />
+                            <span>99.9% Uptime SLA</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -198,29 +205,37 @@ const LandingPage = () => {
                         <h2 className="text-3xl md:text-5xl font-extrabold mb-4 text-slate-900 tracking-tight">Features you'll actually use.</h2>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-8">
-                        <div className="bg-white p-10 rounded-[32px] border border-slate-200/60 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center flex flex-col items-center">
-                            <div className="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
-                                <RefreshCw className="w-7 h-7 text-indigo-600" />
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="bg-white p-8 rounded-[32px] border border-slate-200/60 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center flex flex-col items-center">
+                            <div className="w-16 h-16 bg-orange-50 border border-orange-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
+                                <Utensils className="w-7 h-7 text-orange-600" />
                             </div>
-                            <h3 className="text-2xl font-bold mb-3 text-slate-900">Edit Anytime</h3>
-                            <p className="text-slate-500 font-medium leading-relaxed">Swap links on the fly without ever reprinting menus, flyers, or marketing materials.</p>
+                            <h3 className="text-xl font-bold mb-3 text-slate-900">Restaurant Chains</h3>
+                            <p className="text-slate-500 font-medium leading-relaxed text-sm">Menu QR codes with real-time updates. Perfect for 50+ outlets wanting instant menu sync.</p>
                         </div>
 
-                        <div className="bg-white p-10 rounded-[32px] border border-slate-200/60 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center flex flex-col items-center">
-                            <div className="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
-                                <BarChart3 className="w-7 h-7 text-indigo-600" />
+                        <div className="bg-white p-8 rounded-[32px] border border-slate-200/60 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center flex flex-col items-center">
+                            <div className="w-16 h-16 bg-blue-50 border border-blue-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
+                                <Building className="w-7 h-7 text-blue-600" />
                             </div>
-                            <h3 className="text-2xl font-bold mb-3 text-slate-900">Deep Analytics</h3>
-                            <p className="text-slate-500 font-medium leading-relaxed">Get rich demographic data, device types, and exact location tracking instantly.</p>
+                            <h3 className="text-xl font-bold mb-3 text-slate-900">Real Estate</h3>
+                            <p className="text-slate-500 font-medium leading-relaxed text-sm">Property brochures that track visits. Know which hoarding locations drive buyer interest.</p>
                         </div>
 
-                        <div className="bg-white p-10 rounded-[32px] border border-slate-200/60 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center flex flex-col items-center">
-                            <div className="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
-                                <Palette className="w-7 h-7 text-indigo-600" />
+                        <div className="bg-white p-8 rounded-[32px] border border-slate-200/60 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center flex flex-col items-center">
+                            <div className="w-16 h-16 bg-pink-50 border border-pink-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
+                                <Package className="w-7 h-7 text-pink-600" />
                             </div>
-                            <h3 className="text-2xl font-bold mb-3 text-slate-900">Brand Studio</h3>
-                            <p className="text-slate-500 font-medium leading-relaxed">Add logos, pick custom colors, and choose unique patterns to build ultimate trust.</p>
+                            <h3 className="text-xl font-bold mb-3 text-slate-900">Retail & FMCG</h3>
+                            <p className="text-slate-500 font-medium leading-relaxed text-sm">Connect packaging to customer data. Track authenticity checks & warranty registrations.</p>
+                        </div>
+
+                        <div className="bg-white p-8 rounded-[32px] border border-slate-200/60 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center flex flex-col items-center">
+                            <div className="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
+                                <FileText className="w-7 h-7 text-indigo-600" />
+                            </div>
+                            <h3 className="text-xl font-bold mb-3 text-slate-900">Manufacturing</h3>
+                            <p className="text-slate-500 font-medium leading-relaxed text-sm">Smart invoices & catalogues. Digital product manuals, instant reorders, and payment links.</p>
                         </div>
                     </div>
                 </div>
@@ -332,23 +347,58 @@ const LandingPage = () => {
             </section>
 
             {/* Testimonials (Authority / Trust) */}
-            <section className="py-24 px-6 bg-white overflow-hidden text-center flex flex-col items-center">
-                <div className="max-w-4xl mx-auto w-full">
-                    <div className="text-amber-400 flex justify-center gap-1.5 mb-8">
-                        <Star className="w-7 h-7 fill-current drop-shadow-sm" />
-                        <Star className="w-7 h-7 fill-current drop-shadow-sm" />
-                        <Star className="w-7 h-7 fill-current drop-shadow-sm" />
-                        <Star className="w-7 h-7 fill-current drop-shadow-sm" />
-                        <Star className="w-7 h-7 fill-current drop-shadow-sm" />
-                    </div>
-                    <h2 className="text-3xl md:text-5xl font-extrabold mb-12 text-slate-900 leading-[1.2] tracking-tight text-balance">
-                        "We saved ₹40,000 in reprint costs in just 3 months. The analytics showed us exactly which locations were driving traffic. Absolute game-changer."
+            <section className="py-24 px-6 bg-slate-900 text-white overflow-hidden text-center flex flex-col items-center">
+                <div className="max-w-7xl mx-auto w-full">
+                    <h2 className="text-3xl md:text-5xl font-extrabold mb-16 text-white leading-[1.2] tracking-tight text-center">
+                        Trusted by Indian Businesses
                     </h2>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <img src="https://i.pravatar.cc/100?u=novel" alt="Founder" className="w-16 h-16 rounded-full border-4 border-slate-100 shadow-md" />
-                        <div className="text-center sm:text-left">
-                            <p className="font-bold text-slate-900 text-lg">Priya Sharma</p>
-                            <p className="text-indigo-600 text-sm font-bold uppercase tracking-wider">Marketing Director, BrandElevate</p>
+                    <div className="grid md:grid-cols-3 gap-8 text-left">
+                        <div className="bg-slate-800 p-8 sm:p-10 rounded-3xl border border-slate-700 relative flex flex-col shadow-2xl">
+                            <div className="text-amber-400 flex gap-1 mb-6">
+                                <Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" />
+                            </div>
+                            <p className="text-slate-300 text-lg font-medium mb-10 leading-relaxed">
+                                "Helped us go contactless during COVID and saved ₹3.2L on menu printing. Instant updates across all our locations."
+                            </p>
+                            <div className="flex items-center gap-4 mt-auto">
+                                <div className="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center font-bold text-xl text-white shadow-inner">R</div>
+                                <div>
+                                    <p className="font-bold text-white text-lg">Rahul Mehta, Owner</p>
+                                    <p className="text-indigo-400 text-sm font-semibold">Chai & Chaat (40 outlets)</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="bg-slate-800 p-8 sm:p-10 rounded-3xl border border-slate-700 relative flex flex-col shadow-2xl md:-translate-y-4">
+                            <div className="text-amber-400 flex gap-1 mb-6">
+                                <Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" />
+                            </div>
+                            <p className="text-slate-300 text-lg font-medium mb-10 leading-relaxed">
+                                "Our property site visits went up 240% after using traceable QR codes on our city hoardings. We finally know what works."
+                            </p>
+                            <div className="flex items-center gap-4 mt-auto">
+                                <div className="w-12 h-12 bg-pink-500 rounded-full flex items-center justify-center font-bold text-xl text-white shadow-inner">P</div>
+                                <div>
+                                    <p className="font-bold text-white text-lg">Priya Sharma</p>
+                                    <p className="text-indigo-400 text-sm font-semibold">Marketing Head, Metro Realty</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-slate-800 p-8 sm:p-10 rounded-3xl border border-slate-700 relative flex flex-col shadow-2xl">
+                            <div className="text-amber-400 flex gap-1 mb-6">
+                                <Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" />
+                            </div>
+                            <p className="text-slate-300 text-lg font-medium mb-10 leading-relaxed">
+                                "Track which distributor is actually reaching customers. Game changer for our FMCG supply chain visibility!"
+                            </p>
+                            <div className="flex items-center gap-4 mt-auto">
+                                <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center font-bold text-xl text-white shadow-inner">A</div>
+                                <div>
+                                    <p className="font-bold text-white text-lg">Anil Kumar</p>
+                                    <p className="text-indigo-400 text-sm font-semibold">Sales Director, Sunrise FMCG</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

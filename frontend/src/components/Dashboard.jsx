@@ -27,6 +27,147 @@ const timeAgo = (dateString) => {
     return new Date(dateString).toLocaleDateString();
 };
 
+const LoadingSkeleton = () => (
+    <div className="max-w-md mx-auto px-4 pt-6 animate-pulse">
+        {/* Welcome Skeleton */}
+        <div className="flex justify-between items-start mb-6">
+            <div className="space-y-2">
+                <div className="h-8 w-48 bg-slate-200 rounded-lg"></div>
+                <div className="h-4 w-64 bg-slate-200 rounded-md"></div>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-slate-200"></div>
+        </div>
+
+        {/* Stats Skeleton */}
+        <div className="grid grid-cols-3 gap-3 mb-8">
+            {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-white p-3 rounded-2xl border border-slate-100 flex flex-col items-center">
+                    <div className="w-8 h-8 bg-slate-100 rounded-xl mb-2"></div>
+                    <div className="h-5 w-8 bg-slate-200 rounded mb-1"></div>
+                    <div className="h-2 w-12 bg-slate-100 rounded"></div>
+                </div>
+            ))}
+        </div>
+
+        {/* Action Bar Skeleton */}
+        <div className="space-y-4 mb-6">
+            <div className="h-14 bg-indigo-100 rounded-2xl"></div>
+            <div className="h-12 bg-white border border-slate-200 rounded-2xl"></div>
+        </div>
+
+        {/* List Skeleton */}
+        <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-white border border-slate-100 rounded-2xl p-4 flex gap-4">
+                    {/* Shining QR Box */}
+                    <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center overflow-hidden relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]"></div>
+                        <QrCode size={32} className="text-slate-200" />
+                    </div>
+                    <div className="flex-1 space-y-3">
+                        <div className="flex justify-between">
+                            <div className="h-4 w-32 bg-slate-200 rounded"></div>
+                            <div className="h-4 w-4 bg-slate-100 rounded"></div>
+                        </div>
+                        <div className="h-3 w-40 bg-slate-100 rounded"></div>
+                        <div className="flex justify-between items-end">
+                            <div className="flex gap-4">
+                                <div className="h-6 w-10 bg-slate-100 rounded"></div>
+                                <div className="h-6 w-10 bg-slate-100 rounded"></div>
+                            </div>
+                            <div className="flex gap-2">
+                                <div className="h-8 w-8 bg-slate-100 rounded-lg"></div>
+                                <div className="h-8 w-8 bg-slate-100 rounded-lg"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+
+        {/* Custom Style for the shimmer effect */}
+        <style>{`
+        @keyframes shimmer {
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
+    </div>
+);
+
+const DesktopLoadingSkeleton = () => (
+    <div className="hidden md:block p-6 md:p-10 bg-slate-50 min-h-full animate-pulse">
+        {/* Top Header Skeleton */}
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+            <div>
+                <div className="h-8 w-64 bg-slate-200 rounded-lg mb-2"></div>
+                <div className="h-4 w-48 bg-slate-200 rounded-md"></div>
+            </div>
+            <div className="flex items-center gap-4 w-full md:w-auto">
+                <div className="hidden lg:block w-64 h-11 bg-white border border-slate-200 rounded-xl"></div>
+                <div className="w-10 h-10 rounded-xl bg-slate-200"></div>
+            </div>
+        </header>
+
+        {/* Desktop Mobile Search Bar Skeleton */}
+        <div className="lg:hidden mb-6 w-full h-11 bg-white border border-slate-200 rounded-xl"></div>
+
+        {/* Stats Grid Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex flex-col justify-center">
+                    <div className="w-10 h-10 bg-slate-100 rounded-xl mb-4"></div>
+                    <div className="h-3 w-24 bg-slate-200 rounded mb-2"></div>
+                    <div className="h-6 w-16 bg-slate-200 rounded"></div>
+                </div>
+            ))}
+        </div>
+
+        {/* Codes Table Skeleton */}
+        <div className="w-full mb-8">
+            <div className="flex items-center gap-4 mb-6">
+                <div className="w-5 h-5 bg-slate-200 rounded"></div>
+                <div className="h-4 w-20 bg-slate-200 rounded"></div>
+            </div>
+            
+            <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-6 p-4 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                        <div className="w-12 h-12 bg-slate-100 rounded-xl relative overflow-hidden flex items-center justify-center">
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]"></div>
+                            <QrCode size={24} className="text-slate-200" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="h-5 w-48 bg-slate-200 rounded mb-2"></div>
+                            <div className="h-3 w-64 bg-slate-100 rounded"></div>
+                        </div>
+                        <div className="hidden lg:flex gap-8 px-8">
+                            <div>
+                                <div className="h-3 w-12 bg-slate-200 rounded mb-2"></div>
+                                <div className="h-4 w-16 bg-slate-100 rounded"></div>
+                            </div>
+                            <div>
+                                <div className="h-3 w-12 bg-slate-200 rounded mb-2"></div>
+                                <div className="h-4 w-24 bg-slate-100 rounded"></div>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <div className="w-9 h-9 bg-slate-100 rounded-xl"></div>
+                            <div className="w-9 h-9 bg-slate-100 rounded-xl"></div>
+                            <div className="w-9 h-9 bg-slate-100 rounded-xl"></div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+        
+        <style>{`
+            @keyframes shimmer {
+                100% { transform: translateX(100%); }
+            }
+        `}</style>
+    </div>
+);
+
 const Dashboard = () => {
     const { user } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
@@ -191,88 +332,98 @@ const Dashboard = () => {
     const handleTriggerDownload = () => {
         if (!downloadModal) return;
 
-        const qr = downloadModal;
-        const design = qr.customization || {};
-        const baseUrl = import.meta.env.VITE_BASE_URL || import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
-        const shortUrl = `${baseUrl}/r/${qr.short_id}`;
-        const size = getSizePixels();
-        const title = qr.metadata?.title || 'QRCode';
+        try {
+            const qr = downloadModal;
+            const design = qr.customization || {};
+            const baseUrl = import.meta.env.VITE_BASE_URL || import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+            const shortUrl = `${baseUrl}/r/${qr.short_id}`;
+            const size = getSizePixels();
+            const title = qr.metadata?.title || 'QRCode';
 
-        // Create a temporary off-screen container to render a QR at the chosen size
-        const tempContainer = document.createElement('div');
-        tempContainer.style.position = 'fixed';
-        tempContainer.style.left = '-9999px';
-        tempContainer.style.top = '-9999px';
-        document.body.appendChild(tempContainer);
+            // Create a temporary off-screen container to render a QR at the chosen size
+            const tempContainer = document.createElement('div');
+            tempContainer.style.position = 'fixed';
+            tempContainer.style.left = '-9999px';
+            tempContainer.style.top = '-9999px';
+            document.body.appendChild(tempContainer);
 
-        // We'll use ReactDOM to render a QRCode into the temp container synchronously
-        import('react-dom/client').then(({ createRoot }) => {
-            const root = createRoot(tempContainer);
-            const QRCodeComponent = QRCode;
+            // We'll use ReactDOM to render a QRCode into the temp container synchronously
+            import('react-dom/client').then(({ createRoot }) => {
+                const root = createRoot(tempContainer);
+                const QRCodeComponent = QRCode;
 
-            root.render(
-                React.createElement(QRCodeComponent, {
-                    id: 'qr-download-temp',
-                    value: shortUrl,
-                    size: size,
-                    ecLevel: 'H',
-                    qrStyle: design.qrStyle || 'squares',
-                    fgColor: design.fgColor || '#000000',
-                    bgColor: design.bgColor || '#ffffff',
-                    eyeRadius: design.eyeShape === 'circle' ? 10 : 0,
-                    logoImage: design.logoUrl || undefined,
-                    logoWidth: Math.round(size * 0.15),
-                    logoHeight: Math.round(size * 0.15),
-                    removeQrCodeBehindLogo: true,
-                    quietZone: 10,
-                })
-            );
+                root.render(
+                    React.createElement(QRCodeComponent, {
+                        id: 'qr-download-temp',
+                        value: shortUrl,
+                        size: size,
+                        ecLevel: 'H',
+                        qrStyle: design.qrStyle || 'squares',
+                        fgColor: design.fgColor || '#000000',
+                        bgColor: design.bgColor || '#ffffff',
+                        eyeRadius: design.eyeShape === 'circle' ? 10 : 0,
+                        logoImage: design.logoUrl || undefined,
+                        logoWidth: Math.round(size * 0.15),
+                        logoHeight: Math.round(size * 0.15),
+                        removeQrCodeBehindLogo: true,
+                        quietZone: 10,
+                        crossOrigin: 'anonymous', // Prevent canvas tainting
+                    })
+                );
 
-            // Give the canvas time to render (especially if logo image needs to load)
-            setTimeout(() => {
-                const canvas = document.getElementById('qr-download-temp');
-                if (!canvas) {
-                    alert('Failed to generate QR code. Please try again.');
-                    document.body.removeChild(tempContainer);
-                    return;
-                }
+                // Give the canvas time to render (especially if logo image needs to load)
+                setTimeout(() => {
+                    try {
+                        const canvas = document.getElementById('qr-download-temp');
+                        if (!canvas) {
+                            throw new Error('Canvas element not found. Generation failed.');
+                        }
 
-                if (downloadFormat === 'SVG') {
-                    // Convert canvas to SVG by embedding the image data
-                    const imgData = canvas.toDataURL('image/png');
-                    const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+                        if (downloadFormat === 'SVG') {
+                            // Convert canvas to SVG by embedding the image data
+                            const imgData = canvas.toDataURL('image/png');
+                            const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
   <rect width="100%" height="100%" fill="${design.bgColor || '#ffffff'}"/>
   <image href="${imgData}" x="0" y="0" width="${size}" height="${size}"/>
 </svg>`;
-                    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = `${title}.svg`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(url);
-                } else {
-                    const mimeType = downloadFormat === 'JPEG' ? 'image/jpeg' : 'image/png';
-                    const ext = downloadFormat === 'JPEG' ? 'jpg' : 'png';
-                    const imgData = canvas.toDataURL(mimeType, 1.0);
-                    const link = document.createElement('a');
-                    link.href = imgData;
-                    link.download = `${title}.${ext}`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                }
+                            const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = `${title}.svg`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(url);
+                        } else {
+                            const mimeType = downloadFormat === 'JPEG' ? 'image/jpeg' : 'image/png';
+                            const ext = downloadFormat === 'JPEG' ? 'jpg' : 'png';
+                            const imgData = canvas.toDataURL(mimeType, 1.0);
+                            const link = document.createElement('a');
+                            link.href = imgData;
+                            link.download = `${title}.${ext}`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        }
 
-                // Cleanup
-                root.unmount();
-                document.body.removeChild(tempContainer);
-                setDownloadModal(null);
-                setPreviewModal(null);
-            }, 800); // Delay to ensure canvas is fully rendered (logo loading, etc.)
-        });
+                        // Cleanup
+                        root.unmount();
+                        document.body.removeChild(tempContainer);
+                        setDownloadModal(null);
+                        setPreviewModal(null);
+                    } catch (err) {
+                        console.error('Download Rendering Error:', err);
+                        alert(`Error generating file: ${err.message}. If you have a logo, ensure it is from a reliable source.`);
+                        document.body.removeChild(tempContainer);
+                    }
+                }, 1000); // 1s delay
+            });
+        } catch (err) {
+            console.error('Download Trigger Error:', err);
+            alert('An unexpected error occurred while starting the download.');
+        }
     };
 
     // Compute live stats from real data
@@ -306,6 +457,7 @@ const Dashboard = () => {
         {/* Mobile View */}
         <div className="md:hidden min-h-screen bg-slate-50 font-sans text-slate-900 pb-24">
 
+            {loading ? <LoadingSkeleton /> : (
             <main className="max-w-md mx-auto px-4 pt-6">
                 {/* Welcome Section */}
                 <section className="mb-6">
@@ -421,7 +573,7 @@ const Dashboard = () => {
                                                     {qr.qr_type || 'URL'}
                                                 </span>
                                                 <span>•</span>
-                                                <span className="truncate max-w-[120px]">{qr.original_url?.replace('https://', '')}</span>
+                                                <span className="truncate max-w-[120px]">{qr.target_url?.replace('https://', '')}</span>
                                             </div>
 
                                             <div className="flex items-center justify-between">
@@ -440,7 +592,7 @@ const Dashboard = () => {
                                                     <button onClick={(e) => { e.stopPropagation(); setDownloadModal(qr); }} className="p-2 bg-slate-50 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 rounded-xl transition-colors border border-slate-100">
                                                         <Download size={18} />
                                                     </button>
-                                                    <button onClick={(e) => { e.stopPropagation(); window.open(qr.original_url, '_blank'); }} className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-colors border border-indigo-100">
+                                                    <button onClick={(e) => { e.stopPropagation(); window.open(qr.target_url, '_blank'); }} className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-colors border border-indigo-100">
                                                         <ExternalLink size={18} />
                                                     </button>
                                                 </div>
@@ -460,11 +612,12 @@ const Dashboard = () => {
                     </div>
                 </section>
             </main>
-
+            )}
             
         </div>
 
         {/* Desktop View */}
+        {loading ? <DesktopLoadingSkeleton /> : (
         <div className="hidden md:block p-6 md:p-10 bg-slate-50 min-h-full">
             {/* Top Header */}
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
@@ -598,11 +751,7 @@ const Dashboard = () => {
                     {/* The search bar was shown here in the design but we already have one in the header. We can skip adding another one to avoid redundancy. */}
                 </div>
 
-                {loading ? (
-                    <div className="flex items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
-                        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-                    </div>
-                ) : error ? (
+                {error ? (
                     <div className="p-8 text-center text-red-500 font-medium bg-white rounded-3xl border border-slate-100 shadow-sm">{error}</div>
                 ) : qrCodes.length === 0 ? (
                     <div className="p-12 text-center bg-white rounded-[32px] border border-slate-100 shadow-sm">
@@ -1041,6 +1190,7 @@ const Dashboard = () => {
                                     logoWidth={50}
                                     logoHeight={50}
                                     removeQrCodeBehindLogo={true}
+                                    crossOrigin="anonymous"
                                 />
                             </div>
 
@@ -1147,6 +1297,7 @@ const Dashboard = () => {
                 </div>
             )}
         </div>
+        )}
         </>
     );
 };

@@ -101,6 +101,21 @@ export const redirectQR = async (req, res) => {
             return res.redirect(302, `${frontendUrl}/pdf/${shortId}`);
         }
 
+        if (qr.qr_type === 'VCARD') {
+            const frontendUrl = process.env.CORS_ORIGIN || 'http://localhost:5173';
+            return res.redirect(302, `${frontendUrl}/vcard/${shortId}`);
+        }
+
+        if (qr.qr_type === 'SOCIAL') {
+            const frontendUrl = process.env.CORS_ORIGIN || 'http://localhost:5173';
+            return res.redirect(302, `${frontendUrl}/social/${shortId}`);
+        }
+
+        if (qr.qr_type === 'MEDIA') {
+            const frontendUrl = process.env.CORS_ORIGIN || 'http://localhost:5173';
+            return res.redirect(302, `${frontendUrl}/media/${shortId}`);
+        }
+
         return res.redirect(302, finalUrl);
 
     } catch (error) {
@@ -126,6 +141,7 @@ export const getPublicQR = async (req, res) => {
             target_url: qr.target_url,
             customization: qr.customization,
             isActive: qr.isActive,
+            metadata: qr.metadata || {},
         });
     } catch (error) {
         console.error("Public QR Error:", error);

@@ -16,6 +16,9 @@ import AnalyticsPage from './pages/AnalyticsPage.jsx';
 import AccountPage from './pages/AccountPage.jsx';
 import BillingPage from './pages/BillingPage.jsx';
 import PDFViewPage from './pages/PDFViewPage.jsx';
+import VCardViewPage from './pages/VCardViewPage.jsx';
+import SocialViewPage from './pages/SocialViewPage.jsx';
+import MediaViewPage from './pages/MediaViewPage.jsx';
 
 // 1. Dashboard Layout (Uses Outlet for child routes)
 const DashboardLayout = ({ isSidebarOpen, onToggle }) => (
@@ -71,6 +74,9 @@ const App = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/pdf/:shortId" element={<PDFViewPage />} />
+        <Route path="/vcard/:shortId" element={<VCardViewPage />} />
+        <Route path="/social/:shortId" element={<SocialViewPage />} />
+        <Route path="/media/:shortId" element={<MediaViewPage />} />
 
         {/* Protected Routes */}
         <Route element={<PrivateRoute />}>

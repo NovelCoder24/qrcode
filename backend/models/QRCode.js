@@ -56,26 +56,18 @@ const qrCodeSchema = new mongoose.Schema({
     last_scanned_at: { type: Date }
   },
   metadata: {
-    title: {
-      type: String,
-      default: null
-    },
-    description: {
-      type: String,
-      default: null
-    },
-    tags: {
-      type: [String],
-      default: null
-    }
+    type: Object,
+    default: {}
   }
 }, { timestamps: true });
 
 //  1. sanitize url -> middleware
 // Ensures that every URL saved is a valid clickable link
+// Only sanitize for types that use real HTTP URLs
 qrCodeSchema.pre("save", function () {
   if (this.isModified("target_url")) {
-    if (!/^https?:\/\//i.test(this.target_url)) {
+    const skipTypes = ['VCARD', 'SOCIAL', 'MEDIA'];
+    if (!skipTypes.includes(this.qr_type) && !/^https?:\/\//i.test(this.target_url)) {
       this.target_url = `https://${this.target_url}`;
     };
   };
