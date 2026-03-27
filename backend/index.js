@@ -20,8 +20,8 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',          // Local development (Vite)
-  'https://spotter.in',             // Your stable version
-  'https://spotter-git-feature-qr-styling-novel.vercel.app' // Your preview URL
+  'https://qrcode-jade-chi.vercel.app',             // Your stable version
+  'https://qrcode-git-feature-qr-styling-2b6589-novelsahu22-9572s-projects.vercel.app' // Your preview URL
 ];
 
 app.use(cors({
