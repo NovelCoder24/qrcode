@@ -273,11 +273,125 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* Pricing (Anchoring & Decoy Effect) */}
+            {/* Analytics Section - Indian Context */}
+            <section className="py-24 px-6 bg-slate-50 border-y border-slate-200">
+                <div className="max-w-6xl mx-auto">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">Analytics built for India</h2>
+                        <p className="text-slate-500 max-w-2xl mx-auto text-lg">Know exactly who is scanning, when, and from where.</p>
+                    </div>
+                    <div className="grid lg:grid-cols-3 gap-6">
+                        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                            <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><MapPin className="w-5 h-5 text-indigo-500"/> Top Cities</h4>
+                            <ul className="space-y-3">
+                                <li className="flex justify-between items-center"><span className="text-slate-600">Mumbai</span><span className="font-bold text-slate-900">2,453</span></li>
+                                <li className="flex justify-between items-center"><span className="text-slate-600">Bangalore</span><span className="font-bold text-slate-900">1,897</span></li>
+                                <li className="flex justify-between items-center"><span className="text-slate-600">Delhi NCR</span><span className="font-bold text-slate-900">1,654</span></li>
+                                <li className="flex justify-between items-center"><span className="text-slate-600">Pune</span><span className="font-bold text-slate-900">892</span></li>
+                            </ul>
+                        </div>
+                        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                            <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Activity className="w-5 h-5 text-indigo-500"/> Peak Times</h4>
+                            <ul className="space-y-4 mt-2">
+                                <li className="flex flex-col"><span className="text-slate-900 font-bold">12 PM - 2 PM</span><span className="text-sm text-slate-500">Lunch hours (Restaurant QRs)</span></li>
+                                <li className="flex flex-col"><span className="text-slate-900 font-bold">6 PM - 9 PM</span><span className="text-sm text-slate-500">Evening traffic (Retail)</span></li>
+                                <li className="flex flex-col"><span className="text-emerald-600 font-bold">+35%</span><span className="text-sm text-slate-500">Higher traffic on weekends</span></li>
+                            </ul>
+                        </div>
+                        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-center">
+                            <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2"><Smartphone className="w-5 h-5 text-indigo-500"/> Device Split</h4>
+                            <div className="flex h-4 bg-slate-200 rounded-full overflow-hidden mb-6">
+                                <div className="bg-emerald-500 w-[78%]"></div>
+                                <div className="bg-slate-800 w-[22%]"></div>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-emerald-500"></span><span className="font-bold">Android (78%)</span></div>
+                                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-slate-800"></span><span className="font-bold">iOS (22%)</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Missing Critical Sections for B2B */}
+            <section className="py-24 px-6 bg-white border-b border-slate-100">
+                <div className="max-w-7xl mx-auto">
+                    <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center mb-20">
+                        <div>
+                            <h2 className="text-3xl font-bold text-slate-900 mb-4 tracking-tight">Works with tools you already use</h2>
+                            <p className="text-slate-600 mb-8 leading-relaxed text-lg">Integrate your offline data seamlessly into your existing CRM, payment gateways, and communication tools.</p>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-center font-bold text-slate-700">Zoho CRM</div>
+                                <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-200 flex items-center justify-center font-bold text-indigo-600">Razorpay</div>
+                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-center font-bold text-slate-700">Tally</div>
+                                <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 flex items-center justify-center font-bold text-emerald-600">WhatsApp</div>
+                            </div>
+                        </div>
+                        <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-xl relative overflow-hidden">
+                            <div className="w-14 h-14 bg-indigo-500/20 rounded-2xl flex items-center justify-center mb-6">
+                                <Lock className="w-7 h-7 text-indigo-400" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-white mb-6">Enterprise Grade Security</h3>
+                            <ul className="space-y-4">
+                                <li className="flex items-center gap-3"><Check className="w-5 h-5 text-emerald-400" /><span className="text-slate-300 font-medium tracking-wide">100% Data stored in India</span></li>
+                                <li className="flex items-center gap-3"><Check className="w-5 h-5 text-emerald-400" /><span className="text-slate-300 font-medium tracking-wide">AES-256 Encryption standards</span></li>
+                                <li className="flex items-center gap-3"><Check className="w-5 h-5 text-emerald-400" /><span className="text-slate-300 font-medium tracking-wide">Role-based access controls for teams</span></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
+                        <div className="bg-indigo-600 rounded-3xl p-8 lg:p-12 text-white shadow-2xl relative overflow-hidden order-2 md:order-1 border border-indigo-500">
+                            <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 blur-3xl rounded-full"></div>
+                            <h3 className="text-3xl font-bold mb-4 tracking-tight">Calculate Your ROI</h3>
+                            <p className="text-indigo-100 mb-8 font-medium">Stop guessing. See exactly how much your business will save by switching to digital QRs.</p>
+                            
+                            <div className="space-y-6 bg-white/10 p-6 sm:p-8 rounded-2xl border border-white/20 backdrop-blur-sm shadow-inner">
+                                <div>
+                                    <label className="text-sm text-indigo-100 font-bold mb-2 block uppercase tracking-wider">Current monthly printing cost</label>
+                                    <div className="flex bg-white rounded-xl overflow-hidden text-slate-900 font-bold border-2 border-transparent focus-within:border-indigo-300 transition-colors">
+                                        <div className="bg-slate-100 px-4 py-3 border-r border-slate-200 text-slate-500">₹</div>
+                                        <input type="text" className="w-full px-4 py-3 outline-none" placeholder="15000" disabled />
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="text-sm text-indigo-100 font-bold uppercase tracking-wider">Updates per month</label>
+                                        <span className="bg-indigo-500 px-2 py-0.5 rounded text-sm font-bold">4</span>
+                                    </div>
+                                    <input type="range" className="w-full h-2 bg-indigo-400/50 rounded-lg appearance-none cursor-not-allowed" disabled defaultValue="40" />
+                                </div>
+                                <div className="pt-6 border-t border-indigo-400/30 mt-6 flex justify-between items-center">
+                                    <span className="text-indigo-100 font-bold uppercase tracking-wider text-sm">Annual Savings:</span>
+                                    <span className="text-3xl font-black text-emerald-300 drop-shadow-sm">₹1,75,000</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="order-1 md:order-2">
+                            <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-emerald-200">
+                                <HeadphonesIcon className="w-7 h-7 text-emerald-600" />
+                            </div>
+                            <h2 className="text-3xl font-bold text-slate-900 mb-4 tracking-tight">Local Support in Hindi & English</h2>
+                            <p className="text-slate-600 mb-8 leading-relaxed text-lg">Get help when you need it from our dedicated Indian support team.</p>
+                            <ul className="space-y-4 mb-10">
+                                <li className="flex items-center gap-3"><Check className="w-6 h-6 p-1 bg-indigo-100 text-indigo-600 rounded-full" /><span className="text-slate-700 font-bold tracking-wide">9 AM - 9 PM IST Phone Support</span></li>
+                                <li className="flex items-center gap-3"><Check className="w-6 h-6 p-1 bg-indigo-100 text-indigo-600 rounded-full" /><span className="text-slate-700 font-bold tracking-wide">Direct WhatsApp Support</span></li>
+                                <li className="flex items-center gap-3"><Check className="w-6 h-6 p-1 bg-indigo-100 text-indigo-600 rounded-full" /><span className="text-slate-700 font-bold tracking-wide">1-on-1 Onboarding Assistance</span></li>
+                            </ul>
+                            <button className="bg-slate-900 text-white px-8 py-4 rounded-xl font-bold hover:bg-slate-800 transition-colors inline-flex items-center gap-2 shadow-lg shadow-slate-900/20 md:hover:-translate-y-1">
+                                <MessageCircle className="w-5 h-5" /> Chat with Sales
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Pricing (B2B Focused) */}
             <section id="pricing" className="py-24 px-6 bg-slate-50 border-b border-slate-200 relative overflow-hidden text-center">
                 <div className="max-w-6xl mx-auto relative z-10">
                     <div className="mb-16">
-                        <h2 className="text-4xl md:text-5xl font-extrabold mb-6 text-slate-900 tracking-tight">Simple pricing, huge ROI.</h2>
+                        <h2 className="text-4xl md:text-5xl font-extrabold mb-6 text-slate-900 tracking-tight">One simple plan. Everything you need.</h2>
                         <div className="inline-flex flex-wrap justify-center items-center gap-1 bg-slate-200/60 p-1.5 rounded-full border border-slate-200 transition-all text-center mx-auto">
                             <button 
                                 onClick={() => setBillingCycle('annual')}
@@ -294,53 +408,36 @@ const LandingPage = () => {
                         </div>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-8 items-center lg:px-8 max-w-5xl mx-auto">
-                        {/* Starter / Free (Decoy context) */}
-                        <div className="bg-white p-10 rounded-[40px] border border-slate-200 hover:border-slate-300 transition-all text-left">
-                            <h4 className="font-bold text-xl mb-2 text-slate-900">Starter</h4>
-                            <div className="text-5xl font-extrabold mb-6 text-slate-900">₹0 <span className="text-sm font-medium text-slate-500">/mo</span></div>
-                            <p className="text-sm text-slate-500 mb-8 pb-8 border-b border-slate-100">Perfect for trying out dynamic codes.</p>
-                            <ul className="space-y-4 mb-10 text-slate-600 text-sm font-medium">
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>3 Dynamic QR Codes</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>Basic scan volume</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>Standard PNG output</span></li>
+                    <div className="grid md:grid-cols-2 gap-8 items-center lg:px-8 max-w-4xl mx-auto">
+                        {/* Left: What you get */}
+                        <div className="text-left bg-white p-10 md:p-12 rounded-[40px] border border-slate-200 shadow-sm h-full flex flex-col justify-center">
+                            <h3 className="text-2xl font-bold text-slate-900 mb-8 tracking-tight">Everything included:</h3>
+                            <ul className="space-y-5 font-medium text-slate-600">
+                                <li className="flex items-start gap-3"><Check className="w-6 h-6 text-emerald-500 shrink-0" /> <span className="pt-0.5">Unlimited Dynamic QR Codes</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-6 h-6 text-emerald-500 shrink-0" /> <span className="pt-0.5">Advanced Analytics & Heatmaps</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-6 h-6 text-emerald-500 shrink-0" /> <span className="pt-0.5">Brand Design Studio & Logos</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-6 h-6 text-emerald-500 shrink-0" /> <span className="pt-0.5">Edit Links Anytime</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-6 h-6 text-emerald-500 shrink-0" /> <span className="pt-0.5">Priority Hindi Support</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-6 h-6 text-emerald-500 shrink-0" /> <span className="pt-0.5">No Hidden Fees, Cancel Anytime</span></li>
                             </ul>
-                            <Link to="/register" className="block text-center w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-2xl font-bold transition-all">Start Free</Link>
                         </div>
 
-                        {/* Pro (Highlighted Target) */}
-                        <div className="bg-indigo-600 text-white p-12 rounded-[40px] shadow-2xl shadow-indigo-200 md:scale-105 relative border border-indigo-500 text-left z-10 transform transition-transform md:hover:-translate-y-1">
-                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-400 to-emerald-500 text-white text-xs font-black uppercase tracking-widest px-6 py-2 rounded-full shadow-lg">Most Popular</div>
-                            <div className="flex justify-between items-center mb-2">
-                                <h4 className="font-bold text-3xl text-indigo-50">Pro Vibe</h4>
+                        {/* Right: Price */}
+                        <div className="bg-slate-900 text-white p-10 md:p-12 rounded-[40px] shadow-2xl relative border border-slate-700 text-left z-10 h-full flex flex-col justify-center overflow-hidden">
+                            <div className="absolute -top-4 -right-4 opacity-5 pointer-events-none">
+                                <IndianRupee className="w-64 h-64" />
                             </div>
-                            <div className="text-6xl font-black mb-2 flex flex-wrap items-end">
-                                {billingCycle === 'annual' ? '₹699' : '₹899'} 
-                                <span className="text-lg font-bold text-indigo-300 mb-2 ml-1">/mo</span>
+                            <h4 className="font-bold text-sm uppercase tracking-widest text-indigo-400 mb-6">Business Pro</h4>
+                            <div className="text-6xl font-black mb-2 flex flex-wrap items-end relative z-10">
+                                {billingCycle === 'annual' ? '₹999' : '₹1,249'} 
+                                <span className="text-lg font-bold text-slate-400 mb-2 ml-1">/mo</span>
                             </div>
-                            <p className="text-sm text-indigo-200 mb-8 pb-8 border-b border-indigo-500/50">
-                                {billingCycle === 'annual' ? 'Billed annually at ₹8,388' : 'Billed monthly'}
+                            <p className="text-sm text-slate-400 mb-10 pb-10 border-b border-slate-700 relative z-10">
+                                {billingCycle === 'annual' ? 'Billed annually at ₹11,988' : 'Billed monthly'}<br/>
+                                <span className="text-emerald-400 font-medium">+ GST as applicable</span>
                             </p>
-                            <ul className="space-y-4 mb-10 font-bold text-sm text-indigo-50">
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>Unlimited QR Codes</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>Full analytics & heatmaps</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>Brand design studio & Logos</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>SVG Vector exports</span></li>
-                            </ul>
-                            <Link to="/register" className="block text-center w-full py-4 bg-white text-indigo-600 rounded-2xl font-black shadow-xl hover:bg-indigo-50 transition-all text-lg tracking-wide">Start 14-Day Free Trial</Link>
-                        </div>
-
-                        {/* Business */}
-                        <div className="bg-white p-10 rounded-[40px] border border-slate-200 hover:border-slate-300 transition-all text-left">
-                            <h4 className="font-bold text-xl mb-2 text-slate-900">Agency</h4>
-                            <div className="text-5xl font-extrabold mb-6 text-slate-900">₹1999 <span className="text-sm font-medium text-slate-500">/mo</span></div>
-                            <p className="text-sm text-slate-500 mb-8 pb-8 border-b border-slate-100">For managing multiple clients.</p>
-                            <ul className="space-y-4 mb-10 text-slate-600 text-sm font-medium">
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" /> <span>Everything in Pro</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" /> <span>Multiple team seats</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" /> <span>Bulk generation API</span></li>
-                            </ul>
-                            <button className="w-full py-4 border-2 border-slate-200 hover:border-slate-300 text-slate-900 rounded-2xl font-bold transition-all bg-white">Contact Sales</button>
+                            <Link to="/register" className="relative z-10 block text-center w-full py-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-2xl font-bold transition-all text-lg shadow-xl shadow-indigo-500/20 md:hover:-translate-y-1">Start 14-Day Free Trial</Link>
+                            <p className="text-center text-xs text-slate-500 mt-5 font-medium">No credit card required</p>
                         </div>
                     </div>
                 </div>
