@@ -18,8 +18,10 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
     const [qrData, setQrData] = useState({});
     const [qrDesign, setQrDesign] = useState({
         fgColor: '#000000',
+        fgColor2: '#4F46E5',
+        gradientType: 'none',
         bgColor: '#ffffff',
-        qrStyle: 'squares',
+        qrStyle: 'square',
         eyeShape: 'square',
         frame: 'none'
     });
@@ -38,8 +40,10 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
                     setQrData({ url: data.target_url, title: data.metadata?.title });
                     setQrDesign({
                         fgColor: data.customization?.fgColor || '#000000',
+                        fgColor2: data.customization?.fgColor2 || '#4F46E5',
+                        gradientType: data.customization?.gradientType || 'none',
                         bgColor: data.customization?.bgColor || '#ffffff',
-                        qrStyle: data.customization?.qrStyle || 'squares',
+                        qrStyle: data.customization?.qrStyle || 'square',
                         eyeShape: data.customization?.eyeShape || 'square',
                         eyeColor: data.customization?.eyeColor,
                         frame: data.customization?.frame || 'none',

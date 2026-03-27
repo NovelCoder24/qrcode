@@ -94,6 +94,8 @@ const QRDetailPage = () => {
                                 size={220}
                                 ecLevel="H"
                                 primaryColor={design.fgColor || '#000000'}
+                                fgColor2={design.fgColor2}
+                                gradientType={design.gradientType}
                                 bgColor={design.bgColor || '#ffffff'}
                                 dotStyle={design.qrStyle || 'square'}
                                 cornerSquareStyle={design.eyeShape === 'circle' ? 'dot' : 'square'}

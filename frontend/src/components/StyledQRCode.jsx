@@ -26,6 +26,8 @@ const StyledQRCode = forwardRef(({
     size = 200,
     logo,
     primaryColor = '#000000',
+    fgColor2,
+    gradientType = 'none',
     bgColor = '#ffffff',
     dotStyle = 'square',
     cornerSquareStyle = 'square',
@@ -62,6 +64,16 @@ const StyledQRCode = forwardRef(({
         dotsOptions: {
             color: primaryColor,
             type: mapDotStyle(dotStyle),
+            ...(gradientType && gradientType !== 'none' && fgColor2 ? {
+                gradient: {
+                    type: gradientType,
+                    rotation: 0.785398, // 45 degrees
+                    colorStops: [
+                        { offset: 0, color: primaryColor },
+                        { offset: 1, color: fgColor2 }
+                    ]
+                }
+            } : {})
         },
         backgroundOptions: {
             color: bgColor,

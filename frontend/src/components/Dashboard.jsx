@@ -354,7 +354,17 @@ const Dashboard = () => {
                 image: design.logoUrl || undefined,
                 dotsOptions: {
                     color: design.fgColor || '#000000',
-                    type: design.qrStyle === 'dots' ? 'dots' : 'square',
+                    type: design.qrStyle || 'square',
+                    ...(design.gradientType && design.gradientType !== 'none' && design.fgColor2 ? {
+                        gradient: {
+                            type: design.gradientType,
+                            rotation: 0.785398, // 45 degrees
+                            colorStops: [
+                                { offset: 0, color: design.fgColor || '#000000' },
+                                { offset: 1, color: design.fgColor2 }
+                            ]
+                        }
+                    } : {})
                 },
                 backgroundOptions: {
                     color: design.bgColor || '#ffffff',
@@ -1154,6 +1164,8 @@ const Dashboard = () => {
                                     ecLevel="Q"
                                     dotStyle={design.qrStyle || 'square'}
                                     primaryColor={design.fgColor || '#000000'}
+                                    fgColor2={design.fgColor2}
+                                    gradientType={design.gradientType}
                                     bgColor={design.bgColor || '#ffffff'}
                                     cornerSquareStyle={design.eyeShape === 'circle' ? 'dot' : 'square'}
                                     cornerDotStyle={design.eyeShape === 'circle' ? 'dot' : 'square'}

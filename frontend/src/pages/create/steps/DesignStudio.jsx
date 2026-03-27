@@ -48,7 +48,7 @@ const DesignStudio = ({ design, onChange }) => {
                     {/* Colors */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-2">Dots Color</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-2">Primary Color</label>
                             <div className="flex items-center gap-2 border border-slate-200 p-2 rounded-lg">
                                 <input
                                     type="color"
@@ -60,7 +60,7 @@ const DesignStudio = ({ design, onChange }) => {
                             </div>
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-2">Background</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-2">Background Color</label>
                             <div className="flex items-center gap-2 border border-slate-200 p-2 rounded-lg">
                                 <input
                                     type="color"
@@ -73,19 +73,65 @@ const DesignStudio = ({ design, onChange }) => {
                         </div>
                     </div>
 
+                    {/* Gradient Toggle & Setup */}
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                            <label className="text-xs font-semibold text-slate-700">Enable Gradient</label>
+                            <button
+                                onClick={() => onChange({ ...design, gradientType: design?.gradientType && design.gradientType !== 'none' ? 'none' : 'linear' })}
+                                className={`w-10 h-5 rounded-full relative transition-colors ${design?.gradientType && design.gradientType !== 'none' ? 'bg-teal-500' : 'bg-slate-300'}`}
+                            >
+                                <span className={`absolute top-0.5 left-0.5 bg-white w-4 h-4 rounded-full transition-transform ${design?.gradientType && design.gradientType !== 'none' ? 'translate-x-5' : ''}`} />
+                            </button>
+                        </div>
+                        
+                        {design?.gradientType && design.gradientType !== 'none' && (
+                            <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200">
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-700 mb-2">Secondary Color</label>
+                                    <div className="flex items-center gap-2 border border-slate-200 p-2 rounded-lg bg-white">
+                                        <input
+                                            type="color"
+                                            value={design?.fgColor2 || '#4F46E5'}
+                                            onChange={(e) => handleColorChange('fgColor2', e.target.value)}
+                                            className="w-8 h-8 rounded cursor-pointer border-none bg-transparent"
+                                        />
+                                        <span className="text-sm text-slate-600">{design?.fgColor2 || '#4F46E5'}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-700 mb-2">Gradient Type</label>
+                                    <div className="flex gap-2">
+                                        {['linear', 'radial'].map(type => (
+                                            <button
+                                                key={type}
+                                                onClick={() => onChange({ ...design, gradientType: type })}
+                                                className={`flex-1 py-1.5 text-xs border rounded-md capitalize bg-white
+                                                    ${design?.gradientType === type ? 'border-teal-500 text-teal-700 font-semibold' : 'border-slate-200'}
+                                                `}
+                                            >
+                                                {type}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Dot Style (Style of the small squares) */}
                     <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-2">Pattern Style</label>
-                        <div className="flex gap-2">
-                            {['squares', 'dots', 'fluid'].map(style => (
+                        <div className="grid grid-cols-3 gap-2">
+                            {['square', 'dots', 'rounded', 'extra-rounded', 'classy'].map(style => (
                                 <button
                                     key={style}
                                     onClick={() => onChange({ ...design, qrStyle: style })}
-                                    className={`flex-1 py-2 text-xs border rounded-md capitalize
-                                        ${design?.qrStyle === style ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-slate-200'}
+                                    className={`py-2 text-[11px] border rounded-md capitalize font-medium transition-colors
+                                        ${design?.qrStyle === style ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-slate-200 hover:bg-slate-50'}
                                     `}
                                 >
-                                    {style}
+                                    {style.replace('-', ' ')}
                                 </button>
                             ))}
                         </div>
@@ -111,16 +157,16 @@ const DesignStudio = ({ design, onChange }) => {
 
                     <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-2">Corner Shape</label>
-                        <div className="flex gap-2">
-                            {['square', 'circle'].map(shape => (
+                        <div className="grid grid-cols-3 gap-2">
+                            {['square', 'dot', 'extra-rounded'].map(shape => (
                                 <button
                                     key={shape}
                                     onClick={() => onChange({ ...design, eyeShape: shape })}
-                                    className={`flex-1 py-2 text-xs border rounded-md capitalize
-                                        ${design?.eyeShape === shape ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-slate-200'}
+                                    className={`py-2 text-[11px] border rounded-md capitalize font-medium transition-colors
+                                        ${design?.eyeShape === shape ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-slate-200 hover:bg-slate-50'}
                                     `}
                                 >
-                                    {shape}
+                                    {shape.replace('-', ' ')}
                                 </button>
                             ))}
                         </div>
