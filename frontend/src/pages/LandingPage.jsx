@@ -7,6 +7,7 @@ import {
     HeadphonesIcon, Calculator, Lock, MessageCircle, MapPin, 
     IndianRupee, Activity
 } from 'lucide-react';
+import founderImg from '../assets/founder.jpg';
 
 const LandingPage = () => {
     const [themeColor, setThemeColor] = useState('#4F46E5'); // Default indigo-600
@@ -573,57 +574,37 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* Testimonials (Authority / Trust) */}
-            <section className="py-24 px-6 bg-slate-900 text-white overflow-hidden text-center flex flex-col items-center">
-                <div className="max-w-7xl mx-auto w-full">
-                    <h2 className="text-3xl md:text-5xl font-extrabold mb-16 text-white leading-[1.2] tracking-tight text-center">
-                        Trusted by Indian Businesses
-                    </h2>
-                    <div className="grid md:grid-cols-3 gap-8 text-left">
-                        <div className="bg-slate-800 p-8 sm:p-10 rounded-3xl border border-slate-700 relative flex flex-col shadow-2xl">
-                            <div className="text-amber-400 flex gap-1 mb-6">
-                                <Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" />
-                            </div>
-                            <p className="text-slate-300 text-lg font-medium mb-10 leading-relaxed">
-                                "Helped us go contactless during COVID and saved ₹3.2L on menu printing. Instant updates across all our locations."
-                            </p>
-                            <div className="flex items-center gap-4 mt-auto">
-                                <div className="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center font-bold text-xl text-white shadow-inner">R</div>
-                                <div>
-                                    <p className="font-bold text-white text-lg">Rahul Mehta, Owner</p>
-                                    <p className="text-indigo-400 text-sm font-semibold">Chai & Chaat (40 outlets)</p>
+            {/* Founder's Note (High Trust & Personal Connection) */}
+            <section className="py-24 px-6 bg-slate-900 border-y border-slate-800 relative overflow-hidden text-left">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 blur-[120px] rounded-full -z-0"></div>
+                <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 blur-[120px] rounded-full -z-0"></div>
+                
+                <div className="max-w-4xl mx-auto relative z-10">
+                    <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-8 md:p-16 rounded-[48px] shadow-2xl">
+                        <div className="flex flex-col md:flex-row items-center gap-12 text-center md:text-left">
+                            <div className="shrink-0 relative group">
+                                <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                                <div className="w-32 h-32 md:w-40 md:h-40 bg-slate-700 rounded-full overflow-hidden border-4 border-slate-800 relative flex items-center justify-center">
+                                    <img src={founderImg} alt="Novel - Founder" className="w-full h-full object-cover" />
+                                </div>
+                                <div className="absolute -bottom-2 -right-2 bg-emerald-500 p-2 rounded-full border-4 border-slate-800 shadow-lg">
+                                    <Check className="w-4 h-4 text-white font-bold" />
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div className="bg-slate-800 p-8 sm:p-10 rounded-3xl border border-slate-700 relative flex flex-col shadow-2xl md:-translate-y-4">
-                            <div className="text-amber-400 flex gap-1 mb-6">
-                                <Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" />
-                            </div>
-                            <p className="text-slate-300 text-lg font-medium mb-10 leading-relaxed">
-                                "Our property site visits went up 240% after using traceable QR codes on our city hoardings. We finally know what works."
-                            </p>
-                            <div className="flex items-center gap-4 mt-auto">
-                                <div className="w-12 h-12 bg-pink-500 rounded-full flex items-center justify-center font-bold text-xl text-white shadow-inner">P</div>
-                                <div>
-                                    <p className="font-bold text-white text-lg">Priya Sharma</p>
-                                    <p className="text-indigo-400 text-sm font-semibold">Marketing Head, Metro Realty</p>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div className="bg-slate-800 p-8 sm:p-10 rounded-3xl border border-slate-700 relative flex flex-col shadow-2xl">
-                            <div className="text-amber-400 flex gap-1 mb-6">
-                                <Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" />
-                            </div>
-                            <p className="text-slate-300 text-lg font-medium mb-10 leading-relaxed">
-                                "Track which distributor is actually reaching customers. Game changer for our FMCG supply chain visibility!"
-                            </p>
-                            <div className="flex items-center gap-4 mt-auto">
-                                <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center font-bold text-xl text-white shadow-inner">A</div>
+                            <div>
+                                <div className="inline-flex items-center gap-2 bg-indigo-500/10 text-indigo-400 font-bold px-3 py-1 rounded-full text-xs uppercase tracking-widest mb-6 border border-indigo-500/20">
+                                    Message from the Founder
+                                </div>
+                                <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-6 leading-tight italic">
+                                    &ldquo;I built QRVibe because I saw Indian businesses losing money on static QRs that break. My goal is simple: ensure your physical marketing never goes dead.&rdquo;
+                                </h2>
+                                <p className="text-slate-400 text-lg mb-8 leading-relaxed font-medium">
+                                    As a founder building for the Indian market, I know how frustrating it is to print thousands of flyers only to realize the link is broken or needs an update. QRVibe is my commitment to solving that. If you ever have a problem, you can reach me directly.
+                                </p>
                                 <div>
-                                    <p className="font-bold text-white text-lg">Anil Kumar</p>
-                                    <p className="text-indigo-400 text-sm font-semibold">Sales Director, Sunrise FMCG</p>
+                                    <p className="text-white font-black text-xl mb-1">Novel</p>
+                                    <p className="text-indigo-400 font-bold text-sm tracking-wide">Founder, QRVibe</p>
                                 </div>
                             </div>
                         </div>
