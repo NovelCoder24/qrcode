@@ -17,7 +17,7 @@ const LandingPage = () => {
     const [updatesPerMonth, setUpdatesPerMonth] = useState(4);
     const [openFaq, setOpenFaq] = useState(null);
 
-    const annualSavings = Math.max(0, (printingCost * updatesPerMonth * 12) - (billingCycle === 'annual' ? 11988 : 14988));
+    const annualSavings = Math.max(0, (printingCost * updatesPerMonth * 12) - (billingCycle === 'annual' ? 8388 : 10788));
     const formatINR = (num) => num.toLocaleString('en-IN');
 
     const faqs = [
@@ -77,21 +77,18 @@ const LandingPage = () => {
                 <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
                     {/* Left Copy block - Utilizing Von Restorff Effect for high contrast */}
                     <div className="relative z-10 text-center lg:text-left"> 
-                        <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold leading-[1.1] mb-6 tracking-tight">
-                            Smart QR Solutions for <br />
-                            <span className="gradient-text">Growing Indian Businesses</span>
+                        <h1 className="text-4xl sm:text-5xl lg:text-[60px] font-extrabold leading-[1.1] mb-6 tracking-tight text-slate-900">
+                            Your printed QR should <br />
+                            <span className="gradient-text">never go dead.</span>
                         </h1>
                         <p className="text-lg lg:text-xl text-slate-600 mb-10 max-w-lg mx-auto lg:mx-0 font-medium leading-relaxed">
-                            Track, analyze, and optimize your offline-to-online marketing. Join 6,000+ Indian businesses driving measurable ROI.
+                            Stop wasting money on static prints. Track, analyze, and update your offline marketing instantly. Join 6,000+ Indian businesses driving measurable ROI.
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                            <Link to="/register" className="w-full sm:w-auto bg-indigo-600 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-indigo-700 hover:-translate-y-1 transition-all shadow-xl shadow-indigo-200 flex items-center justify-center gap-2">
-                                Start Free <ArrowRight className="w-5 h-5" />
+                            <Link to="/register" className="w-full sm:w-auto bg-indigo-600 text-white px-10 py-5 rounded-3xl font-bold text-xl hover:bg-indigo-700 hover:-translate-y-1 transition-all shadow-2xl shadow-indigo-200 flex items-center justify-center gap-2">
+                                Start Free <ArrowRight className="w-6 h-6" />
                             </Link>
-                            <a href="#designer" className="w-full sm:w-auto bg-white border-2 border-slate-200 text-slate-700 px-8 py-4 rounded-2xl font-bold text-lg hover:bg-slate-50 transition-all text-center">
-                                Try Designer
-                            </a>
                         </div>
                     </div>
 
@@ -221,7 +218,7 @@ const LandingPage = () => {
                                 <Utensils className="w-7 h-7 text-orange-600" />
                             </div>
                             <h3 className="text-xl font-bold mb-3 text-slate-900">Restaurant Chains</h3>
-                            <p className="text-slate-500 font-medium leading-relaxed text-sm">Menu QR codes with real-time updates. Perfect for 50+ outlets wanting instant menu sync.</p>
+                            <p className="text-slate-500 font-medium leading-relaxed text-sm">Update your digital menu across all tables/outlets instantly without reprinting flyers.</p>
                         </div>
 
                         <div className="bg-white p-8 rounded-[32px] border border-slate-200/60 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center flex flex-col items-center">
@@ -331,9 +328,15 @@ const LandingPage = () => {
                             <h2 className="text-3xl font-bold text-slate-900 mb-4 tracking-tight">Works with tools you already use</h2>
                             <p className="text-slate-600 mb-8 leading-relaxed text-lg">Integrate your offline data seamlessly into your existing CRM, payment gateways, and communication tools.</p>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-center font-bold text-slate-700">Zoho CRM</div>
+                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col items-center justify-center font-bold text-slate-400">
+                                    <span className="text-slate-700">Zoho CRM</span>
+                                    <span className="text-[10px] uppercase tracking-tighter bg-slate-200 px-2 py-0.5 rounded-full mt-1">Coming Soon</span>
+                                </div>
                                 <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-200 flex items-center justify-center font-bold text-indigo-600">Razorpay</div>
-                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-center font-bold text-slate-700">Tally</div>
+                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col items-center justify-center font-bold text-slate-400">
+                                    <span className="text-slate-700">Tally</span>
+                                    <span className="text-[10px] uppercase tracking-tighter bg-slate-200 px-2 py-0.5 rounded-full mt-1">Coming Soon</span>
+                                </div>
                                 <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 flex items-center justify-center font-bold text-emerald-600">WhatsApp</div>
                             </div>
                         </div>
@@ -398,7 +401,7 @@ const LandingPage = () => {
                                     </div>
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="text-indigo-200">QRVibe annual cost</span>
-                                        <span className="font-bold text-white">₹{formatINR(billingCycle === 'annual' ? 11988 : 14988)}</span>
+                                        <span className="font-bold text-white">₹{formatINR(billingCycle === 'annual' ? 8388 : 10788)}</span>
                                     </div>
                                     <div className="flex justify-between items-center pt-3 border-t border-indigo-400/30">
                                         <span className="text-indigo-100 font-bold uppercase tracking-wider text-sm">Annual Savings:</span>
@@ -469,21 +472,21 @@ const LandingPage = () => {
                             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-400 to-emerald-500 text-white text-xs font-black uppercase tracking-widest px-6 py-2 rounded-full shadow-lg">Most Popular</div>
                             <h4 className="font-bold text-xl mb-2 text-indigo-100">Business Pro</h4>
                             <div className="text-5xl font-black mb-2 flex flex-wrap items-end">
-                                {billingCycle === 'annual' ? '₹999' : '₹1,249'} 
+                                {billingCycle === 'annual' ? '₹699' : '₹899'} 
                                 <span className="text-lg font-bold text-indigo-300 mb-1 ml-1">/mo</span>
                             </div>
                             <p className="text-sm text-indigo-200 mb-8 pb-8 border-b border-indigo-500/50">
-                                {billingCycle === 'annual' ? 'Billed ₹11,988/year + GST' : 'Billed monthly + GST'}
+                                {billingCycle === 'annual' ? 'Billed ₹8,388/year + GST' : 'Billed monthly + GST'}
                             </p>
                             <ul className="space-y-4 mb-10 font-bold text-sm text-indigo-50 flex-1">
                                 <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>Unlimited QR Codes</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>Full analytics & heatmaps</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>Advanced analytics & tracking</span></li>
                                 <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>Brand design studio & logos</span></li>
                                 <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>SVG vector exports</span></li>
                                 <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>Priority support (Hindi & English)</span></li>
                             </ul>
                             <Link to="/register" className="block text-center w-full py-4 bg-white text-indigo-600 rounded-2xl font-black shadow-xl hover:bg-indigo-50 transition-all text-lg tracking-wide mt-auto">Start 14-Day Free Trial</Link>
-                            <p className="text-center text-xs text-indigo-300 mt-3 font-medium">No credit card required</p>
+                            <p className="text-center text-sm text-indigo-200 mt-3 font-black">No credit card required</p>
                         </div>
 
                         {/* Enterprise */}
@@ -494,9 +497,9 @@ const LandingPage = () => {
                             <ul className="space-y-4 mb-10 text-slate-600 text-sm font-medium flex-1">
                                 <li className="flex items-start gap-3"><Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" /> <span>Everything in Business Pro</span></li>
                                 <li className="flex items-start gap-3"><Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" /> <span>Unlimited team seats</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" /> <span>Bulk generation API</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" /> <span>Advanced API Integration</span></li>
                                 <li className="flex items-start gap-3"><Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" /> <span>Dedicated account manager</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" /> <span>Custom SLA & onboarding</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" /> <span>Priority Setup & Training</span></li>
                             </ul>
                             <button className="w-full py-4 border-2 border-slate-200 hover:border-slate-300 text-slate-900 rounded-2xl font-bold transition-all bg-white mt-auto">Contact Sales</button>
                         </div>
@@ -519,14 +522,14 @@ const LandingPage = () => {
                                     {[
                                         ['Dynamic QR Codes', '3', 'Unlimited', 'Unlimited'],
                                         ['Scans/month', '100', 'Unlimited', 'Unlimited'],
-                                        ['Analytics', 'Basic', 'Advanced + Heatmaps', 'Advanced + Heatmaps'],
+                                        ['Analytics', 'Basic', 'Advanced Tracking', 'Advanced Tracking'],
                                         ['Custom Branding', '—', '✓', '✓'],
                                         ['SVG Exports', '—', '✓', '✓'],
                                         ['Team Members', '1', '3', 'Unlimited'],
                                         ['API Access', '—', '—', '✓'],
-                                        ['Bulk QR Generation', '—', '—', '✓'],
+                                        ['Priority Setup', '—', '—', '✓'],
                                         ['Dedicated Manager', '—', '—', '✓'],
-                                        ['Support', 'Email', 'Priority (Hindi/EN)', 'Dedicated + SLA'],
+                                        ['Support', 'Email', 'Priority (Hindi/EN)', 'Dedicated Support'],
                                     ].map(([feature, starter, pro, enterprise], i) => (
                                         <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                                             <td className="py-3.5 pr-4 font-medium text-slate-800">{feature}</td>

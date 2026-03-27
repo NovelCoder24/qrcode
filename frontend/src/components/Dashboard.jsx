@@ -574,7 +574,15 @@ const Dashboard = () => {
                             const iconColorClass = formatTypeColors[typeLower] || 'text-indigo-500';
 
                             return (
-                                <div key={qr._id} onClick={() => navigate(`/qrcodes/${qr._id}`)} className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow group flex cursor-pointer">
+                                <div 
+                                    key={qr._id} 
+                                    onClick={(e) => {
+                                        // On mobile, prevent navigation if clicking directly on action buttons
+                                        if (e.target.closest('button')) return;
+                                        navigate(`/qrcodes/${qr._id}`);
+                                    }} 
+                                    className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow group flex cursor-pointer relative"
+                                >
                                     <div className="flex gap-4 w-full">
                                         {/* Visual Preview Area */}
                                         <div className="w-16 h-16 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center relative shrink-0">
@@ -1235,9 +1243,9 @@ const Dashboard = () => {
             {/* DOWNLOAD FORMAT OPTIONS MODAL */}
             {downloadModal && (
                 <div className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200 border border-slate-100">
+                    <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200 border border-slate-100">
 
-                        <div className="relative p-6 border-b border-slate-50 flex items-center justify-between">
+                        <div className="relative p-6 border-b border-slate-50 flex items-center justify-between shrink-0">
                             <h2 className="text-lg font-bold text-slate-800">
                                 Download QR Code
                             </h2>
@@ -1249,9 +1257,9 @@ const Dashboard = () => {
                             </button>
                         </div>
 
-                        <div className="p-6">
+                        <div className="p-6 overflow-y-auto">
                             {/* Format Grid - Now 3 columns, smaller cards */}
-                            <div className="grid grid-cols-3 gap-3 mb-8">
+                            <div className="grid grid-cols-2 xs:grid-cols-3 gap-3 mb-8">
                                 {['PNG', 'JPEG', 'SVG', 'PDF', 'EPS', 'Print'].map(format => {
                                     const isSelected = downloadFormat === format;
                                     const isAvailable = ['PNG', 'JPEG', 'SVG'].includes(format);

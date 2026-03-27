@@ -59,8 +59,8 @@ const Sidebar = ({ isOpen, overlay = false }) => {
                         <span>{item.label}</span>
                     </NavLink>
                 ))}
-
-                <div className="pt-8 pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Support</div>
+                {/* For now disabled secondary nav i'll implement it later */}
+                {/* <div className="pt-8 pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Support</div>
                 {secondaryNav.map((item) => (
                     <NavLink
                         key={item.id}
@@ -75,7 +75,7 @@ const Sidebar = ({ isOpen, overlay = false }) => {
                         {item.icon}
                         <span>{item.label}</span>
                     </NavLink>
-                ))}
+                ))} */}
             </nav>
 
             {/* Upgrade Card */}
