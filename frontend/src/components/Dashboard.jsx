@@ -329,7 +329,7 @@ const Dashboard = () => {
         }
     };
 
-    const handleTriggerDownload = () => {
+    const handleTriggerDownload = async () => {
         if (!downloadModal) return;
 
         try {
@@ -340,6 +340,35 @@ const Dashboard = () => {
             const size = getSizePixels();
             const title = qr.metadata?.title || 'QRCode';
 
+            // Pre-convert cross-origin logo to a local data URL to avoid canvas tainting
+            let localLogoUrl = undefined;
+            if (design.logoUrl) {
+                try {
+                    const res = await fetch(design.logoUrl, { mode: 'cors' });
+                    const blob = await res.blob();
+                    localLogoUrl = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.readAsDataURL(blob);
+                    });
+                } catch {
+                    // Fallback: try loading via Image + canvas
+                    localLogoUrl = await new Promise((resolve) => {
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        img.onload = () => {
+                            const c = document.createElement('canvas');
+                            c.width = img.naturalWidth;
+                            c.height = img.naturalHeight;
+                            c.getContext('2d').drawImage(img, 0, 0);
+                            try { resolve(c.toDataURL('image/png')); } catch { resolve(undefined); }
+                        };
+                        img.onerror = () => resolve(undefined);
+                        img.src = design.logoUrl;
+                    });
+                }
+            }
+
             // Create a temporary off-screen container to render a QR at the chosen size
             const tempContainer = document.createElement('div');
             tempContainer.style.position = 'fixed';
@@ -347,79 +376,75 @@ const Dashboard = () => {
             tempContainer.style.top = '-9999px';
             document.body.appendChild(tempContainer);
 
-            // We'll use ReactDOM to render a QRCode into the temp container synchronously
-            import('react-dom/client').then(({ createRoot }) => {
-                const root = createRoot(tempContainer);
-                const QRCodeComponent = QRCode;
+            const { createRoot } = await import('react-dom/client');
+            const root = createRoot(tempContainer);
 
-                root.render(
-                    React.createElement(QRCodeComponent, {
-                        id: 'qr-download-temp',
-                        value: shortUrl,
-                        size: size,
-                        ecLevel: 'H',
-                        qrStyle: design.qrStyle || 'squares',
-                        fgColor: design.fgColor || '#000000',
-                        bgColor: design.bgColor || '#ffffff',
-                        eyeRadius: design.eyeShape === 'circle' ? 10 : 0,
-                        logoImage: design.logoUrl || undefined,
-                        logoWidth: Math.round(size * 0.15),
-                        logoHeight: Math.round(size * 0.15),
-                        removeQrCodeBehindLogo: true,
-                        quietZone: 10,
-                        crossOrigin: 'anonymous', // Prevent canvas tainting
-                    })
-                );
+            root.render(
+                React.createElement(QRCode, {
+                    id: 'qr-download-temp',
+                    value: shortUrl,
+                    size: size,
+                    ecLevel: 'H',
+                    qrStyle: design.qrStyle || 'squares',
+                    fgColor: design.fgColor || '#000000',
+                    bgColor: design.bgColor || '#ffffff',
+                    eyeRadius: design.eyeShape === 'circle' ? 10 : 0,
+                    logoImage: localLogoUrl || undefined,
+                    logoWidth: Math.round(size * 0.15),
+                    logoHeight: Math.round(size * 0.15),
+                    removeQrCodeBehindLogo: true,
+                    quietZone: 10,
+                })
+            );
 
-                // Give the canvas time to render (especially if logo image needs to load)
-                setTimeout(() => {
-                    try {
-                        const canvas = document.getElementById('qr-download-temp');
-                        if (!canvas) {
-                            throw new Error('Canvas element not found. Generation failed.');
-                        }
+            // Give the canvas time to render
+            setTimeout(() => {
+                try {
+                    const canvas = document.getElementById('qr-download-temp');
+                    if (!canvas) {
+                        throw new Error('Canvas element not found. Generation failed.');
+                    }
 
-                        if (downloadFormat === 'SVG') {
-                            // Convert canvas to SVG by embedding the image data
-                            const imgData = canvas.toDataURL('image/png');
-                            const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+                    if (downloadFormat === 'SVG') {
+                        const imgData = canvas.toDataURL('image/png');
+                        const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
   <rect width="100%" height="100%" fill="${design.bgColor || '#ffffff'}"/>
   <image href="${imgData}" x="0" y="0" width="${size}" height="${size}"/>
 </svg>`;
-                            const blob = new Blob([svgContent], { type: 'image/svg+xml' });
-                            const url = URL.createObjectURL(blob);
-                            const link = document.createElement('a');
-                            link.href = url;
-                            link.download = `${title}.svg`;
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                            URL.revokeObjectURL(url);
-                        } else {
-                            const mimeType = downloadFormat === 'JPEG' ? 'image/jpeg' : 'image/png';
-                            const ext = downloadFormat === 'JPEG' ? 'jpg' : 'png';
-                            const imgData = canvas.toDataURL(mimeType, 1.0);
-                            const link = document.createElement('a');
-                            link.href = imgData;
-                            link.download = `${title}.${ext}`;
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                        }
-
-                        // Cleanup
-                        root.unmount();
-                        document.body.removeChild(tempContainer);
-                        setDownloadModal(null);
-                        setPreviewModal(null);
-                    } catch (err) {
-                        console.error('Download Rendering Error:', err);
-                        alert(`Error generating file: ${err.message}. If you have a logo, ensure it is from a reliable source.`);
-                        document.body.removeChild(tempContainer);
+                        const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `${title}.svg`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                    } else {
+                        const mimeType = downloadFormat === 'JPEG' ? 'image/jpeg' : 'image/png';
+                        const ext = downloadFormat === 'JPEG' ? 'jpg' : 'png';
+                        const imgData = canvas.toDataURL(mimeType, 1.0);
+                        const link = document.createElement('a');
+                        link.href = imgData;
+                        link.download = `${title}.${ext}`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
                     }
-                }, 1000); // 1s delay
-            });
+
+                    // Cleanup
+                    root.unmount();
+                    document.body.removeChild(tempContainer);
+                    setDownloadModal(null);
+                    setPreviewModal(null);
+                } catch (err) {
+                    console.error('Download Rendering Error:', err);
+                    alert(`Error generating file: ${err.message}. If you have a logo, ensure it is from a reliable source.`);
+                    root.unmount();
+                    document.body.removeChild(tempContainer);
+                }
+            }, 1500);
         } catch (err) {
             console.error('Download Trigger Error:', err);
             alert('An unexpected error occurred while starting the download.');
