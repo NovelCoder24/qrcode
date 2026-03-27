@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit3, ExternalLink, Copy, Check, Loader2, QrCode as QrCodeIcon, Calendar, ScanLine, Clock, Globe, Palette } from 'lucide-react';
-import { QRCode } from 'react-qrcode-logo';
+import StyledQRCode from '../components/StyledQRCode';
 import api from '../api/axios';
 
 const timeAgo = (dateString) => {
@@ -89,20 +89,16 @@ const QRDetailPage = () => {
                 <div className="lg:w-[380px] flex-shrink-0">
                     <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-8 flex flex-col items-center">
                         <div className="p-5 bg-white rounded-2xl shadow-sm border border-slate-100 mb-6">
-                            <QRCode
-                                value={shortUrl}
+                            <StyledQRCode
+                                data={shortUrl}
                                 size={220}
                                 ecLevel="H"
-                                fgColor={design.fgColor || '#000000'}
+                                primaryColor={design.fgColor || '#000000'}
                                 bgColor={design.bgColor || '#ffffff'}
-                                qrStyle={design.qrStyle || 'squares'}
-                                eyeRadius={design.eyeShape === 'circle' ? 10 : 0}
-                                logoImage={design.logoUrl || undefined}
-                                logoWidth={30}
-                                logoHeight={30}
-                                logoPaddingStyle="circle"
-                                logoPadding={2}
-                                removeQrCodeBehindLogo={true}
+                                dotStyle={design.qrStyle || 'square'}
+                                cornerSquareStyle={design.eyeShape === 'circle' ? 'dot' : 'square'}
+                                cornerDotStyle={design.eyeShape === 'circle' ? 'dot' : 'square'}
+                                logo={design.logoUrl || undefined}
                             />
                         </div>
 
