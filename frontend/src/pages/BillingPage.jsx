@@ -25,13 +25,13 @@ const PLANS = {
             "Full analytics & insights",
             "Custom patterns & logos",
             "SVG export",
-            "Health monitoring alerts"
+            "WhatsApp & Email Health Alerts"
         ],
         icon: Crown,
         popular: true
     },
     business: {
-        name: "Agency",
+        name: "Enterprise",
         price: { monthly: 1999, annual: 1666 },
         features: [
             "Everything in Pro",
@@ -263,12 +263,12 @@ const BillingPage = () => {
 
                             <div className="mb-6">
                                 <span className="text-3xl font-bold text-slate-900">
-                                    {price === 0 ? 'Free' : `₹${price}`}
+                                    {key === 'business' ? 'Custom' : price === 0 ? 'Free' : `₹${price}`}
                                 </span>
-                                {price > 0 && (
+                                {price > 0 && key !== 'business' && (
                                     <span className="text-slate-500 text-sm">/month</span>
                                 )}
-                                {billingCycle === 'annual' && price > 0 && (
+                                {billingCycle === 'annual' && price > 0 && key !== 'business' && (
                                     <p className="text-xs text-slate-400 mt-1">Billed annually</p>
                                 )}
                             </div>
@@ -283,10 +283,16 @@ const BillingPage = () => {
                             </ul>
 
                             <button
-                                onClick={() => handleSubscribe(key)}
-                                disabled={loading || isCurrentPlan || key === 'starter'}
+                                onClick={() => {
+                                    if (key === 'business') {
+                                        window.location.href = '/contact';
+                                    } else {
+                                        handleSubscribe(key);
+                                    }
+                                }}
+                                disabled={(loading && key !== 'business') || (isCurrentPlan && key !== 'business') || key === 'starter'}
                                 className={`w-full py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
-                                    isCurrentPlan
+                                    isCurrentPlan && key !== 'business'
                                         ? 'bg-slate-100 text-slate-500 cursor-default'
                                         : key === 'starter'
                                             ? 'bg-slate-100 text-slate-500 cursor-default'
@@ -295,8 +301,8 @@ const BillingPage = () => {
                                                 : 'bg-slate-900 text-white hover:bg-slate-800'
                                 }`}
                             >
-                                {loading && <Loader className="w-4 h-4 animate-spin" />}
-                                {isCurrentPlan ? 'Current Plan' : key === 'starter' ? 'Free Forever' : 'Upgrade'}
+                                {loading && key !== 'business' && <Loader className="w-4 h-4 animate-spin" />}
+                                {key === 'business' ? 'Contact Sales' : isCurrentPlan ? 'Current Plan' : key === 'starter' ? 'Free Forever' : 'Upgrade'}
                             </button>
                         </div>
                     );

@@ -501,7 +501,7 @@ const LandingPage = () => {
                                 <li className="flex items-start gap-3"><Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" /> <span>Dedicated account manager</span></li>
                                 <li className="flex items-start gap-3"><Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" /> <span>Priority Setup & Training</span></li>
                             </ul>
-                            <button className="w-full py-4 border-2 border-slate-200 hover:border-slate-300 text-slate-900 rounded-2xl font-bold transition-all bg-white mt-auto">Contact Sales</button>
+                            <Link to="/contact" className="block text-center w-full py-4 border-2 border-slate-200 hover:border-slate-300 text-slate-900 rounded-2xl font-bold transition-all bg-white mt-auto">Contact Sales</Link>
                         </div>
                     </div>
 
