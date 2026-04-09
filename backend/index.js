@@ -17,32 +17,27 @@ connectDB();
 const app = express();
 
 // CORS configuration
-const allowedOrigins = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-    : ['http://localhost:5173'];
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',          // Local development (Vite)
+  'https://qrcode-jade-chi.vercel.app',             // Your stable version
+  'https://qrcode-git-feature-qr-styling-2b6589-novelsahu22-9572s-projects.vercel.app' // Your preview URL
+];
 
 app.use(cors({
-    origin: function(origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl)
-        if (!origin) return callback(null, true);
-
-        // In development, allow any localhost
-        if (process.env.NODE_ENV !== 'production' && origin && origin.includes('localhost')) {
-            return callback(null, true);
-        }
-
-        // Allow configured origins
-        if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-
-        // Log CORS violations for debugging
-        console.warn(`CORS blocked origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
-        callback(new Error(`Not allowed by CORS. Origin: ${origin}`));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use(cookieParser());
