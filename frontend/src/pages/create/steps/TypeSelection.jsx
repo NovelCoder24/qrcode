@@ -8,7 +8,7 @@ import {
     Film
 } from 'lucide-react';
 
-const TypeSelection = ({ selectedType, onSelect }) => {
+const TypeSelection = ({ selectedType, onSelect, onNext }) => {
     const types = [
         {
             id: 'URL',
@@ -54,6 +54,24 @@ const TypeSelection = ({ selectedType, onSelect }) => {
         },
     ];
 
+    const handleInteraction = (typeId) => {
+        onSelect(typeId);
+        // On mobile/tablet, proceed to next step automatically
+        if (window.innerWidth < 1024) {
+            setTimeout(() => {
+                onNext();
+            }, 100); // 100ms delay to show the "active" state selection visually before transition
+        }
+    };
+
+    const handleDoubleClick = (typeId) => {
+        // On desktop, double click to proceed
+        if (window.innerWidth >= 1024) {
+            onSelect(typeId);
+            onNext();
+        }
+    };
+
     return (
         <div className="w-full">
             <h1 className="text-3xl font-extrabold text-slate-900 mb-12 text-center lg:text-left">
@@ -65,9 +83,10 @@ const TypeSelection = ({ selectedType, onSelect }) => {
                     return (
                         <div
                             key={type.id}
-                            onClick={() => onSelect(type.id)}
+                            onClick={() => handleInteraction(type.id)}
+                            onDoubleClick={() => handleDoubleClick(type.id)}
                             className={`
-                                bg-white p-6 rounded-3xl border text-center cursor-pointer transition-all hover:shadow-lg flex flex-col items-center
+                                bg-white p-6 rounded-3xl border text-center cursor-pointer transition-all hover:shadow-lg flex flex-col items-center select-none
                                 ${isActive ? 'border-indigo-600 ring-1 ring-indigo-600 shadow-md' : 'border-slate-100'}
                             `}
                         >

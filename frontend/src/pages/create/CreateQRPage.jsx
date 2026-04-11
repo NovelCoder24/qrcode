@@ -273,7 +273,7 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
                 {/* Left Side: Steps Content */}
                 <div className="lg:col-span-8 flex flex-col">
                     {currentStep === 1 && (
-                        <TypeSelection selectedType={qrType} onSelect={handleTypeSelect} />
+                        <TypeSelection selectedType={qrType} onSelect={handleTypeSelect} onNext={nextStep} />
                     )}
 
                     {/* Step 2: Content Input */}
