@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loadUser } from './redux/authSlice';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 import Sidebar from './components/Sidebar.jsx';
 import Dashboard from './components/Dashboard.jsx';
@@ -97,6 +98,7 @@ const App = () => {
 
         </Route>
       </Routes>
+      <SpeedInsights />
     </div>
   );
 };
