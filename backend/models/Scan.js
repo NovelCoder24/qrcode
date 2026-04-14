@@ -24,7 +24,7 @@ const scanSchema = new mongoose.Schema({
     device: {
         os: String,
         browser: String,
-        type: String // mobile, tablet, desktop, smarttv, console, wearable
+        type: { type: String }
     },
     sessionContext: String // Used to track unique scanners (hash of IP + User-Agent)
 }, {
