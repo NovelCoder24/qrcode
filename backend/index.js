@@ -17,9 +17,12 @@ connectDB();
 const app = express();
 
 // CORS configuration
-const allowedOrigins = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-    : ['http://localhost:5173'];
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://qrcode-jade-chi.vercel.app',
+  'https://qrcode-git-dev-v2-novelsahu22-9572s-projects.vercel.app'
+];
 
 app.use(cors({
     origin: function(origin, callback) {
