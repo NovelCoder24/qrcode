@@ -280,18 +280,24 @@ async function handleSubscriptionActivated(payload) {
         return;
     }
 
-    const user = await User.findById(userId);
-    if (!user) return;
-
     const plan = subscription.notes?.plan || "pro";
 
-    user.subscription.plan = plan;
-    user.subscription.status = "active";
-    user.subscription.trialEndsAt = null;
-    user.subscription.razorpaySubscriptionId = subscription.id;
-    await user.save();
+    const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        {
+            $set: {
+                "subscription.plan": plan,
+                "subscription.status": "active",
+                "subscription.trialEndsAt": null,
+                "subscription.razorpaySubscriptionId": subscription.id
+            }
+        },
+        { new: true }
+    );
 
-    console.log(`[Webhook] User ${user.email} upgraded to ${plan}`);
+    if (!updatedUser) return;
+
+    console.log(`[Webhook] User ${updatedUser.email} upgraded to ${plan}`);
 }
 
 // Helper: Handle subscription charged (create invoice)
@@ -361,15 +367,21 @@ async function handleSubscriptionCancelled(payload) {
 
     if (!userId) return;
 
-    const user = await User.findById(userId);
-    if (!user) return;
+    const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        {
+            $set: {
+                "subscription.plan": "starter",
+                "subscription.status": "canceled",
+                "subscription.razorpaySubscriptionId": null
+            }
+        },
+        { new: true }
+    );
 
-    user.subscription.plan = "starter";
-    user.subscription.status = "canceled";
-    user.subscription.razorpaySubscriptionId = null;
-    await user.save();
+    if (!updatedUser) return;
 
-    console.log(`[Webhook] Subscription cancelled for user ${user.email}`);
+    console.log(`[Webhook] Subscription cancelled for user ${updatedUser.email}`);
 }
 
 // Helper: Handle payment failed
@@ -379,12 +391,14 @@ async function handlePaymentFailed(payload) {
 
     if (!subscriptionId) return;
 
-    // Find user by subscription ID
-    const user = await User.findOne({ "subscription.razorpaySubscriptionId": subscriptionId });
-    if (!user) return;
+    // Find user by subscription ID and update atomically
+    const updatedUser = await User.findOneAndUpdate(
+        { "subscription.razorpaySubscriptionId": subscriptionId },
+        { $set: { "subscription.status": "past_due" } },
+        { new: true }
+    );
+    
+    if (!updatedUser) return;
 
-    user.subscription.status = "past_due";
-    await user.save();
-
-    console.log(`[Webhook] Payment failed for user ${user.email}`);
+    console.log(`[Webhook] Payment failed for user ${updatedUser.email}`);
 }
