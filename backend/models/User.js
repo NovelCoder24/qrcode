@@ -25,48 +25,44 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: null
     },
-    plan: {
-        type: String,
-        enum: ["starter", "basic", "pro", "business"],
-        default: "starter"
+    subscription: {
+        plan: {
+            type: String,
+            enum: ["starter", "basic", "pro", "business"],
+            default: "business" // Reverse Trial Strategy
+        },
+        status: {
+            type: String,
+            enum: ["trialing", "active", "past_due", "canceled", "expired"],
+            default: "trialing"
+        },
+        trialEndsAt: { 
+            type: Date, 
+            default: () => new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14-Day trial
+        },
+        gateway: {
+            type: String,
+            enum: ["razorpay", "stripe"],
+            default: "razorpay"
+        },
+        currency: {
+            type: String,
+            default: "INR"
+        },
+        stripeCustomerId: { type: String, default: null },
+        stripeSubscriptionId: { type: String, default: null },
+        razorpayCustomerId: { type: String, default: null },
+        razorpaySubscriptionId: { type: String, default: null }
     },
-    trialEndsAt: { 
-        type: Date, 
-        default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) 
-    },
-    stripeCustomerId: { 
-        type: String, 
-        default: null 
-    },
-    stripeSubscriptionId: { 
-        type: String, 
-        default: null 
-    },
-    subscriptionStatus: {
-        type: String,
-        enum: ["trialing", "active", "past_due", "canceled", "expired"],
-        default: "trialing"
-    },
-    // Razorpay fields
-    razorpayCustomerId: {
-        type: String,
-        default: null
-    },
-    razorpaySubscriptionId: {
-        type: String,
-        default: null
-    },
-    // GST fields for invoicing
-    gstNumber: {
-        type: String,
-        default: null
-    },
-    billingAddress: {
+    billing: {
         companyName: { type: String, default: null },
-        address: { type: String, default: null },
-        city: { type: String, default: null },
-        state: { type: String, default: null },
-        pincode: { type: String, default: null }
+        gstNumber: { type: String, default: null },
+        address: {
+            line1: { type: String, default: null },
+            city: { type: String, default: null },
+            state: { type: String, default: null },
+            pincode: { type: String, default: null }
+        }
     },
     // Onboarding
     hasCreatedFirstQR: {
