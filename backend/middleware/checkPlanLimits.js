@@ -4,15 +4,15 @@ import { QRCode } from "../models/QRCode.js";
 export const checkPlanLimits = async (req, res, next) => {
     try {
         const user = req.user;
-        const plan = user.plan || "starter";
+        const plan = user.subscription?.plan || "starter";
         const limits = PLAN_LIMITS[plan];
 
         // 1. Check if Trial is Expired
-        if (user.subscriptionStatus === "trialing") {
+        if (user.subscription?.status === "trialing") {
             const now = new Date();
-            const trialEnd = new Date(user.trialEndsAt);
+            const trialEnd = new Date(user.subscription.trialEndsAt);
             if (now > trialEnd) {
-                user.subscriptionStatus = "expired";
+                user.subscription.status = "expired";
                 await user.save();
                 return res.status(403).json({ 
                     message: "Free trial expired. Please upgrade your plan to create more QR codes.",
