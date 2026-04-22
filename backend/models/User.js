@@ -28,8 +28,7 @@ const userSchema = new mongoose.Schema({
     subscription: {
         plan: {
             type: String,
-            enum: ["starter", "basic", "pro", "business"],
-            default: "business" // Reverse Trial Strategy
+            default: "pro" // Reverse Trial Strategy
         },
         status: {
             type: String,
