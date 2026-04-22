@@ -12,8 +12,19 @@ export const checkPlanLimits = async (req, res, next) => {
             const now = new Date();
             const trialEnd = new Date(user.subscription.trialEndsAt);
             if (now > trialEnd) {
+                // Use atomic update to avoid race conditions and correctly demote plan
+                await User.updateOne(
+                    { _id: user._id },
+                    { 
+                        $set: { 
+                            "subscription.status": "expired",
+                            "subscription.plan": "starter" 
+                        } 
+                    }
+                );
+                // Update local memory object for immediate response
                 user.subscription.status = "expired";
-                await user.save();
+                user.subscription.plan = "starter";
                 return res.status(403).json({ 
                     message: "Free trial expired. Please upgrade your plan to create more QR codes.",
                     code: "TRIAL_EXPIRED"

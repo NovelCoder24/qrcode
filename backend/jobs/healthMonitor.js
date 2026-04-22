@@ -106,10 +106,34 @@ export const runHealthCheck = async () => {
     }
 };
 
+export const runTrialExpirationCheck = async () => {
+    console.log(`[Trial Monitor] Running trial expiration check at ${new Date().toISOString()}`);
+    try {
+        const result = await User.updateMany(
+            {
+                "subscription.status": "trialing",
+                "subscription.trialEndsAt": { $lt: new Date() }
+            },
+            {
+                $set: {
+                    "subscription.plan": "starter",
+                    "subscription.status": "expired"
+                }
+            }
+        );
+        if (result.modifiedCount > 0) {
+            console.log(`[Trial Monitor] Automatically downgraded ${result.modifiedCount} expired trials to free starter plan.`);
+        }
+    } catch (error) {
+        console.error(`[Trial Monitor] Error running trial expiration check:`, error);
+    }
+};
+
 export const initHealthMonitor = () => {
     // Schedule to run every 24 hours at midnight
     // Cron timing: '0 0 * * *' means "At 00:00 every day"
     cron.schedule('0 0 * * *', runHealthCheck);
+    cron.schedule('0 0 * * *', runTrialExpirationCheck);
 
-    console.log("[Service] Automatic Health Monitor & Link Verification active (cron set to midnight).");
+    console.log("[Service] Automatic Health Monitor & Trial Verification active (cron set to midnight).");
 };
