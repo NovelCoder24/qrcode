@@ -71,8 +71,8 @@ const BillingPage = () => {
         try {
             const { data } = await api.get('/razorpay/subscription-status');
             setSubscriptionStatus(data);
-            if (data.gstNumber) setGstNumber(data.gstNumber);
-            if (data.billingAddress) setBillingAddress(prev => ({ ...prev, ...data.billingAddress }));
+            if (data.billing?.gstNumber) setGstNumber(data.billing.gstNumber);
+            if (data.billing?.address) setBillingAddress(prev => ({ ...prev, ...data.billing.address, companyName: data.billing.companyName || prev.companyName }));
         } catch (err) {
             console.error('Failed to fetch subscription status:', err);
         }
@@ -141,9 +141,9 @@ const BillingPage = () => {
         }
     };
 
-    const currentPlan = subscriptionStatus?.plan || user?.plan || 'starter';
-    const isTrialing = subscriptionStatus?.subscriptionStatus === 'trialing';
-    const trialEndsAt = subscriptionStatus?.trialEndsAt ? new Date(subscriptionStatus.trialEndsAt) : null;
+    const currentPlan = subscriptionStatus?.subscription?.plan || user?.subscription?.plan || 'starter';
+    const isTrialing = subscriptionStatus?.subscription?.status === 'trialing';
+    const trialEndsAt = subscriptionStatus?.subscription?.trialEndsAt ? new Date(subscriptionStatus.subscription.trialEndsAt) : null;
     const daysLeftInTrial = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt - new Date()) / (1000 * 60 * 60 * 24))) : 0;
 
     return (
@@ -183,14 +183,14 @@ const BillingPage = () => {
                                     Trial: {daysLeftInTrial} days left
                                 </span>
                             )}
-                            {subscriptionStatus?.subscriptionStatus === 'active' && (
+                            {subscriptionStatus?.subscription?.status === 'active' && (
                                 <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
                                     Active
                                 </span>
                             )}
                         </div>
                     </div>
-                    {subscriptionStatus?.razorpaySubscriptionId && subscriptionStatus?.subscriptionStatus === 'active' && (
+                    {subscriptionStatus?.subscription?.razorpaySubscriptionId && subscriptionStatus?.subscription?.status === 'active' && (
                         <button
                             onClick={handleCancelSubscription}
                             disabled={loading}
