@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { NavLink } from 'react-router-dom';
 import {
     Plus,
@@ -24,6 +25,23 @@ const Sidebar = ({ isOpen, overlay = false }) => {
         { id: 'contact', label: 'Contact', icon: <Mail size={20} />, path: '/contact' },
         { id: 'faqs', label: 'FAQs', icon: <HelpCircle size={20} />, path: '/faqs' },
     ];
+
+    const { user } = useSelector((state) => state.auth);
+    const subscription = user?.subscription;
+    const isTrialing = subscription?.status === 'trialing';
+
+    const [daysLeft, setDaysLeft] = useState(0);
+    useEffect(() => {
+        if (!subscription?.trialEndsAt) return;
+        const interval = setInterval(() => {
+            const endsAt = new Date(subscription.trialEndsAt);
+            const now = new Date();
+            const diff = Math.max(0, endsAt - now);
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            setDaysLeft(days);
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [subscription?.trialEndsAt]);
 
     return (
         <aside className={`
@@ -91,8 +109,15 @@ const Sidebar = ({ isOpen, overlay = false }) => {
                     </div>
 
                     <div className="relative flex flex-col min-w-0">
-                        <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-[0.1em] leading-none mb-1">Active Tier</span>
-                        <h4 className="text-[13px] font-bold text-slate-800 truncate">Pro Vibe</h4>
+                        <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-[0.1em] leading-none mb-1">
+                            {isTrialing ? 'Trial Active' : 'Active Tier'}
+                        </span>
+                        <h4 className="text-[13px] font-bold text-slate-800 truncate">
+                            {subscription?.plan === 'pro' ? 'Pro Vibe' : subscription?.plan === 'business' ? 'Agency' : 'Free Starter'}
+                        </h4>
+                        {isTrialing && (
+                            <p className="text-[10px] font-semibold text-amber-500 mt-0.5">{daysLeft} days left</p>
+                        )}
                     </div>
 
                     {/* Minimalist Upgrade Action */}
