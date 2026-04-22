@@ -36,10 +36,10 @@ export const createSubscription = async (req, res) => {
         // TEST MODE: Return mock response
         if (isTestMode) {
             const mockSubscriptionId = `sub_test_${Date.now()}`;
-            user.razorpaySubscriptionId = mockSubscriptionId;
-            user.plan = plan;
-            user.subscriptionStatus = "active";
-            user.trialEndsAt = null;
+            user.subscription.razorpaySubscriptionId = mockSubscriptionId;
+            user.subscription.plan = plan;
+            user.subscription.status = "active";
+            user.subscription.trialEndsAt = null;
             await user.save();
 
             return res.status(200).json({
@@ -52,7 +52,7 @@ export const createSubscription = async (req, res) => {
         }
 
         // Create or get Razorpay customer
-        let customerId = user.razorpayCustomerId;
+        let customerId = user.subscription.razorpayCustomerId;
         if (!customerId) {
             const customer = await razorpay.customers.create({
                 name: user.name,
@@ -63,7 +63,7 @@ export const createSubscription = async (req, res) => {
                 }
             });
             customerId = customer.id;
-            user.razorpayCustomerId = customerId;
+            user.subscription.razorpayCustomerId = customerId;
             await user.save();
         }
 
@@ -82,7 +82,7 @@ export const createSubscription = async (req, res) => {
         });
 
         // Store subscription ID
-        user.razorpaySubscriptionId = subscription.id;
+        user.subscription.razorpaySubscriptionId = subscription.id;
         await user.save();
 
         res.status(200).json({
@@ -110,27 +110,27 @@ export const getSubscriptionStatus = async (req, res) => {
         let subscriptionDetails = null;
 
         // Only fetch from Razorpay if not in test mode and has subscription
-        if (!isTestMode && razorpay && user.razorpaySubscriptionId) {
+        if (!isTestMode && razorpay && user.subscription.razorpaySubscriptionId) {
             try {
-                subscriptionDetails = await razorpay.subscriptions.fetch(user.razorpaySubscriptionId);
+                subscriptionDetails = await razorpay.subscriptions.fetch(user.subscription.razorpaySubscriptionId);
             } catch (err) {
                 console.error("[Razorpay] Fetch subscription error:", err);
             }
         }
 
         res.status(200).json({
-            plan: user.plan,
-            subscriptionStatus: user.subscriptionStatus,
-            trialEndsAt: user.trialEndsAt,
-            razorpaySubscriptionId: user.razorpaySubscriptionId,
+            plan: user.subscription.plan,
+            subscriptionStatus: user.subscription.status,
+            trialEndsAt: user.subscription.trialEndsAt,
+            razorpaySubscriptionId: user.subscription.razorpaySubscriptionId,
             subscriptionDetails: subscriptionDetails ? {
                 status: subscriptionDetails.status,
                 currentStart: subscriptionDetails.current_start,
                 currentEnd: subscriptionDetails.current_end,
                 chargeAt: subscriptionDetails.charge_at
             } : null,
-            billingAddress: user.billingAddress,
-            gstNumber: user.gstNumber,
+            billingAddress: user.billing.address,
+            gstNumber: user.billing.gstNumber,
             testMode: isTestMode
         });
     } catch (error) {
@@ -146,15 +146,15 @@ export const cancelSubscription = async (req, res) => {
     try {
         const user = await User.findById(req.user._id);
 
-        if (!user || !user.razorpaySubscriptionId) {
+        if (!user || !user.subscription.razorpaySubscriptionId) {
             return res.status(400).json({ message: "No active subscription found" });
         }
 
         // TEST MODE: Just update local state
         if (isTestMode) {
-            user.plan = "starter";
-            user.subscriptionStatus = "canceled";
-            user.razorpaySubscriptionId = null;
+            user.subscription.plan = "starter";
+            user.subscription.status = "canceled";
+            user.subscription.razorpaySubscriptionId = null;
             await user.save();
 
             return res.status(200).json({
@@ -164,7 +164,7 @@ export const cancelSubscription = async (req, res) => {
         }
 
         // Cancel at end of current billing period
-        await razorpay.subscriptions.cancel(user.razorpaySubscriptionId, { cancel_at_cycle_end: 1 });
+        await razorpay.subscriptions.cancel(user.subscription.razorpaySubscriptionId, { cancel_at_cycle_end: 1 });
 
         res.status(200).json({ message: "Subscription will be cancelled at the end of the billing period" });
     } catch (error) {
@@ -190,12 +190,12 @@ export const updateBillingInfo = async (req, res) => {
             if (gstNumber && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstNumber)) {
                 return res.status(400).json({ message: "Invalid GST number format" });
             }
-            user.gstNumber = gstNumber || null;
+            user.billing.gstNumber = gstNumber || null;
         }
 
         if (billingAddress) {
-            user.billingAddress = {
-                ...user.billingAddress,
+            user.billing.address = {
+                ...user.billing.address,
                 ...billingAddress
             };
         }
@@ -204,8 +204,8 @@ export const updateBillingInfo = async (req, res) => {
 
         res.status(200).json({
             message: "Billing info updated",
-            gstNumber: user.gstNumber,
-            billingAddress: user.billingAddress
+            gstNumber: user.billing.gstNumber,
+            billingAddress: user.billing.address
         });
     } catch (error) {
         console.error("[Razorpay] Update billing info error:", error);
@@ -285,10 +285,10 @@ async function handleSubscriptionActivated(payload) {
 
     const plan = subscription.notes?.plan || "pro";
 
-    user.plan = plan;
-    user.subscriptionStatus = "active";
-    user.trialEndsAt = null;
-    user.razorpaySubscriptionId = subscription.id;
+    user.subscription.plan = plan;
+    user.subscription.status = "active";
+    user.subscription.trialEndsAt = null;
+    user.subscription.razorpaySubscriptionId = subscription.id;
     await user.save();
 
     console.log(`[Webhook] User ${user.email} upgraded to ${plan}`);
@@ -306,26 +306,26 @@ async function handleSubscriptionCharged(payload) {
     if (!user) return;
 
     // Create invoice via Razorpay Invoice API
-    if (user.gstNumber && user.billingAddress?.companyName) {
+    if (user.billing.gstNumber && user.billing.address?.companyName) {
         try {
             const invoice = await razorpay.invoices.create({
                 type: "invoice",
-                customer_id: user.razorpayCustomerId,
+                customer_id: user.subscription.razorpayCustomerId,
                 line_items: [{
-                    name: `QRVibe ${user.plan} Plan`,
+                    name: `QRVibe ${user.subscription.plan} Plan`,
                     amount: payment?.amount || subscription.plan_amount,
                     currency: "INR",
                     quantity: 1
                 }],
                 customer_details: {
-                    name: user.billingAddress.companyName || user.name,
+                    name: user.billing.companyName || user.name,
                     email: user.email,
-                    gstin: user.gstNumber,
+                    gstin: user.billing.gstNumber,
                     billing_address: {
-                        line1: user.billingAddress.address,
-                        city: user.billingAddress.city,
-                        state: user.billingAddress.state,
-                        zipcode: user.billingAddress.pincode,
+                        line1: user.billing.address.line1,
+                        city: user.billing.address.city,
+                        state: user.billing.address.state,
+                        zipcode: user.billing.address.pincode,
                         country: "India"
                     }
                 },
@@ -350,7 +350,7 @@ async function handleSubscriptionPending(payload) {
 
     if (!userId) return;
 
-    await User.findByIdAndUpdate(userId, { subscriptionStatus: "past_due" });
+    await User.findByIdAndUpdate(userId, { "subscription.status": "past_due" });
     console.log(`[Webhook] Subscription pending for userId ${userId}`);
 }
 
@@ -364,9 +364,9 @@ async function handleSubscriptionCancelled(payload) {
     const user = await User.findById(userId);
     if (!user) return;
 
-    user.plan = "starter";
-    user.subscriptionStatus = "canceled";
-    user.razorpaySubscriptionId = null;
+    user.subscription.plan = "starter";
+    user.subscription.status = "canceled";
+    user.subscription.razorpaySubscriptionId = null;
     await user.save();
 
     console.log(`[Webhook] Subscription cancelled for user ${user.email}`);
@@ -380,10 +380,10 @@ async function handlePaymentFailed(payload) {
     if (!subscriptionId) return;
 
     // Find user by subscription ID
-    const user = await User.findOne({ razorpaySubscriptionId: subscriptionId });
+    const user = await User.findOne({ "subscription.razorpaySubscriptionId": subscriptionId });
     if (!user) return;
 
-    user.subscriptionStatus = "past_due";
+    user.subscription.status = "past_due";
     await user.save();
 
     console.log(`[Webhook] Payment failed for user ${user.email}`);
