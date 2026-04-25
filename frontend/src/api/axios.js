@@ -5,6 +5,7 @@ const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
     headers: {
         'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true' // Bypass Ngrok interstitial screen
     },
     withCredentials: true, // Send cookies with every request
 });

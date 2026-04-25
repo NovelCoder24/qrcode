@@ -18,10 +18,10 @@ const app = express();
 
 // CORS configuration
 const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
+  'http://localhost:5173', 
   'https://qrcode-jade-chi.vercel.app',
-  'https://qrcode-git-dev-v2-novelsahu22-9572s-projects.vercel.app'
+  'https://qrcode-git-dev-v2-novelsahu22-9572s-projects.vercel.app',
+  'https://posing-lion-satisfy.ngrok-free.dev'
 ];
 
 app.use(cors({
@@ -45,7 +45,7 @@ app.use(cors({
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning']
 }));
 app.use(express.json());
 app.use(cookieParser());
