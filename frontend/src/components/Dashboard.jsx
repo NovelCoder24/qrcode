@@ -525,8 +525,11 @@ const Dashboard = () => {
                                 <div 
                                     key={qr._id} 
                                     onClick={(e) => {
-                                        // On mobile, prevent navigation if clicking directly on action buttons
-                                        if (e.target.closest('button')) return;
+                                        // On mobile, prevent navigation if clicking directly on action buttons or menus
+                                        if (e.target.closest('button') || e.target.closest('[data-menu-dropdown]') || e.target.closest('[data-menu-trigger]') || activeMenuId === qr._id) {
+                                            e.stopPropagation();
+                                            return;
+                                        }
                                         navigate(`/qrcodes/${qr._id}`);
                                     }} 
                                     className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow group flex cursor-pointer relative"
@@ -544,7 +547,14 @@ const Dashboard = () => {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-start mb-1">
                                                 <h3 className="font-bold text-slate-900 truncate pr-2">{qr.metadata?.title || 'Untitled QR Code'}</h3>
-                                                <button onClick={(e) => { e.stopPropagation(); navigate(`/qrcodes/${qr._id}`); }} className="p-1 hover:bg-slate-50 rounded-lg text-slate-400">
+                                                <button 
+                                                    data-menu-trigger="true"
+                                                    onClick={(e) => { 
+                                                        e.stopPropagation(); 
+                                                        setActiveMenuId(activeMenuId === qr._id ? null : qr._id); 
+                                                    }} 
+                                                    className="p-1 hover:bg-slate-50 rounded-lg text-slate-400"
+                                                >
                                                     <MoreHorizontal size={18} />
                                                 </button>
                                             </div>
@@ -599,6 +609,7 @@ const Dashboard = () => {
 
         {/* Desktop View */}
         {loading ? <DesktopLoadingSkeleton /> : (
+        <>
         <div className="hidden md:block p-6 md:p-10 bg-slate-50 min-h-full">
             {/* Top Header */}
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
@@ -999,8 +1010,92 @@ const Dashboard = () => {
                     </>
                 )}
             </div>
+        </div>
 
-            {/* Inline Editing Modal */}
+        {/* Mobile Bottom Sheet Menu */}
+        <div className="md:hidden">
+            {/* Overlay */}
+            {activeMenuId && (
+                <div 
+                    className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] animate-in fade-in duration-200"
+                    onClick={() => setActiveMenuId(null)}
+                />
+            )}
+            
+            {/* Bottom Sheet */}
+            <div 
+                data-menu-dropdown="true"
+                className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-[70] transition-transform duration-300 ease-out transform ${
+                    activeMenuId ? 'translate-y-0' : 'translate-y-full'
+                }`}
+                style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+            >
+                {activeMenuId && (() => {
+                    const qr = qrCodes.find(q => q._id === activeMenuId);
+                    if (!qr) return null;
+                    return (
+                        <div className="p-6">
+                            <div className="flex justify-center mb-4">
+                                <div className="w-12 h-1.5 bg-slate-200 rounded-full"></div>
+                            </div>
+                            
+                            <div className="mb-6 flex items-center gap-4 border-b border-slate-100 pb-4">
+                                <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-bold shrink-0">
+                                    {qr.qr_type || 'URL'}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <h3 className="font-bold text-slate-900 truncate">{qr.metadata?.title || 'Untitled'}</h3>
+                                    <p className="text-xs text-slate-500 truncate">{qr.target_url}</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <button
+                                    onClick={() => { setEditingItem({ id: qr._id, field: 'url', value: qr.target_url }); setActiveMenuId(null); }}
+                                    className="w-full text-left px-4 py-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-4 rounded-xl"
+                                >
+                                    <div className="p-2 bg-slate-100 rounded-lg"><Edit2 className="w-5 h-5 text-slate-600" /></div>
+                                    Edit QR URL
+                                </button>
+                                <button
+                                    onClick={() => { setEditingItem({ id: qr._id, field: 'title', value: qr.metadata?.title || '' }); setActiveMenuId(null); }}
+                                    className="w-full text-left px-4 py-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-4 rounded-xl"
+                                >
+                                    <div className="p-2 bg-slate-100 rounded-lg"><Edit2 className="w-5 h-5 text-slate-600" /></div>
+                                    Rename Location
+                                </button>
+                                <button
+                                    onClick={() => { navigate(`/qrcodes/${qr._id}`); setActiveMenuId(null); }}
+                                    className="w-full text-left px-4 py-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-4 rounded-xl"
+                                >
+                                    <div className="p-2 bg-slate-100 rounded-lg"><Palette className="w-5 h-5 text-slate-600" /></div>
+                                    Edit QR Design
+                                </button>
+                                <button
+                                    onClick={() => { setChangeTypeModal({ id: qr._id, type: qr.qr_type }); setActiveMenuId(null); }}
+                                    className="w-full text-left px-4 py-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-4 rounded-xl"
+                                >
+                                    <div className="p-2 bg-slate-100 rounded-lg"><ArrowRightLeft className="w-5 h-5 text-slate-600" /></div>
+                                    Change QR Type
+                                </button>
+
+                                <div className="my-2 border-t border-slate-100"></div>
+
+                                <button
+                                    onClick={() => { setActiveMenuId(null); handleDelete(qr._id); }}
+                                    className="w-full text-left px-4 py-3.5 text-sm font-bold text-red-600 hover:bg-red-50 flex items-center gap-4 rounded-xl"
+                                >
+                                    <div className="p-2 bg-red-50 rounded-lg"><Trash2 className="w-5 h-5 text-red-500" /></div>
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })()}
+            </div>
+        </div>
+
+        {/* Inline Editing Modal */}
             {editingItem && (
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
@@ -1275,7 +1370,7 @@ const Dashboard = () => {
                     </div>
                 </div>
             )}
-        </div>
+        </>
         )}
         </>
     );

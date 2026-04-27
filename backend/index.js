@@ -20,8 +20,7 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:5173', 
   'https://qrcode-jade-chi.vercel.app',
-  'https://qrcode-git-dev-v2-novelsahu22-9572s-projects.vercel.app',
-  'https://posing-lion-satisfy.ngrok-free.dev'
+  'https://qrcode-git-dev-v2-novelsahu22-9572s-projects.vercel.app', 
 ];
 
 app.use(cors({

@@ -80,6 +80,7 @@ userSchema.pre("save", async function () {
 // 2. Insatance methods
 // Method to verify password during login
 userSchema.methods.comparePassword = async function (enteredPassword) {
+    if (!this.password) return false;
     return await bcrypt.compare(enteredPassword, this.password);
 };
 // Method to generate a short-lived access token
