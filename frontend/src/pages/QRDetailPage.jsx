@@ -98,8 +98,9 @@ const QRDetailPage = () => {
                                 gradientType={design.gradientType}
                                 bgColor={design.bgColor || '#ffffff'}
                                 dotStyle={design.qrStyle || 'square'}
-                                cornerSquareStyle={design.eyeShape === 'circle' ? 'dot' : 'square'}
-                                cornerDotStyle={design.eyeShape === 'circle' ? 'dot' : 'square'}
+                                cornerSquareStyle={design.eyeShape || 'square'}
+                                cornerDotStyle={design.eyeShape || 'square'}
+                                eyeColor={design.eyeColor}
                                 logo={design.logoUrl || undefined}
                             />
                         </div>
