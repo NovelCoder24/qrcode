@@ -8,7 +8,7 @@ import {
     Film
 } from 'lucide-react';
 
-const TypeSelection = ({ selectedType, onSelect }) => {
+const TypeSelection = ({ selectedType, onSelect, onProceed }) => {
     const types = [
         {
             id: 'URL',
@@ -54,6 +54,19 @@ const TypeSelection = ({ selectedType, onSelect }) => {
         },
     ];
 
+    const handleInteraction = (typeId, actionType) => {
+        onSelect(typeId);
+        
+        if (actionType === 'doubleClick' || actionType === 'enter') {
+            onProceed && onProceed();
+        } else if (actionType === 'click') {
+            // Auto-proceed on single tap for mobile devices
+            if (window.innerWidth < 1024 || window.matchMedia("(pointer: coarse)").matches) {
+                onProceed && onProceed();
+            }
+        }
+    };
+
     return (
         <div className="w-full">
             <h1 className="text-3xl font-extrabold text-slate-900 mb-12 text-center lg:text-left">
@@ -65,9 +78,14 @@ const TypeSelection = ({ selectedType, onSelect }) => {
                     return (
                         <div
                             key={type.id}
-                            onClick={() => onSelect(type.id)}
+                            tabIndex={0}
+                            onClick={() => handleInteraction(type.id, 'click')}
+                            onDoubleClick={() => handleInteraction(type.id, 'doubleClick')}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleInteraction(type.id, 'enter');
+                            }}
                             className={`
-                                bg-white p-6 rounded-3xl border text-center cursor-pointer transition-all hover:shadow-lg flex flex-col items-center
+                                bg-white p-6 rounded-3xl border text-center cursor-pointer transition-all hover:shadow-lg flex flex-col items-center focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
                                 ${isActive ? 'border-indigo-600 ring-1 ring-indigo-600 shadow-md' : 'border-slate-100'}
                             `}
                         >
