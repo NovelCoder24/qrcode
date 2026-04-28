@@ -536,11 +536,27 @@ const Dashboard = () => {
                                 >
                                     <div className="flex gap-4 w-full">
                                         {/* Visual Preview Area */}
-                                        <div className="w-16 h-16 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center relative shrink-0">
-                                            <QrCode size={32} className="text-slate-200" />
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                {React.cloneElement(TypeIcon, { size: 24, className: iconColorClass })}
-                                            </div>
+                                        <div className="w-16 h-16 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center relative shrink-0 overflow-hidden">
+                                            {(() => {
+                                                const d = qr.customization || {};
+                                                const bUrl = import.meta.env.VITE_BASE_URL || import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+                                                return (
+                                                    <StyledQRCode
+                                                        data={`${bUrl}/r/${qr.short_id}`}
+                                                        size={56}
+                                                        ecLevel="L"
+                                                        primaryColor={d.fgColor || '#000000'}
+                                                        fgColor2={d.fgColor2}
+                                                        gradientType={d.gradientType}
+                                                        bgColor={d.bgColor || '#ffffff'}
+                                                        dotStyle={d.qrStyle || 'square'}
+                                                        cornerSquareStyle={d.eyeShape || 'square'}
+                                                        cornerDotStyle={d.eyeShape || 'square'}
+                                                        eyeColor={d.eyeColor}
+                                                        logo={d.logoUrl || undefined}
+                                                    />
+                                                );
+                                            })()}
                                         </div>
 
                                         {/* Content Area */}
@@ -830,10 +846,29 @@ const Dashboard = () => {
                                             {isSelected ? <CheckSquare className="w-5 h-5 text-indigo-500" /> : <Square className="w-5 h-5" />}
                                         </button>
                                         <div
-                                            className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center flex-shrink-0 cursor-pointer overflow-hidden p-2 relative group"
+                                            className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center flex-shrink-0 cursor-pointer overflow-hidden relative group"
                                             onClick={() => setPreviewModal(qr)}
                                         >
-                                            <QrCode className={`w-10 h-10 ${colors.text} transition-all group-hover:scale-110`} />
+                                            {(() => {
+                                                const d = qr.customization || {};
+                                                const bUrl = import.meta.env.VITE_BASE_URL || import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+                                                return (
+                                                    <StyledQRCode
+                                                        data={`${bUrl}/r/${qr.short_id}`}
+                                                        size={72}
+                                                        ecLevel="L"
+                                                        primaryColor={d.fgColor || '#000000'}
+                                                        fgColor2={d.fgColor2}
+                                                        gradientType={d.gradientType}
+                                                        bgColor={d.bgColor || '#ffffff'}
+                                                        dotStyle={d.qrStyle || 'square'}
+                                                        cornerSquareStyle={d.eyeShape || 'square'}
+                                                        cornerDotStyle={d.eyeShape || 'square'}
+                                                        eyeColor={d.eyeColor}
+                                                        logo={d.logoUrl || undefined}
+                                                    />
+                                                );
+                                            })()}
                                             <div className="absolute inset-0 bg-slate-900/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <Search className="w-5 h-5 text-slate-700 bg-white/80 rounded-full p-1" />
                                             </div>
@@ -940,7 +975,7 @@ const Dashboard = () => {
                                                     onClick={(e) => e.stopPropagation()} // Keep open if clicking inside
                                                 >
                                                     <button
-                                                        onClick={() => { setEditingItem({ id: qr._id, field: 'url', value: qr.target_url }); setActiveMenuId(null); }}
+                                                        onClick={() => { navigate(`/create?step=2&edit=${qr._id}`); setActiveMenuId(null); }}
                                                         className="w-full text-left px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-3"
                                                     >
                                                         <div className="p-1 bg-slate-100 rounded-md"><Edit2 className="w-4 h-4 text-slate-500" /></div>
@@ -1051,11 +1086,11 @@ const Dashboard = () => {
 
                             <div className="space-y-1">
                                 <button
-                                    onClick={() => { setEditingItem({ id: qr._id, field: 'url', value: qr.target_url }); setActiveMenuId(null); }}
+                                    onClick={() => { navigate(`/create?step=2&edit=${qr._id}`); setActiveMenuId(null); }}
                                     className="w-full text-left px-4 py-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-4 rounded-xl"
                                 >
                                     <div className="p-2 bg-slate-100 rounded-lg"><Edit2 className="w-5 h-5 text-slate-600" /></div>
-                                    Edit QR URL
+                                    Edit QR Content
                                 </button>
                                 <button
                                     onClick={() => { setEditingItem({ id: qr._id, field: 'title', value: qr.metadata?.title || '' }); setActiveMenuId(null); }}
@@ -1262,8 +1297,9 @@ const Dashboard = () => {
                                     fgColor2={design.fgColor2}
                                     gradientType={design.gradientType}
                                     bgColor={design.bgColor || '#ffffff'}
-                                    cornerSquareStyle={design.eyeShape === 'circle' ? 'dot' : 'square'}
-                                    cornerDotStyle={design.eyeShape === 'circle' ? 'dot' : 'square'}
+                                    cornerSquareStyle={design.eyeShape || 'square'}
+                                    cornerDotStyle={design.eyeShape || 'square'}
+                                    eyeColor={design.eyeColor}
                                     logo={design.logoUrl || undefined}
                                 />
                             </div>
