@@ -188,6 +188,8 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
                 metadata,
                 customization: {
                     fgColor: qrDesign.fgColor,
+                    fgColor2: qrDesign.fgColor2 || null,
+                    gradientType: qrDesign.gradientType || 'none',
                     bgColor: qrDesign.bgColor,
                     qrStyle: qrDesign.qrStyle,
                     eyeShape: qrDesign.eyeShape,
@@ -273,7 +275,7 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
                 {/* Left Side: Steps Content */}
                 <div className="lg:col-span-8 flex flex-col">
                     {currentStep === 1 && (
-                        <TypeSelection selectedType={qrType} onSelect={handleTypeSelect} />
+                        <TypeSelection selectedType={qrType} onSelect={handleTypeSelect} onProceed={nextStep} />
                     )}
 
                     {/* Step 2: Content Input */}
