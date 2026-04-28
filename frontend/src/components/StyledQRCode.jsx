@@ -32,6 +32,7 @@ const StyledQRCode = forwardRef(({
     dotStyle = 'square',
     cornerSquareStyle = 'square',
     cornerDotStyle = 'square',
+    eyeColor,
     ecLevel = 'H',
     className = '',
     imageOptions,
@@ -80,9 +81,11 @@ const StyledQRCode = forwardRef(({
         },
         cornersSquareOptions: {
             type: cornerSquareStyle === 'circle' || cornerSquareStyle === 'dot' ? 'dot' : cornerSquareStyle,
+            ...(eyeColor ? { color: eyeColor } : {}),
         },
         cornersDotOptions: {
             type: cornerDotStyle === 'circle' || cornerDotStyle === 'dot' ? 'dot' : cornerDotStyle,
+            ...(eyeColor ? { color: eyeColor } : {}),
         },
         imageOptions: {
             crossOrigin: 'anonymous',
@@ -96,44 +99,31 @@ const StyledQRCode = forwardRef(({
         },
     });
 
-    // Mount: Create QRCodeStyling instance and append to DOM (once)
+    // Single unified effect: create/recreate QR code whenever any prop changes
     useEffect(() => {
-        if (!data) return;
+        if (!data || !containerRef.current) return;
 
         try {
+            // Clear previous render
+            containerRef.current.innerHTML = '';
+
             const qrCode = new QRCodeStyling(buildOptions());
             qrInstanceRef.current = qrCode;
-
-            // Guard: only append if the container is empty (prevents double-append on StrictMode re-renders)
-            if (containerRef.current && containerRef.current.children.length === 0) {
-                qrCode.append(containerRef.current);
-            }
+            qrCode.append(containerRef.current);
 
             setHasError(false);
         } catch (err) {
-            console.error('StyledQRCode: Failed to initialize QR code', err);
+            console.error('StyledQRCode: Failed to render QR code', err);
             setHasError(true);
         }
 
-        // Cleanup: remove the rendered SVG/canvas from the DOM and release the instance
         return () => {
             if (containerRef.current) {
                 containerRef.current.innerHTML = '';
             }
             qrInstanceRef.current = null;
         };
-    }, []); // Only run on mount — updates are handled by the update effect below
-
-    // Update: When props change, call .update() instead of re-creating
-    useEffect(() => {
-        if (!qrInstanceRef.current || !data) return;
-
-        try {
-            qrInstanceRef.current.update(buildOptions());
-        } catch (err) {
-            console.error('StyledQRCode: Failed to update QR code', err);
-        }
-    }, [data, size, logo, primaryColor, bgColor, dotStyle, cornerSquareStyle, cornerDotStyle, ecLevel]);
+    }, [data, size, logo, primaryColor, fgColor2, gradientType, bgColor, dotStyle, cornerSquareStyle, cornerDotStyle, eyeColor, ecLevel]);
 
     // Expose download API and raw instance via ref
     useImperativeHandle(ref, () => ({
