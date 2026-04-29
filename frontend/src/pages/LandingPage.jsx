@@ -18,6 +18,7 @@ const LandingPage = () => {
     const [updatesPerMonth, setUpdatesPerMonth] = useState(4);
     const [openFaq, setOpenFaq] = useState(null);
 
+
     const annualSavings = Math.max(0, (printingCost * updatesPerMonth * 12) - (billingCycle === 'annual' ? 8388 : 10788));
     const formatINR = (num) => num.toLocaleString('en-IN');
 
@@ -28,6 +29,8 @@ const LandingPage = () => {
         { q: 'What payment methods do you accept?', a: 'We accept UPI, all major credit/debit cards, net banking, and wallets via Razorpay. For annual Enterprise plans, we also support bank transfers and purchase orders.' },
         { q: 'Do you offer discounts for NGOs or startups?', a: 'Yes! We offer special pricing for registered NGOs, educational institutions, and DPIIT-recognized startups. Contact our sales team for details.' },
     ];
+
+
 
     useEffect(() => {
         const handleScroll = () => {
@@ -93,55 +96,66 @@ const LandingPage = () => {
                         </div>
                     </div>
 
-                    {/* Interactive Designer Demo (Endowment Effect - letting them play first) */}
-                    <div id="designer" className="relative w-full max-w-lg mx-auto lg:ml-auto group">
-                        <div className="glass p-6 sm:p-8 rounded-[32px] shadow-2xl relative z-10 border border-indigo-100 transform transition-transform duration-500 hover:scale-[1.02]">
-                            <div className="flex justify-between items-center mb-8">
-                                <h3 className="font-bold text-xl text-slate-900 flex items-center gap-2"><Zap className="w-5 h-5 text-indigo-500"/> Quick Designer</h3>
-                                <div className="flex gap-2">
-                                    <span className="w-3 h-3 rounded-full bg-red-400 hover:bg-red-500 cursor-pointer"></span>
-                                    <span className="w-3 h-3 rounded-full bg-yellow-400 hover:bg-yellow-500 cursor-pointer"></span>
-                                    <span className="w-3 h-3 rounded-full bg-emerald-400 hover:bg-emerald-500 cursor-pointer"></span>
+                    {/* The Right Side Image/Card Component (From User Image) */}
+                    <div id="designer" className="relative w-full max-w-lg mx-auto lg:ml-auto mt-12 lg:mt-0">
+                        <div className="bg-white p-6 sm:p-8 rounded-[2rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.07)] border border-slate-100 relative z-10">
+                            
+                            {/* Header */}
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-2 text-indigo-600 font-bold">
+                                    <RefreshCw className="w-5 h-5 animate-[spin_4s_linear_infinite]" />
+                                    <span>Dynamic Magic</span>
+                                </div>
+                                <div className="flex gap-1.5">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-slate-200"></div>
+                                    <div className="w-2.5 h-2.5 rounded-full bg-slate-200"></div>
+                                    <div className="w-2.5 h-2.5 rounded-full bg-slate-200"></div>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 items-center">
-                                <div className="flex flex-col items-center">
-                                    <div className="bg-white p-6 rounded-3xl shadow-inner transition-all duration-500 floating">
-                                        <svg width="150" height="150" viewBox="0 0 100 100">
-                                            <path d={getPathData()} fill={themeColor} className="transition-all duration-300" />
-                                            <circle cx="50" cy="50" r="10" fill="white" stroke={themeColor} strokeWidth="2" className="transition-all duration-300" />
-                                            <path d="M48 48h4v4h-4z" fill={themeColor} className="transition-all duration-300" />
-                                        </svg>
+                            {/* Digital Destination Block */}
+                            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm relative">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+                                <div className="p-4 sm:p-5 pt-6">
+                                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+                                        <Smartphone className="w-3.5 h-3.5" /> DIGITAL DESTINATION
                                     </div>
-                                </div>
-
-                                <div className="space-y-6">
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 block">Color Theme</label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {['#4F46E5', '#ef4444', '#10b981', '#f59e0b', '#0f172a'].map((color) => (
-                                                <button 
-                                                    key={color} 
-                                                    onClick={() => setThemeColor(color)} 
-                                                    style={{ backgroundColor: color }}
-                                                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full transition-all ${themeColor === color ? 'ring-2 ring-offset-2 ring-indigo-600 scale-110' : 'hover:scale-110 shadow-sm'}`}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 block">Corner Style</label>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <button onClick={() => setCornerStyle('square')} className={`px-3 py-2 rounded-xl text-xs font-bold transition-colors ${cornerStyle === 'square' ? 'bg-indigo-50 border border-indigo-200 text-indigo-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Sharp</button>
-                                            <button onClick={() => setCornerStyle('round')} className={`px-3 py-2 rounded-xl text-xs font-bold transition-colors ${cornerStyle === 'round' ? 'bg-indigo-50 border border-indigo-200 text-indigo-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Round</button>
-                                        </div>
+                                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 sm:p-4 font-mono text-xs sm:text-sm flex items-center overflow-hidden">
+                                        <span className="text-slate-400 mr-1">https://qrvibe.in/</span>
+                                        <span className="text-indigo-600 font-bold relative">
+                                            menu-v2-summer.pdf
+                                        </span>
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Connecting Line */}
+                            <div className="h-12 flex justify-center items-center relative">
+                                <div className="h-full w-px border-l-2 border-dashed border-indigo-200 relative flex justify-center">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 absolute top-1/2 -translate-y-1/2"></div>
+                                </div>
+                            </div>
+
+                            {/* Printed Flyer Block */}
+                            <div className="bg-[#0f172a] rounded-xl p-4 sm:p-5 flex items-center gap-4 sm:gap-6 shadow-xl">
+                                <div className="bg-white p-2.5 sm:p-3 rounded-xl shrink-0">
+                                    <QrCode className="w-10 h-10 sm:w-12 sm:h-12 text-indigo-600" />
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                                        <MapPin className="w-3 h-3" /> PRINTED FLYER
+                                    </div>
+                                    <div className="text-white font-bold text-base sm:text-lg mb-1.5">
+                                        Table Tent Card
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-slate-300">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                                        Never needs reprinting
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
-                        <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-indigo-400/20 rounded-full mix-blend-multiply filter blur-3xl -z-10 animate-pulse"></div>
-                        <div className="absolute top-10 -left-10 w-48 h-48 bg-purple-400/20 rounded-full mix-blend-multiply filter blur-3xl -z-10"></div>
                     </div>
                 </div>
             </section>
@@ -184,9 +198,23 @@ const LandingPage = () => {
                                 <X className="w-7 h-7 stroke-[3]" />
                             </div>
                             <h3 className="text-red-500 font-extrabold text-2xl mb-4 tracking-tight">The Old Way</h3>
-                            <p className="text-slate-700 text-lg leading-relaxed font-medium mt-auto">
-                                You print 1,000 product flyers. A week later, your promotion changes or the link breaks. The QR code is dead. You reprint everything — <span className="font-extrabold text-red-700 bg-red-100 px-1.5 py-0.5 rounded shadow-sm">₹12,000 gone.</span>
-                            </p>
+                            <ul className="text-slate-700 text-lg leading-relaxed font-medium mt-auto space-y-3">
+                                <li className="flex items-start gap-2">
+                                    <span className="text-red-400 mt-1 text-xl leading-none">•</span>
+                                    <span>Print 1,000 product flyers with a static link.</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="text-red-400 mt-1 text-xl leading-none">•</span>
+                                    <span>Promotion changes or the link breaks.</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="text-red-400 mt-1 text-xl leading-none">•</span>
+                                    <span>The QR code is dead. Reprint everything.</span>
+                                </li>
+                                <li className="mt-4 pt-2 border-t border-red-200/50">
+                                    <span className="font-extrabold text-red-700 bg-red-100 px-2.5 py-1 rounded shadow-sm inline-block">Result: ₹12,000 wasted.</span>
+                                </li>
+                            </ul>
                         </div>
 
                         {/* The QRVibe Way */}
@@ -196,10 +224,20 @@ const LandingPage = () => {
                                 <Check className="w-7 h-7 stroke-[3]" />
                             </div>
                             <h3 className="text-white font-extrabold text-2xl mb-4 tracking-tight">The QRVibe Way</h3>
-                            <p className="text-slate-300 text-lg leading-relaxed font-medium mt-auto">
-                                Update the destination URL instantly from your dashboard. <span className="text-emerald-400 font-bold">Zero reprints. </span> 
-                                Plus, see exactly <span className="bg-indigo-600/50 text-white px-1.5 py-0.5 rounded font-bold">how many people scanned</span>, from where, and on what device.
-                            </p>
+                            <ul className="text-slate-300 text-lg leading-relaxed font-medium mt-auto space-y-3">
+                                <li className="flex items-start gap-2">
+                                    <span className="text-emerald-400 mt-1 text-xl leading-none">•</span>
+                                    <span>Update destination URL instantly from dashboard.</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="text-emerald-400 mt-1 text-xl leading-none">•</span>
+                                    <span><span className="text-emerald-400 font-bold">Zero reprints</span> needed, ever.</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="text-emerald-400 mt-1 text-xl leading-none">•</span>
+                                    <span>Track <span className="bg-indigo-600/50 text-white px-1.5 py-0.5 rounded font-bold">scans, location, and device</span> analytics.</span>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -209,39 +247,40 @@ const LandingPage = () => {
             <section id="features" className="py-24 px-6 bg-slate-50">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-5xl font-extrabold mb-4 text-slate-900 tracking-tight">Features you'll actually use.</h2>
+                        <h2 className="text-3xl md:text-5xl font-extrabold mb-4 text-slate-900 tracking-tight">Built for your industry.</h2>
+                        <p className="text-slate-500 max-w-2xl mx-auto text-lg font-medium">See how top sectors use QRVibe to connect physical prints with digital experiences.</p>
                     </div>
 
                     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div className="bg-white p-8 rounded-[32px] border border-slate-200/60 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center flex flex-col items-center">
-                            <div className="w-16 h-16 bg-orange-50 border border-orange-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
+                        <div className="group bg-white p-8 rounded-[32px] border border-slate-200/60 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center flex flex-col items-center">
+                            <div className="w-16 h-16 bg-orange-50 border border-orange-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform duration-300">
                                 <Utensils className="w-7 h-7 text-orange-600" />
                             </div>
-                            <h3 className="text-xl font-bold mb-3 text-slate-900">Restaurant Chains</h3>
+                            <h3 className="text-xl font-bold mb-3 text-slate-900 group-hover:text-indigo-600 transition-colors">Restaurant Chains</h3>
                             <p className="text-slate-500 font-medium leading-relaxed text-sm">Update your digital menu across all tables/outlets instantly without reprinting flyers.</p>
                         </div>
 
-                        <div className="bg-white p-8 rounded-[32px] border border-slate-200/60 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center flex flex-col items-center">
-                            <div className="w-16 h-16 bg-blue-50 border border-blue-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
+                        <div className="group bg-white p-8 rounded-[32px] border border-slate-200/60 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center flex flex-col items-center">
+                            <div className="w-16 h-16 bg-blue-50 border border-blue-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform duration-300">
                                 <Building className="w-7 h-7 text-blue-600" />
                             </div>
-                            <h3 className="text-xl font-bold mb-3 text-slate-900">Real Estate</h3>
+                            <h3 className="text-xl font-bold mb-3 text-slate-900 group-hover:text-indigo-600 transition-colors">Real Estate</h3>
                             <p className="text-slate-500 font-medium leading-relaxed text-sm">Property brochures that track visits. Know which hoarding locations drive buyer interest.</p>
                         </div>
 
-                        <div className="bg-white p-8 rounded-[32px] border border-slate-200/60 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center flex flex-col items-center">
-                            <div className="w-16 h-16 bg-pink-50 border border-pink-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
+                        <div className="group bg-white p-8 rounded-[32px] border border-slate-200/60 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center flex flex-col items-center">
+                            <div className="w-16 h-16 bg-pink-50 border border-pink-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform duration-300">
                                 <Package className="w-7 h-7 text-pink-600" />
                             </div>
-                            <h3 className="text-xl font-bold mb-3 text-slate-900">Retail & FMCG</h3>
+                            <h3 className="text-xl font-bold mb-3 text-slate-900 group-hover:text-indigo-600 transition-colors">Retail & FMCG</h3>
                             <p className="text-slate-500 font-medium leading-relaxed text-sm">Connect packaging to customer data. Track authenticity checks & warranty registrations.</p>
                         </div>
 
-                        <div className="bg-white p-8 rounded-[32px] border border-slate-200/60 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center flex flex-col items-center">
-                            <div className="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
+                        <div className="group bg-white p-8 rounded-[32px] border border-slate-200/60 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center flex flex-col items-center">
+                            <div className="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform duration-300">
                                 <FileText className="w-7 h-7 text-indigo-600" />
                             </div>
-                            <h3 className="text-xl font-bold mb-3 text-slate-900">Manufacturing</h3>
+                            <h3 className="text-xl font-bold mb-3 text-slate-900 group-hover:text-indigo-600 transition-colors">Manufacturing</h3>
                             <p className="text-slate-500 font-medium leading-relaxed text-sm">Smart invoices & catalogues. Digital product manuals, instant reorders, and payment links.</p>
                         </div>
                     </div>
@@ -253,7 +292,8 @@ const LandingPage = () => {
                 <div className="max-w-5xl mx-auto bg-slate-900 p-10 md:p-16 rounded-[40px] flex flex-col md:flex-row items-center gap-12 relative overflow-hidden shadow-2xl">
                     <div className="absolute left-0 top-0 w-1/2 h-full bg-indigo-600/20 blur-[100px] pointer-events-none"></div>
                     
-                    <div className="bg-white p-6 rounded-3xl shadow-2xl z-10 transform -rotate-3 hover:rotate-0 transition-transform duration-500 border border-slate-100 flex-shrink-0">
+                    {/* Desktop View: Show QR Code to scan */}
+                    <div className="hidden md:block bg-white p-6 rounded-3xl shadow-2xl z-10 transform -rotate-3 hover:rotate-0 transition-transform duration-500 border border-slate-100 flex-shrink-0">
                         <div className="w-48 h-48 bg-slate-50 rounded-2xl flex items-center justify-center relative border border-slate-200 p-4 mx-auto">
                             <svg width="100%" height="100%" viewBox="0 0 100 100">
                                 <path d={getPathData()} fill="#0f172a" />
@@ -265,12 +305,23 @@ const LandingPage = () => {
                         </p>
                     </div>
 
+                    {/* Mobile View: Tap to experience button */}
+                    <div className="md:hidden bg-white p-6 rounded-3xl shadow-2xl z-10 transform rotate-2 hover:rotate-0 transition-transform duration-500 border border-slate-100 flex-shrink-0 w-full flex flex-col items-center justify-center">
+                         <div className="w-20 h-20 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mb-4">
+                             <Zap className="w-10 h-10 animate-pulse" />
+                         </div>
+                         <button onClick={() => alert("Magic simulated! Imagine being instantly redirected to a digital menu while the business owner tracks your scan in real-time.")} className="bg-indigo-600 hover:bg-indigo-500 transition-colors text-white font-bold px-6 py-4 rounded-xl w-full shadow-lg shadow-indigo-500/30 text-sm flex items-center justify-center gap-2">
+                            Tap here to experience the magic <ArrowRight className="w-4 h-4" />
+                         </button>
+                    </div>
+
                     <div className="flex-1 text-center md:text-left z-10 min-w-0">
                         <div className="inline-flex items-center gap-2 bg-indigo-500/20 text-indigo-300 font-bold px-3 py-1.5 rounded-full text-xs uppercase tracking-widest mb-6 border border-indigo-500/30">
                             <Smartphone className="w-3 h-3" /> Try the magic
                         </div>
                         <h2 className="text-3xl md:text-4xl font-extrabold mb-4 text-white">Experience it yourself.</h2>
-                        <p className="text-slate-400 text-lg mb-8 font-medium">Scan this code with your phone. See how quickly it redirects, and imagine the analytics it registers in the backend.</p>
+                        <p className="hidden md:block text-slate-400 text-lg mb-8 font-medium">Scan this code with your phone. See how quickly it redirects, and imagine the analytics it registers in the backend.</p>
+                        <p className="md:hidden text-slate-400 text-lg mb-8 font-medium">Tap the button above to simulate a scan. See how quickly it redirects, and imagine the analytics it registers in the backend.</p>
                         <div className="flex justify-center md:justify-start">
                             <Link to="/register" className="font-bold text-white flex items-center gap-2 hover:text-indigo-300 transition-colors bg-white/10 px-6 py-3 rounded-xl border border-white/20 hover:bg-white/20 whitespace-nowrap">
                                 Create your own <ArrowRight className="w-4 h-4" />
@@ -287,33 +338,58 @@ const LandingPage = () => {
                         <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">Analytics built for India</h2>
                         <p className="text-slate-500 max-w-2xl mx-auto text-lg">Know exactly who is scanning, when, and from where.</p>
                     </div>
-                    <div className="grid lg:grid-cols-3 gap-6">
-                        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                            <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><MapPin className="w-5 h-5 text-indigo-500"/> Top Cities</h4>
-                            <ul className="space-y-3">
-                                <li className="flex justify-between items-center"><span className="text-slate-600">Mumbai</span><span className="font-bold text-slate-900">2,453</span></li>
-                                <li className="flex justify-between items-center"><span className="text-slate-600">Bangalore</span><span className="font-bold text-slate-900">1,897</span></li>
-                                <li className="flex justify-between items-center"><span className="text-slate-600">Delhi NCR</span><span className="font-bold text-slate-900">1,654</span></li>
-                                <li className="flex justify-between items-center"><span className="text-slate-600">Pune</span><span className="font-bold text-slate-900">892</span></li>
-                            </ul>
-                        </div>
-                        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                            <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Activity className="w-5 h-5 text-indigo-500"/> Peak Times</h4>
-                            <ul className="space-y-4 mt-2">
-                                <li className="flex flex-col"><span className="text-slate-900 font-bold">12 PM - 2 PM</span><span className="text-sm text-slate-500">Lunch hours (Restaurant QRs)</span></li>
-                                <li className="flex flex-col"><span className="text-slate-900 font-bold">6 PM - 9 PM</span><span className="text-sm text-slate-500">Evening traffic (Retail)</span></li>
-                                <li className="flex flex-col"><span className="text-emerald-600 font-bold">+35%</span><span className="text-sm text-slate-500">Higher traffic on weekends</span></li>
-                            </ul>
-                        </div>
-                        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-center">
-                            <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2"><Smartphone className="w-5 h-5 text-indigo-500"/> Device Split</h4>
-                            <div className="flex h-4 bg-slate-200 rounded-full overflow-hidden mb-6">
-                                <div className="bg-emerald-500 w-[78%]"></div>
-                                <div className="bg-slate-800 w-[22%]"></div>
+                    <div className="bg-white rounded-[2rem] shadow-2xl border border-slate-200 overflow-hidden">
+                        {/* Fake Browser/Dashboard Header */}
+                        <div className="bg-slate-50 border-b border-slate-100 p-4 flex items-center gap-4">
+                            <div className="flex gap-2 pl-2">
+                                <div className="w-3 h-3 rounded-full bg-slate-300 hover:bg-red-400 transition-colors"></div>
+                                <div className="w-3 h-3 rounded-full bg-slate-300 hover:bg-amber-400 transition-colors"></div>
+                                <div className="w-3 h-3 rounded-full bg-slate-300 hover:bg-emerald-400 transition-colors"></div>
                             </div>
-                            <div className="flex justify-between text-sm">
-                                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-emerald-500"></span><span className="font-bold">Android (78%)</span></div>
-                                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-slate-800"></span><span className="font-bold">iOS (22%)</span></div>
+                            <div className="flex-1 max-w-sm bg-white rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-400 font-mono flex items-center gap-2 mx-auto">
+                                <Lock className="w-3 h-3 text-emerald-500" /> https://app.qrvibe.in/analytics
+                            </div>
+                        </div>
+                        {/* Content */}
+                        <div className="p-8 md:p-10 bg-slate-50/30">
+                            <div className="flex justify-between items-end mb-8">
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-900">Campaign Overview</h3>
+                                    <p className="text-slate-500 text-sm">Real-time scan data for 'Summer Menu'</p>
+                                </div>
+                                <div className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg text-sm font-bold border border-indigo-100">
+                                    Last 7 Days
+                                </div>
+                            </div>
+                            <div className="grid lg:grid-cols-3 gap-6">
+                                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                                    <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><MapPin className="w-5 h-5 text-indigo-500"/> Top Cities</h4>
+                                    <ul className="space-y-3">
+                                        <li className="flex justify-between items-center"><span className="text-slate-600">Mumbai</span><span className="font-bold text-slate-900">2,453</span></li>
+                                        <li className="flex justify-between items-center"><span className="text-slate-600">Bangalore</span><span className="font-bold text-slate-900">1,897</span></li>
+                                        <li className="flex justify-between items-center"><span className="text-slate-600">Delhi NCR</span><span className="font-bold text-slate-900">1,654</span></li>
+                                        <li className="flex justify-between items-center"><span className="text-slate-600">Pune</span><span className="font-bold text-slate-900">892</span></li>
+                                    </ul>
+                                </div>
+                                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                                    <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Activity className="w-5 h-5 text-indigo-500"/> Peak Times</h4>
+                                    <ul className="space-y-4 mt-2">
+                                        <li className="flex flex-col"><span className="text-slate-900 font-bold">12 PM - 2 PM</span><span className="text-sm text-slate-500">Lunch hours (Restaurant QRs)</span></li>
+                                        <li className="flex flex-col"><span className="text-slate-900 font-bold">6 PM - 9 PM</span><span className="text-sm text-slate-500">Evening traffic (Retail)</span></li>
+                                        <li className="flex flex-col"><span className="text-emerald-600 font-bold">+35%</span><span className="text-sm text-slate-500">Higher traffic on weekends</span></li>
+                                    </ul>
+                                </div>
+                                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-center hover:shadow-md transition-shadow">
+                                    <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2"><Smartphone className="w-5 h-5 text-indigo-500"/> Device Split</h4>
+                                    <div className="flex h-4 bg-slate-200 rounded-full overflow-hidden mb-6">
+                                        <div className="bg-emerald-500 w-[78%]"></div>
+                                        <div className="bg-slate-800 w-[22%]"></div>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-emerald-500"></span><span className="font-bold">Android (78%)</span></div>
+                                        <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-slate-800"></span><span className="font-bold">iOS (22%)</span></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -325,19 +401,30 @@ const LandingPage = () => {
                 <div className="max-w-7xl mx-auto">
                     <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center mb-20">
                         <div>
+                            <div className="inline-flex items-center gap-2 bg-slate-100 text-slate-600 font-bold px-3 py-1.5 rounded-full text-xs uppercase tracking-widest mb-4 border border-slate-200">
+                                <RefreshCw className="w-3 h-3" /> Auto-syncs seamlessly
+                            </div>
                             <h2 className="text-3xl font-bold text-slate-900 mb-4 tracking-tight">Works with tools you already use</h2>
-                            <p className="text-slate-600 mb-8 leading-relaxed text-lg">Integrate your offline data seamlessly into your existing CRM, payment gateways, and communication tools.</p>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col items-center justify-center font-bold text-slate-400">
-                                    <span className="text-slate-700">Zoho CRM</span>
-                                    <span className="text-[10px] uppercase tracking-tighter bg-slate-200 px-2 py-0.5 rounded-full mt-1">Coming Soon</span>
+                            <p className="text-slate-600 mb-8 leading-relaxed text-lg">Integrate your offline data seamlessly into your existing CRM, payment gateways, and communication tools without writing a single line of code.</p>
+                            <div className="flex flex-wrap gap-4">
+                                <div className="bg-indigo-50 px-5 py-3 rounded-xl border border-indigo-200 flex items-center gap-2 font-bold text-indigo-600 shadow-sm hover:shadow-md transition-shadow">
+                                    Razorpay
                                 </div>
-                                <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-200 flex items-center justify-center font-bold text-indigo-600">Razorpay</div>
-                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col items-center justify-center font-bold text-slate-400">
-                                    <span className="text-slate-700">Tally</span>
-                                    <span className="text-[10px] uppercase tracking-tighter bg-slate-200 px-2 py-0.5 rounded-full mt-1">Coming Soon</span>
+                                <div className="bg-emerald-50 px-5 py-3 rounded-xl border border-emerald-200 flex items-center gap-2 font-bold text-emerald-600 shadow-sm hover:shadow-md transition-shadow">
+                                    WhatsApp
                                 </div>
-                                <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 flex items-center justify-center font-bold text-emerald-600">WhatsApp</div>
+                                <div className="bg-white px-5 py-3 rounded-xl border border-slate-200 flex flex-col items-center justify-center font-bold text-slate-400 opacity-60">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-slate-500">Zoho CRM</span>
+                                        <span className="text-[9px] uppercase tracking-tighter bg-slate-100 px-1.5 py-0.5 rounded text-slate-400">Soon</span>
+                                    </div>
+                                </div>
+                                <div className="bg-white px-5 py-3 rounded-xl border border-slate-200 flex flex-col items-center justify-center font-bold text-slate-400 opacity-60">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-slate-500">Tally</span>
+                                        <span className="text-[9px] uppercase tracking-tighter bg-slate-100 px-1.5 py-0.5 rounded text-slate-400">Soon</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-xl relative overflow-hidden">
@@ -408,6 +495,11 @@ const LandingPage = () => {
                                         <span className={`text-3xl font-black drop-shadow-sm ${annualSavings > 0 ? 'text-emerald-300' : 'text-red-300'}`}>₹{formatINR(annualSavings)}</span>
                                     </div>
                                 </div>
+                                <div className="mt-6">
+                                    <Link to="/register" className="w-full bg-emerald-400 hover:bg-emerald-300 text-slate-900 font-extrabold px-6 py-4 rounded-xl transition-colors shadow-lg flex items-center justify-center gap-2 tracking-wide text-lg">
+                                        Start saving ₹{formatINR(annualSavings)} today <ArrowRight className="w-5 h-5" />
+                                    </Link>
+                                </div>
                             </div>
                         </div>
 
@@ -465,6 +557,7 @@ const LandingPage = () => {
                                 <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>Standard PNG download</span></li>
                             </ul>
                             <Link to="/register" className="block text-center w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-2xl font-bold transition-all mt-auto">Start Free</Link>
+                            <p className="text-center text-xs text-slate-500 mt-3 font-medium">No credit card required</p>
                         </div>
 
                         {/* Business Pro (Highlighted) */}
