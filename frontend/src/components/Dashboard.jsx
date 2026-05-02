@@ -5,7 +5,7 @@ import {
     MoreHorizontal, Loader2, Trash2, Edit2, Calendar, Folder, ExternalLink, PencilLine, Image as ImageIcon,
     Square, CheckSquare, Palette, ArrowRightLeft, Copy, PauseCircle, X, Check, Share,
     Globe, FileText, Contact, Share2, MessageCircle, Film,
-    PartyPopper, Link as LinkIcon, LogOut, CreditCard, Settings, User, BarChart3, Layers, Menu, ChevronRight
+    PartyPopper, Link as LinkIcon, LogOut, CreditCard, Settings, User, BarChart3, Layers, Menu, ChevronRight, Eye
 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { logout } from '../redux/authSlice';
@@ -341,7 +341,7 @@ const Dashboard = () => {
                 image: design.logoUrl || undefined,
                 dotsOptions: {
                     color: design.fgColor || '#000000',
-                    type: design.qrStyle || 'square',
+                    type: (design.qrStyle === 'squares' ? 'square' : design.qrStyle) || 'square',
                     ...(design.gradientType && design.gradientType !== 'none' && design.fgColor2 ? {
                         gradient: {
                             type: design.gradientType,
@@ -357,10 +357,12 @@ const Dashboard = () => {
                     color: design.bgColor || '#ffffff',
                 },
                 cornersSquareOptions: {
-                    type: design.eyeShape === 'circle' ? 'dot' : 'square',
+                    type: design.eyeShape || 'square',
+                    color: design.eyeColor || undefined,
                 },
                 cornersDotOptions: {
-                    type: design.eyeShape === 'circle' ? 'dot' : 'square',
+                    type: design.eyeShape || 'square',
+                    color: design.eyeColor || undefined,
                 },
                 imageOptions: {
                     crossOrigin: 'anonymous',
@@ -516,27 +518,18 @@ const Dashboard = () => {
                                 >
                                     <div className="flex gap-4 w-full">
                                         {/* Visual Preview Area */}
-                                        <div className="w-16 h-16 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center relative shrink-0 overflow-hidden">
-                                            {(() => {
-                                                const d = qr.customization || {};
-                                                const bUrl = import.meta.env.VITE_BASE_URL || import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
-                                                return (
-                                                    <StyledQRCode
-                                                        data={`${bUrl}/r/${qr.short_id}`}
-                                                        size={56}
-                                                        ecLevel="L"
-                                                        primaryColor={d.fgColor || '#000000'}
-                                                        fgColor2={d.fgColor2}
-                                                        gradientType={d.gradientType}
-                                                        bgColor={d.bgColor || '#ffffff'}
-                                                        dotStyle={d.qrStyle || 'square'}
-                                                        cornerSquareStyle={d.eyeShape || 'square'}
-                                                        cornerDotStyle={d.eyeShape || 'square'}
-                                                        eyeColor={d.eyeColor}
-                                                        logo={d.logoUrl || undefined}
-                                                    />
-                                                );
-                                            })()}
+                                        <div 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setPreviewModal(qr);
+                                            }}
+                                            className="w-16 h-16 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center relative shrink-0 overflow-hidden hover:bg-white hover:border-indigo-200 transition-all group/qr cursor-zoom-in"
+                                            title="Click to view design"
+                                        >
+                                            <QrCode size={28} className="text-slate-900 group-hover/qr:text-indigo-400 transition-colors" />
+                                            <div className="absolute inset-0 bg-indigo-600/0 group-hover/qr:bg-indigo-600/5 flex items-center justify-center transition-all">
+                                                <Eye size={16} className="text-white opacity-0 group-hover/qr:opacity-100 translate-y-1 group-hover/qr:translate-y-0 transition-all" />
+                                            </div>
                                         </div>
 
                                         {/* Content Area */}
@@ -826,31 +819,13 @@ const Dashboard = () => {
                                             {isSelected ? <CheckSquare className="w-5 h-5 text-indigo-500" /> : <Square className="w-5 h-5" />}
                                         </button>
                                         <div
-                                            className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center flex-shrink-0 cursor-pointer overflow-hidden relative group"
+                                            className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center flex-shrink-0 cursor-zoom-in overflow-hidden relative group"
                                             onClick={() => setPreviewModal(qr)}
+                                            title="Click to view design"
                                         >
-                                            {(() => {
-                                                const d = qr.customization || {};
-                                                const bUrl = import.meta.env.VITE_BASE_URL || import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
-                                                return (
-                                                    <StyledQRCode
-                                                        data={`${bUrl}/r/${qr.short_id}`}
-                                                        size={72}
-                                                        ecLevel="L"
-                                                        primaryColor={d.fgColor || '#000000'}
-                                                        fgColor2={d.fgColor2}
-                                                        gradientType={d.gradientType}
-                                                        bgColor={d.bgColor || '#ffffff'}
-                                                        dotStyle={d.qrStyle || 'square'}
-                                                        cornerSquareStyle={d.eyeShape || 'square'}
-                                                        cornerDotStyle={d.eyeShape || 'square'}
-                                                        eyeColor={d.eyeColor}
-                                                        logo={d.logoUrl || undefined}
-                                                    />
-                                                );
-                                            })()}
-                                            <div className="absolute inset-0 bg-slate-900/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Search className="w-5 h-5 text-slate-700 bg-white/80 rounded-full p-1" />
+                                            <QrCode size={36} className="text-slate-900 group-hover:text-indigo-400 transition-colors" />
+                                            <div className="absolute inset-0 bg-indigo-600/0 group-hover:bg-indigo-600/5 flex items-center justify-center transition-all">
+                                                <Eye size={20} className="text-white opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all" />
                                             </div>
                                         </div>
 
