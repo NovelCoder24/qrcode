@@ -57,6 +57,7 @@ const App = () => {
   const location = useLocation();
   
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsSidebarOpen(false);
   }, [location]);
 

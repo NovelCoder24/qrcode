@@ -16,6 +16,8 @@ connectDB();
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 // CORS configuration
 const allowedOrigins = [
   'http://localhost:5173', 

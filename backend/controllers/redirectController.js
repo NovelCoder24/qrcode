@@ -22,7 +22,7 @@ export const redirectQR = async (req, res) => {
             return res.status(410).send("<h1>This QR Code is inactive</h1>");
         }
 
-        await qr.recordScan();
+        qr.recordScan().catch(err => console.error("Error updating scan count:",err));
 
         // 2. Parse User-Agent for Device Breakdown
         const parser = new UAParser(req.headers["user-agent"]);
@@ -36,11 +36,14 @@ export const redirectQR = async (req, res) => {
         else if (result.device.type === "wearable") deviceType = "wearable";
 
         // 3. Geolocation parsing using geoip-lite
-        let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-        if (ip === "::1" || ip === "127.0.0.1") {
-            ip = "8.8.8.8"; // Fallback to test IP locally
+        let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "";
+        if (ip && ip.includes(',')) {
+            ip = ip.split(',')[0].trim();
         }
-        
+        if (ip === "::1" || ip === "127.0.0.1") {
+            ip = "49.36.12.94"; 
+        }
+
         const geo = geoip.lookup(ip);
         const locationData = {
             country: geo ? geo.country : "Unknown",
