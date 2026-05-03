@@ -26,13 +26,21 @@ const scanSchema = new mongoose.Schema({
         browser: String,
         type: { type: String }
     },
-    sessionContext: String // Used to track unique scanners (hash of IP + User-Agent)
+    isBot: {
+        type: Boolean,
+        default: false,
+        index: true
+    },
+    sessionContext: String
 }, {
     timestamps: true,
     versionKey: false
 });
 
-// Accurate indexing for scan analytics queries
+// Compound index for instant Top Cities aggregation (millions of rows)
+scanSchema.index({ qr_id: 1, "location.city": 1 });
+
+// Time-series indexes
 scanSchema.index({ createdAt: -1 });
 scanSchema.index({ owner_id: 1, createdAt: -1 });
 scanSchema.index({ qr_id: 1, createdAt: -1 });
