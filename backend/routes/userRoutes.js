@@ -1,5 +1,8 @@
 import express from 'express';
-import { registerUser, loginUser, getMe, googleAuth, refreshToken, logoutUser, updateProfile } from '../controllers/userController.js';
+import { 
+    registerUser, loginUser, getMe, googleAuth, refreshToken, logoutUser, updateProfile,
+    updatePrivacySettings, exportUserData, requestDataErasure
+} from '../controllers/userController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -26,5 +29,14 @@ router.get('/me', protect, getMe);
 
 // PUT /api/users/profile
 router.put('/profile', protect, updateProfile);
+
+// PUT /api/users/privacy - Toggle privacy settings & log consent
+router.put('/privacy', protect, updatePrivacySettings);
+
+// GET /api/users/export - Export all user data (DPDP)
+router.get('/export', protect, exportUserData);
+
+// DELETE /api/users/erasure - Permanently wipe account and all data (DPDP)
+router.delete('/erasure', protect, requestDataErasure);
 
 export default router;

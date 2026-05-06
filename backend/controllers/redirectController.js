@@ -1,11 +1,19 @@
 import { QRCode } from "../models/QRCode.js";
 import { Scan } from "../models/Scan.js";
+import { DailyScanStats } from "../models/DailyScanStats.js";
 import { UAParser } from "ua-parser-js";
 import geoip from "geoip-lite";
 import crypto from "crypto";
+import { env } from "../config/env.js";
 
 // ── Bot signatures to filter out from analytics ──
 const BOT_PATTERN = /whatsapp|slack|telegram|bot|crawler|spider|crawl|preview|fetch|headless|lighthouse/i;
+
+// ── Utility to sanitize MongoDB Map Keys (remove . and $) ──
+const sanitizeKey = (str) => {
+    if (!str) return "unknown";
+    return String(str).replace(/\./g, "_").replace(/\$/g, "_").toLowerCase();
+};
 
 // @desc    Redirect to the target URL and log the scan
 // @route   GET /r/:shortId
@@ -18,9 +26,6 @@ export const redirectQR = async (req, res) => {
         const qr = await QRCode.findOne({ short_id: shortId });
         if (!qr) return res.status(404).send("<h1>404 - QR Code Not Found</h1>");
         if (!qr.isActive) return res.status(410).send("<h1>This QR Code is inactive</h1>");
-
-        // Increment scan counter in background
-        qr.recordScan().catch(err => console.error("Error updating scan count:", err));
 
         // 2. Parse User-Agent — safe fallback to empty string
         const ua = req.headers["user-agent"] || "";
@@ -35,6 +40,7 @@ export const redirectQR = async (req, res) => {
         else if (result.device.type === "smarttv") deviceType = "smarttv";
         else if (result.device.type === "console") deviceType = "console";
         else if (result.device.type === "wearable") deviceType = "wearable";
+        else if (!result.device.type) deviceType = "unknown";
 
         // 3. Geolocation — geoip-lite only (synchronous, local DB)
         let ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "";
@@ -51,34 +57,34 @@ export const redirectQR = async (req, res) => {
             ll: geo?.ll || []
         };
 
-        // 4. Session hash for unique-scanner tracking
+        // 4. Session hash for unique-scanner tracking (DPDP Compliant)
+        const salt = env.ANALYTICS_SALT || "qrvibe-fallback-salt-7729";
         const sessionHash = crypto
             .createHash("sha256")
-            .update(`${ip}|${ua}`)
+            .update(`${ip}|${ua}|${salt}`)
             .digest("hex");
 
-        // 5. Single database write — fire-and-forget
-        Scan.create({
-            qr_id: qr._id,
-            owner_id: qr.user_id,
-            location: locationData,
-            device: {
-                os: result.os.name || "Unknown",
-                browser: result.browser.name || "Unknown",
-                type: deviceType
-            },
-            isBot,
-            sessionContext: sessionHash
-        }).catch(err => console.error("Background scan logging error:", err));
-
-        // 6. Auto UTM Builder
+        // 5. Auto UTM Builder & Campaign Extraction
         let finalUrl = qr.target_url;
+        let campaignData = {
+            category: "organic",
+            slug: "organic",
+            channel: "qr",
+            source: "qrvibe",
+            medium: "qr_code",
+            content: "",
+            term: ""
+        };
+
         if (qr.qr_type === "URL" || qr.qr_type?.includes("Social")) {
             try {
                 const urlObj = new URL(finalUrl);
+                
+                // If it doesn't have source, we inject defaults
                 if (!urlObj.searchParams.has("utm_source")) {
                     urlObj.searchParams.set("utm_source", "qrvibe");
                     urlObj.searchParams.set("utm_medium", "qr_code");
+                    
                     const campaignName = (qr.metadata?.title || qr.short_id)
                         .toString().toLowerCase()
                         .replace(/\s+/g, "-")
@@ -86,17 +92,97 @@ export const redirectQR = async (req, res) => {
                         .replace(/--+/g, "-")
                         .replace(/^-+/, "")
                         .replace(/-+$/, "");
+                        
                     urlObj.searchParams.set("utm_campaign", campaignName || "qr_campaign");
                     finalUrl = urlObj.toString();
                 }
+
+                // Extract final UTMs for DB logging
+                campaignData = {
+                    category: urlObj.searchParams.get("utm_campaign") || "organic",
+                    slug: urlObj.searchParams.get("utm_campaign") || "organic",
+                    channel: "qr",
+                    source: urlObj.searchParams.get("utm_source") || "qrvibe",
+                    medium: urlObj.searchParams.get("utm_medium") || "qr_code",
+                    content: urlObj.searchParams.get("utm_content") || "",
+                    term: urlObj.searchParams.get("utm_term") || ""
+                };
+
             } catch (urlError) {
-                console.warn(`Could not build UTMs for ${finalUrl}`, urlError.message);
+                console.warn(`Could not build/extract UTMs for ${finalUrl}`, urlError.message);
             }
         }
 
-        // 7. Redirect Handling
-        const frontendUrl = process.env.CORS_ORIGIN || "http://localhost:5173";
+        // 6. Background Analytics Processing (Fire and Forget)
+        const processAnalytics = async () => {
+            try {
+                // strict lock DailyScanStats to YYYY-MM-DD
+                const dateStr = new Date().toISOString().split('T')[0];
+                const startOfDay = new Date(dateStr);
+                
+                // Determine Unique Scan via DB check
+                const isNotUnique = await Scan.exists({
+                    qr_id: qr._id,
+                    sessionContext: sessionHash,
+                    createdAt: { $gte: startOfDay }
+                });
+                const isUnique = !isNotUnique;
+
+                // 1. Log Raw Scan (with DPDP hashing & campaign)
+                await Scan.create({
+                    qr_id: qr._id,
+                    owner_id: qr.user_id,
+                    location: locationData,
+                    device: {
+                        os: result.os.name || "Unknown",
+                        browser: result.browser.name || "Unknown",
+                        type: deviceType
+                    },
+                    isBot,
+                    sessionContext: sessionHash,
+                    campaign: campaignData
+                });
+
+                // 2. Materialized View Update (Skipped for Bots)
+                if (!isBot) {
+                    const osKey = sanitizeKey(result.os.name);
+                    const browserKey = sanitizeKey(result.browser.name);
+                    const countryKey = sanitizeKey(locationData.country_code);
+                    const cityKey = sanitizeKey(locationData.city);
+                    const campaignKey = sanitizeKey(campaignData.slug || "organic");
+
+                    await DailyScanStats.findOneAndUpdate(
+                        { qr_id: qr._id, date: dateStr },
+                        {
+                            $inc: {
+                                total_scans: 1,
+                                unique_scans: isUnique ? 1 : 0,
+                                [`devices.${deviceType}`]: 1,
+                                [`os.${osKey}`]: 1,
+                                [`browsers.${browserKey}`]: 1,
+                                [`countries.${countryKey}`]: 1,
+                                [`cities.${cityKey}`]: 1,
+                                [`campaigns.${campaignKey}`]: 1
+                            }
+                        },
+                        { upsert: true }
+                    );
+                }
+            } catch (bgError) {
+                console.error("Background analytics processing error:", bgError);
+            }
+        };
+
+        // Execute background tasks without awaiting them (Promise.allSettled)
+        Promise.allSettled([
+            qr.recordScan(), // Increment QRCode raw total
+            processAnalytics() // Execute raw Scan insert and materialized view upsert
+        ]);
+
+        // 7. Instant Redirect Handling
+        const frontendUrl = env.CORS_ORIGIN || "http://localhost:5173";
         const typeRedirects = { PDF: "/pdf", VCARD: "/vcard", SOCIAL: "/social", MEDIA: "/media" };
+        
         if (typeRedirects[qr.qr_type]) {
             return res.redirect(302, `${frontendUrl}${typeRedirects[qr.qr_type]}/${shortId}`);
         }

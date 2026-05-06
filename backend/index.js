@@ -1,77 +1,48 @@
-import dotenv from 'dotenv';
-import express from "express";
-import cors from "cors";
-import cookieParser from "cookie-parser";
+import { env } from "./config/env.js";
 import connectDB from "./config/db.js";
-import userRoutes from "./routes/userRoutes.js";
-import qrRoutes from "./routes/qrRoutes.js";
-import analyticsRoutes from "./routes/analyticsRoutes.js";
-import redirectRoutes from "./routes/redirectRoutes.js";
-import uploadFileRoutes from "./routes/uploadFile.js";
-import razorpayRoutes from "./routes/razorpayRoutes.js";
+import mongoose from "mongoose";
+import app from "./app.js";
 import { initHealthMonitor } from "./jobs/healthMonitor.js";
 
-dotenv.config();
+// Connect to database
 connectDB();
 
-const app = express();
-
-app.set('trust proxy', 1);
-
-// CORS configuration
-const allowedOrigins = [
-  'http://localhost:5173', 
-  'https://qrcode-jade-chi.vercel.app',
-  'https://qrcode-git-dev-v2-novelsahu22-9572s-projects.vercel.app', 
-];
-
-app.use(cors({
-    origin: function(origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl)
-        if (!origin) return callback(null, true);
-
-        // In development, allow any localhost
-        if (process.env.NODE_ENV !== 'production' && origin && origin.includes('localhost')) {
-            return callback(null, true);
-        }
-
-        // Allow configured origins
-        if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-
-        // Log CORS violations for debugging
-        console.warn(`CORS blocked origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
-        callback(new Error(`Not allowed by CORS. Origin: ${origin}`));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning']
-}));
-app.use(express.json());
-app.use(cookieParser());
-app.use(express.urlencoded({ extended: true, limit: "16kb" }));
-
-// Health check endpoint for Railway
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-app.use('/api/users', userRoutes);
-app.use('/api/qrcodes', qrRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/razorpay', razorpayRoutes);
-
-// Public Redirect Route
-// This must come LAST or have a specific prefix like /r
-app.use('/r', redirectRoutes);
-// file upload
-app.use('/api/upload', uploadFileRoutes);
-
-const PORT = process.env.PORT || 5000;
+const PORT = env.PORT;
 const HOST = '0.0.0.0';
-app.listen(PORT, HOST, () => {
-    console.log(`Server running on ${HOST}:${PORT}`);
-    // Boot up the 24h cron checks
-    initHealthMonitor();
+
+const server = app.listen(PORT, HOST, () => {
+    console.log(`Server running on ${HOST}:${PORT} in ${env.NODE_ENV} mode`);
+    
+    // Boot up the 24h cron checks ONLY if enabled for this instance
+    if (env.ENABLE_IN_PROCESS_JOBS) {
+        console.log("[Service] In-process jobs are enabled. Initializing health monitor.");
+        initHealthMonitor();
+    }
 });
+
+// Graceful Shutdown Handler
+const gracefulShutdown = async (signal) => {
+    console.log(`\n[${signal}] Received. Closing HTTP server and database connections gracefully...`);
+    
+    server.close(async () => {
+        console.log('HTTP server closed.');
+        try {
+            await mongoose.connection.close();
+            console.log('MongoDB connection closed.');
+            process.exit(0);
+        } catch (err) {
+            console.error('Error during MongoDB disconnection', err);
+            process.exit(1);
+        }
+    });
+
+    // Force exit if hanging
+    setTimeout(() => {
+        console.error('Could not close connections in time, forcefully shutting down');
+        process.exit(1);
+    }, 10000);
+};
+
+// Listen for termination signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));

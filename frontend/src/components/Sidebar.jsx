@@ -9,7 +9,8 @@ import {
     CreditCard,
     Mail,
     HelpCircle,
-    QrCode
+    QrCode,
+    Shield
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, overlay = false }) => {
@@ -19,6 +20,7 @@ const Sidebar = ({ isOpen, overlay = false }) => {
         { id: 'qrcodes', label: 'My QR Codes', icon: <LayoutGrid size={20} />, path: '/qrcodes' },
         { id: 'account', label: 'My Account', icon: <User size={20} />, path: '/account' },
         { id: 'billing', label: 'Billing', icon: <CreditCard size={20} />, path: '/billing' },
+        { id: 'privacy', label: 'Privacy & Data', icon: <Shield size={20} />, path: '/privacy-data' },
     ];
 
     const secondaryNav = [

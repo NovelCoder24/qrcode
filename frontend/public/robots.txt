@@ -1,0 +1,26 @@
+# QRVibe — robots.txt
+# https://qrvibe.in
+
+User-agent: *
+Allow: /
+
+# Public landing & auth pages
+Allow: /
+Allow: /login
+Allow: /register
+
+# Block authenticated app routes from indexing
+Disallow: /qrcodes
+Disallow: /create
+Disallow: /analytics
+Disallow: /billing
+Disallow: /account
+
+# Block QR view pages (dynamic user-generated content)
+Disallow: /pdf/
+Disallow: /vcard/
+Disallow: /social/
+Disallow: /media/
+
+# Sitemap
+Sitemap: https://qrvibe.in/sitemap.xml

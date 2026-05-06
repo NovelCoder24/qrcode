@@ -1,0 +1,47 @@
+<svg width="720" height="180" viewBox="0 0 720 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">QRVibe logo</title>
+  <desc id="desc">A rounded QR mark with an analytics tracking line beside the QRVibe wordmark.</desc>
+  <defs>
+    <linearGradient id="markGradient" x1="18" y1="18" x2="142" y2="142" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B82F6"/>
+      <stop offset="0.52" stop-color="#5B3FF4"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="wordGradient" x1="215" y1="94" x2="458" y2="94" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#101828"/>
+      <stop offset="0.62" stop-color="#101828"/>
+      <stop offset="0.63" stop-color="#5B3FF4"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+    <filter id="softShadow" x="0" y="0" width="170" height="170" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="8"/>
+      <feGaussianBlur stdDeviation="10"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.231 0 0 0 0 0.129 0 0 0 0 0.965 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#softShadow)">
+    <rect x="18" y="18" width="124" height="124" rx="32" fill="url(#markGradient)"/>
+    <rect x="48" y="48" width="20" height="20" rx="5" fill="white"/>
+    <rect x="73" y="48" width="20" height="20" rx="5" fill="white" fill-opacity="0.86"/>
+    <rect x="98" y="48" width="20" height="20" rx="5" fill="white"/>
+    <rect x="48" y="73" width="20" height="20" rx="5" fill="white" fill-opacity="0.86"/>
+    <rect x="98" y="73" width="20" height="20" rx="5" fill="white" fill-opacity="0.88"/>
+    <rect x="48" y="98" width="20" height="20" rx="5" fill="white"/>
+    <rect x="73" y="98" width="20" height="20" rx="5" fill="white" fill-opacity="0.88"/>
+    <rect x="98" y="98" width="20" height="20" rx="5" fill="white"/>
+
+    <path d="M59 113C76 88 88 101 96 82C103 65 114 64 126 58" stroke="#00D49F" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="59" cy="113" r="7" fill="#00D49F" stroke="#ECFDF5" stroke-width="4"/>
+    <circle cx="96" cy="82" r="7" fill="#00D49F" stroke="#ECFDF5" stroke-width="4"/>
+    <circle cx="126" cy="58" r="7" fill="#00D49F" stroke="#ECFDF5" stroke-width="4"/>
+  </g>
+
+  <text x="178" y="102" fill="url(#wordGradient)" font-family="Plus Jakarta Sans, Inter, Arial, sans-serif" font-size="56" font-weight="800" letter-spacing="0">QRVibe</text>
+  <text x="183" y="131" fill="#64748B" font-family="Plus Jakarta Sans, Inter, Arial, sans-serif" font-size="18" font-weight="600" letter-spacing="0.8">DYNAMIC QR ANALYTICS</text>
+</svg>

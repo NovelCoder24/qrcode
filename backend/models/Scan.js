@@ -31,18 +31,23 @@ const scanSchema = new mongoose.Schema({
         default: false,
         index: true
     },
-    sessionContext: String
+    sessionContext: String,
+    campaign: {
+        category: String,
+        slug: String,
+        channel: String,
+        source: String, // utm_source
+        medium: String, // utm_medium
+        content: String, // utm_content
+        term: String // utm_term
+    }
 }, {
     timestamps: true,
     versionKey: false
 });
 
-// Compound index for instant Top Cities aggregation (millions of rows)
-scanSchema.index({ qr_id: 1, "location.city": 1 });
-
-// Time-series indexes
-scanSchema.index({ createdAt: -1 });
-scanSchema.index({ owner_id: 1, createdAt: -1 });
+// Minimal indexes for raw exports and drill-downs
 scanSchema.index({ qr_id: 1, createdAt: -1 });
+scanSchema.index({ owner_id: 1, "campaign.category": 1, createdAt: -1 });
 
 export const Scan = mongoose.model("Scan", scanSchema);

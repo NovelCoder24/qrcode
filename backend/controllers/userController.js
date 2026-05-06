@@ -1,5 +1,12 @@
 import { User } from "../models/User.js";
+import { QRCode } from "../models/QRCode.js";
+import { Scan } from "../models/Scan.js";
+import { DailyScanStats } from "../models/DailyScanStats.js";
+import { AlertEvent } from "../models/AlertEvent.js";
+import { ConsentRecord } from "../models/ConsentRecord.js";
+import { Notification } from "../models/Notification.js";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 // Helper: Cookie options for refresh token
 const REFRESH_COOKIE_OPTIONS = {
@@ -197,9 +204,7 @@ export const updateProfile = async (req, res) => {
         const user = await User.findById(req.user._id);
 
         if (user) {
-            // Update fields if provided
             user.whatsappNumber = req.body.whatsappNumber !== undefined ? req.body.whatsappNumber : user.whatsappNumber;
-            // Can add name, companyName, etc here later if needed
             
             const updatedUser = await user.save();
             res.json({
@@ -213,5 +218,134 @@ export const updateProfile = async (req, res) => {
         }
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+};
+
+// ==========================================
+// PHASE 6: DPDP & PRIVACY CONTROLLERS
+// ==========================================
+
+// @desc    Update specific privacy/consent settings
+// @route   PUT /api/users/privacy
+// @access  Private
+export const updatePrivacySettings = async (req, res) => {
+    try {
+        const { whatsappOptIn } = req.body;
+        const user = await User.findById(req.user._id);
+
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        if (typeof whatsappOptIn === 'boolean' && user.whatsappOptIn !== whatsappOptIn) {
+            user.whatsappOptIn = whatsappOptIn;
+            
+            // Create a NEW ledger entry for DPDP compliance (no upsert)
+            const ipHash = crypto.createHash('sha256').update(req.ip || '0.0.0.0').digest('hex');
+            await ConsentRecord.create({
+                user_id: user._id,
+                consentType: 'whatsapp',
+                granted: whatsappOptIn,
+                ipHash,
+                userAgent: req.headers['user-agent']
+            });
+        }
+
+        const updatedUser = await user.save();
+        res.json({ whatsappOptIn: updatedUser.whatsappOptIn });
+    } catch (error) {
+        console.error("Update Privacy Error:", error);
+        res.status(500).json({ message: "Server Error" });
+    }
+};
+
+// @desc    Export User Data (Data Portability)
+// @route   GET /api/users/export
+// @access  Private
+export const exportUserData = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        // Fetch User profile (excluding password)
+        const user = await User.findById(userId).select('-password').lean();
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        // Fetch remaining associated data using Promise.all for speed
+        // NOTE: We intentionally OMIT raw `Scan` collection to prevent OOM crashes on large accounts.
+        const [qrcodes, dailyStats, alerts, consents] = await Promise.all([
+            QRCode.find({ user_id: userId }).lean(),
+            DailyScanStats.find({ qr_id: { $in: await QRCode.find({ user_id: userId }).distinct('_id') } }).lean(),
+            AlertEvent.find({ qr_id: { $in: await QRCode.find({ user_id: userId }).distinct('_id') } }).lean(),
+            ConsentRecord.find({ user_id: userId }).lean()
+        ]);
+
+        const exportPayload = {
+            exportDate: new Date().toISOString(),
+            user,
+            qrcodes,
+            dailyScanStats: dailyStats,
+            alertEvents: alerts,
+            consentLedger: consents
+        };
+
+        // Send as downloadable JSON file
+        res.setHeader('Content-disposition', `attachment; filename=qrvibe_data_${userId}.json`);
+        res.setHeader('Content-type', 'application/json');
+        res.status(200).send(JSON.stringify(exportPayload, null, 2));
+
+    } catch (error) {
+        console.error("Data Export Error:", error);
+        res.status(500).json({ message: "Failed to generate export file" });
+    }
+};
+
+// @desc    Erasure Request (Right to be Forgotten)
+// @route   DELETE /api/users/erasure
+// @access  Private
+export const requestDataErasure = async (req, res) => {
+    try {
+        const { password } = req.body;
+        const userId = req.user._id;
+
+        // Security Patch: Require password confirmation before total wipe
+        const user = await User.findById(userId).select('+password');
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        // If they registered via Google, they don't have a password. 
+        // We'll bypass password check ONLY IF they don't have a password hash and used Google auth.
+        if (user.password) {
+            if (!password) {
+                return res.status(400).json({ message: "Password is required for account deletion." });
+            }
+            const isMatch = await user.comparePassword(password);
+            if (!isMatch) {
+                return res.status(401).json({ message: "Incorrect password." });
+            }
+        }
+
+        const userQRs = await QRCode.find({ user_id: userId }).distinct('_id');
+
+        console.log(`[DPDP Erasure] Initiating data purge for user ${userId}`);
+
+        // Run all deletions concurrently
+        await Promise.all([
+            Scan.deleteMany({ qr_id: { $in: userQRs } }),
+            DailyScanStats.deleteMany({ qr_id: { $in: userQRs } }),
+            AlertEvent.deleteMany({ qr_id: { $in: userQRs } }),
+            QRCode.deleteMany({ user_id: userId }),
+            ConsentRecord.deleteMany({ user_id: userId }),
+            Notification.deleteMany({ user_id: userId })
+        ]);
+
+        // Finally delete the user account
+        await User.findByIdAndDelete(userId);
+
+        // Clear tokens
+        res.clearCookie("refreshToken", REFRESH_COOKIE_OPTIONS);
+        
+        console.log(`[DPDP Erasure] Wipe complete for user ${userId}`);
+        res.status(200).json({ message: "All personal data has been permanently erased." });
+
+    } catch (error) {
+        console.error("Data Erasure Error:", error);
+        res.status(500).json({ message: "Server Error during erasure" });
     }
 };

@@ -15,6 +15,7 @@ import QRDetailPage from './pages/QRDetailPage.jsx';
 import AnalyticsPage from './pages/AnalyticsPage.jsx';
 import AccountPage from './pages/AccountPage.jsx';
 import BillingPage from './pages/BillingPage.jsx';
+import PrivacyDataPage from './pages/PrivacyDataPage.jsx';
 import PDFViewPage from './pages/PDFViewPage.jsx';
 import VCardViewPage from './pages/VCardViewPage.jsx';
 import SocialViewPage from './pages/SocialViewPage.jsx';
@@ -94,6 +95,7 @@ const App = () => {
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/billing" element={<BillingPage />} />
             <Route path="/account" element={<AccountPage />} />
+            <Route path="/privacy-data" element={<PrivacyDataPage />} />
           </Route>
 
         </Route>

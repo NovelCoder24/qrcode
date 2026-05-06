@@ -25,6 +25,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: null
     },
+    whatsappOptIn: {
+        type: Boolean,
+        default: false
+    },
     subscription: {
         plan: {
             type: String,
