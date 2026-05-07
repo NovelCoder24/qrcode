@@ -186,7 +186,7 @@ export const redirectQR = async (req, res) => {
         ]);
 
         // 7. Instant Redirect Handling
-        const frontendUrl = env.CORS_ORIGIN || "http://localhost:5173";
+        const frontendUrl = env.FRONTEND_URL;
         const typeRedirects = { PDF: "/pdf", VCARD: "/vcard", SOCIAL: "/social", MEDIA: "/media" };
         
         if (typeRedirects[qr.qr_type]) {

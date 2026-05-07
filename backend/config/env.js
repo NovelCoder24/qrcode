@@ -13,6 +13,10 @@ const envSchema = z.object({
   // Database
   MONGO_URI: z.string().url("Must be a valid MongoDB connection string"),
   
+  // Frontend / CORS
+  CORS_ORIGIN: z.string().optional(),
+  FRONTEND_URL: z.string().default('http://localhost:5173'),
+  
   // Architecture Toggles
   RUN_WORKER: z.enum(['true', 'false']).default('false').transform(val => val === 'true'),
   ENABLE_IN_PROCESS_JOBS: z.enum(['true', 'false']).default('false').transform(val => val === 'true'),
