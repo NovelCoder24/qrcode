@@ -66,6 +66,12 @@ export const redirectQR = async (req, res) => {
 
         // 5. Auto UTM Builder & Campaign Extraction
         let finalUrl = qr.target_url;
+        
+        // Ensure URL has a valid protocol so res.redirect doesn't treat it as a relative path
+        if (finalUrl && !/^https?:\/\//i.test(finalUrl)) {
+            finalUrl = 'http://' + finalUrl;
+        }
+        
         let campaignData = {
             category: "organic",
             slug: "organic",
