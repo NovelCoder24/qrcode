@@ -51,6 +51,10 @@ export const runHealthCheck = async () => {
             if (success) {
                 qr.health_status = 'active';
             } else {
+                // Log the failure reason for debugging
+                if (qr.health_status !== 'broken') {
+                    console.log(`[Health Monitor] URL failed first check: ${qr.target_url} (${errorReason}). Awaiting second consecutive failure to send alert.`);
+                }
                 // Trigger central alert service
                 // It handles 12-hour cooldown checks internally
                 await sendHealthAlert(qr, qr.user_id, errorReason);
