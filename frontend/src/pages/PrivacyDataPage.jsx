@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Download, Trash2, AlertTriangle, CheckCircle, Bell } from 'lucide-react';
+import { Shield, Download, Trash2, AlertTriangle, CheckCircle, Bell, X, Phone } from 'lucide-react';
 import { logout, loadUser } from '../redux/authSlice';
 import api from '../api/axios';
 
@@ -13,9 +13,15 @@ const PrivacyDataPage = () => {
     // Privacy toggles
     const [whatsappOptIn, setWhatsappOptIn] = useState(false);
     const [savingPrivacy, setSavingPrivacy] = useState(false);
+    const [privacyError, setPrivacyError] = useState(null);
 
-    // Erasure logic
-    const [password, setPassword] = useState('');
+    // WhatsApp number collection modal
+    const [showNumberModal, setShowNumberModal] = useState(false);
+    const [pendingNumber, setPendingNumber] = useState('');
+
+    // Erasure modal
+    const [showErasureModal, setShowErasureModal] = useState(false);
+    const [erasurePassword, setErasurePassword] = useState('');
     const [erasureLoading, setErasureLoading] = useState(false);
     const [erasureError, setErasureError] = useState(null);
 
@@ -29,14 +35,42 @@ const PrivacyDataPage = () => {
     }, [user]);
 
     const handleToggleWhatsapp = async () => {
+        setPrivacyError(null);
+        const newState = !whatsappOptIn;
+
+        // If turning ON and no number on file → open the number collection modal
+        if (newState === true && !user?.whatsappNumber) {
+            setPendingNumber('');
+            setShowNumberModal(true);
+            return;
+        }
+
+        // Otherwise, toggle directly
+        await submitPrivacyToggle({ whatsappOptIn: newState });
+    };
+
+    const handleNumberModalSubmit = async () => {
+        if (!pendingNumber.trim()) {
+            setPrivacyError("Please enter a valid WhatsApp number.");
+            return;
+        }
+        setShowNumberModal(false);
+        // Send both the number AND the opt-in flag in one request
+        await submitPrivacyToggle({ whatsappOptIn: true, whatsappNumber: pendingNumber.trim() });
+    };
+
+    const submitPrivacyToggle = async (payload) => {
         setSavingPrivacy(true);
+        setPrivacyError(null);
         try {
-            const newState = !whatsappOptIn;
-            await api.put('/users/privacy', { whatsappOptIn: newState });
-            setWhatsappOptIn(newState);
+            const response = await api.put('/users/privacy', payload);
+            setWhatsappOptIn(response.data.whatsappOptIn);
             await dispatch(loadUser());
         } catch (error) {
             console.error("Failed to update privacy settings", error);
+            setPrivacyError(error.response?.data?.message || "Failed to update settings.");
+            // Revert to the server state on failure
+            setWhatsappOptIn(user?.whatsappOptIn ?? false);
         } finally {
             setSavingPrivacy(false);
         }
@@ -46,10 +80,9 @@ const PrivacyDataPage = () => {
         setExportLoading(true);
         try {
             const response = await api.get('/users/export', {
-                responseType: 'blob' // Important for file downloads
+                responseType: 'blob'
             });
             
-            // Create a blob link to download
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
@@ -65,16 +98,23 @@ const PrivacyDataPage = () => {
         }
     };
 
+    const openErasureModal = () => {
+        setErasurePassword('');
+        setErasureError(null);
+        setShowErasureModal(true);
+    };
+
     const handleErasure = async () => {
-        // Confirmation dialog first
-        if (!window.confirm("Are you absolutely sure you want to delete your account? This action cannot be undone and ALL your QR codes and data will be permanently wiped.")) {
+        if (!erasurePassword) {
+            setErasureError("You must enter your password to confirm deletion.");
             return;
         }
 
         setErasureLoading(true);
         setErasureError(null);
         try {
-            await api.delete('/users/erasure', { data: { password } });
+            await api.delete('/users/erasure', { data: { password: erasurePassword } });
+            setShowErasureModal(false);
             alert("Your account and all associated data have been permanently deleted.");
             await dispatch(logout());
             navigate('/');
@@ -118,6 +158,11 @@ const PrivacyDataPage = () => {
                                     <p className="text-xs text-slate-500 font-medium mt-1 pr-4">
                                         Allow QRVibe to send you automated WhatsApp alerts when your links break. We securely log your consent for DPDP compliance.
                                     </p>
+                                    {user?.whatsappNumber && (
+                                        <p className="text-xs text-indigo-500 font-semibold mt-2">
+                                            Linked: {user.whatsappNumber}
+                                        </p>
+                                    )}
                                 </div>
                                 <button
                                     onClick={handleToggleWhatsapp}
@@ -127,6 +172,11 @@ const PrivacyDataPage = () => {
                                     <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${whatsappOptIn ? 'translate-x-5' : 'translate-x-0'}`} />
                                 </button>
                             </div>
+                            {privacyError && (
+                                <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold border border-red-100">
+                                    {privacyError}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -193,44 +243,156 @@ const PrivacyDataPage = () => {
                             </ul>
                         </div>
 
-                        {erasureError && (
-                            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-xl text-sm font-bold">
-                                {erasureError}
-                            </div>
-                        )}
+                        <button
+                            onClick={openErasureModal}
+                            className="w-full flex items-center justify-center gap-2 py-4 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors"
+                        >
+                            <Trash2 className="w-5 h-5" />
+                            Delete My Account
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-                        <div className="space-y-4">
-                            <div>
-                                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 block">
-                                    Confirm Password to Delete
-                                </label>
-                                <input
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="Enter your password"
-                                    className="w-full border border-slate-200 bg-white rounded-xl p-4 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all font-semibold"
-                                />
+            {/* ==========================================
+                WHATSAPP NUMBER COLLECTION MODAL
+               ========================================== */}
+            {showNumberModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 relative">
+                        <button
+                            onClick={() => setShowNumberModal(false)}
+                            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors"
+                        >
+                            <X className="w-4 h-4 text-slate-500" />
+                        </button>
+
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center">
+                                <Phone className="w-6 h-6 text-indigo-600" />
                             </div>
-                            
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900">Add WhatsApp Number</h3>
+                                <p className="text-xs text-slate-500 font-medium">Required to receive health alerts.</p>
+                            </div>
+                        </div>
+
+                        <p className="text-sm text-slate-600 font-medium mb-6">
+                            Enter your WhatsApp number in international format (e.g., +919876543210). We'll use this number exclusively for QR code health alerts.
+                        </p>
+
+                        <div className="mb-6">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 block">
+                                WhatsApp Number
+                            </label>
+                            <input
+                                type="tel"
+                                value={pendingNumber}
+                                onChange={(e) => setPendingNumber(e.target.value)}
+                                placeholder="+919876543210"
+                                autoFocus
+                                className="w-full border border-slate-200 bg-white rounded-xl p-4 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all font-semibold"
+                            />
+                        </div>
+
+                        <div className="flex gap-3">
                             <button
-                                onClick={handleErasure}
-                                disabled={erasureLoading || (!password && user?.password)}
-                                className="w-full flex items-center justify-center gap-2 py-4 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors disabled:opacity-50"
+                                onClick={() => setShowNumberModal(false)}
+                                className="flex-1 py-3.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors"
                             >
-                                {erasureLoading ? (
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleNumberModalSubmit}
+                                disabled={!pendingNumber.trim() || savingPrivacy}
+                                className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {savingPrivacy ? (
                                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                 ) : (
                                     <>
-                                        <Trash2 className="w-5 h-5" />
-                                        Permanently Delete Account
+                                        <Bell className="w-4 h-4" />
+                                        Save & Enable Alerts
                                     </>
                                 )}
                             </button>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
+
+            {/* ==========================================
+                ERASURE CONFIRMATION MODAL
+               ========================================== */}
+            {showErasureModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 relative">
+                        <button
+                            onClick={() => setShowErasureModal(false)}
+                            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors"
+                        >
+                            <X className="w-4 h-4 text-slate-500" />
+                        </button>
+
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center">
+                                <AlertTriangle className="w-6 h-6 text-red-600" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900">Confirm Account Deletion</h3>
+                                <p className="text-xs text-slate-500 font-medium">This action is permanent and cannot be undone.</p>
+                            </div>
+                        </div>
+
+                        <p className="text-sm text-slate-600 font-medium mb-6">
+                            To verify your identity, please enter your account password below. All QR codes, analytics, and personal data will be erased immediately.
+                        </p>
+
+                        {erasureError && (
+                            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-xl text-sm font-bold">
+                                {erasureError}
+                            </div>
+                        )}
+
+                        <div className="mb-6">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 block">
+                                Your Password
+                            </label>
+                            <input
+                                type="password"
+                                value={erasurePassword}
+                                onChange={(e) => setErasurePassword(e.target.value)}
+                                placeholder="Enter your password"
+                                autoFocus
+                                className="w-full border border-slate-200 bg-white rounded-xl p-4 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all font-semibold"
+                            />
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowErasureModal(false)}
+                                className="flex-1 py-3.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleErasure}
+                                disabled={erasureLoading || !erasurePassword}
+                                className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {erasureLoading ? (
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                ) : (
+                                    <>
+                                        <Trash2 className="w-4 h-4" />
+                                        Confirm Delete
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

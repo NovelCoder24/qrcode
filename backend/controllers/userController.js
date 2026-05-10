@@ -7,6 +7,7 @@ import { ConsentRecord } from "../models/ConsentRecord.js";
 import { Notification } from "../models/Notification.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
 // Helper: Cookie options for refresh token
 const REFRESH_COOKIE_OPTIONS = {
@@ -32,6 +33,7 @@ const sendTokens = (res, user, statusCode = 200) => {
         subscription: user.subscription,
         billing: user.billing,
         whatsappNumber: user.whatsappNumber,
+        whatsappOptIn: user.whatsappOptIn,
         hasCreatedFirstQR: user.hasCreatedFirstQR,
     });
 };
@@ -186,6 +188,7 @@ export const getMe = async (req, res) => {
                 subscription: user.subscription,
                 billing: user.billing,
                 whatsappNumber: user.whatsappNumber,
+                whatsappOptIn: user.whatsappOptIn,
                 hasCreatedFirstQR: user.hasCreatedFirstQR,
             });
         } else {
@@ -230,12 +233,22 @@ export const updateProfile = async (req, res) => {
 // @access  Private
 export const updatePrivacySettings = async (req, res) => {
     try {
-        const { whatsappOptIn } = req.body;
+        const { whatsappOptIn, whatsappNumber } = req.body;
         const user = await User.findById(req.user._id);
 
         if (!user) return res.status(404).json({ message: "User not found" });
 
+        // If a new whatsappNumber is provided, save it first
+        if (whatsappNumber !== undefined) {
+            user.whatsappNumber = whatsappNumber;
+        }
+
         if (typeof whatsappOptIn === 'boolean' && user.whatsappOptIn !== whatsappOptIn) {
+            // VALIDATION: Cannot enable alerts without a number on file
+            if (whatsappOptIn === true && !user.whatsappNumber) {
+                return res.status(400).json({ message: "A valid WhatsApp number is required to enable alerts." });
+            }
+
             user.whatsappOptIn = whatsappOptIn;
             
             // Create a NEW ledger entry for DPDP compliance (no upsert)
@@ -250,7 +263,7 @@ export const updatePrivacySettings = async (req, res) => {
         }
 
         const updatedUser = await user.save();
-        res.json({ whatsappOptIn: updatedUser.whatsappOptIn });
+        res.json({ whatsappOptIn: updatedUser.whatsappOptIn, whatsappNumber: updatedUser.whatsappNumber });
     } catch (error) {
         console.error("Update Privacy Error:", error);
         res.status(500).json({ message: "Server Error" });
@@ -305,21 +318,21 @@ export const requestDataErasure = async (req, res) => {
         const { password } = req.body;
         const userId = req.user._id;
 
-        // Security Patch: Require password confirmation before total wipe
-        const user = await User.findById(userId).select('+password');
+        // Security: Fetch user WITH password hash explicitly
+        const user = await User.findById(userId);
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        // If they registered via Google, they don't have a password. 
-        // We'll bypass password check ONLY IF they don't have a password hash and used Google auth.
-        if (user.password) {
+        // For local-auth users: password is MANDATORY
+        if (user.authProvider === 'local') {
             if (!password) {
                 return res.status(400).json({ message: "Password is required for account deletion." });
             }
-            const isMatch = await user.comparePassword(password);
+            const isMatch = await bcrypt.compare(password, user.password);
             if (!isMatch) {
                 return res.status(401).json({ message: "Incorrect password." });
             }
         }
+        // For Google OAuth users: no password exists, skip the check
 
         const userQRs = await QRCode.find({ user_id: userId }).distinct('_id');
 
