@@ -2,8 +2,8 @@ import { QRCode } from "../models/QRCode.js";
 import { Scan } from "../models/Scan.js";
 import { DailyScanStats } from "../models/DailyScanStats.js";
 import { UAParser } from "ua-parser-js";
-import geoip from "geoip-lite";
 import crypto from "crypto";
+import { getClientIp, getLocationAsync } from "../services/Geolocation.js";
 import { env } from "../config/env.js";
 
 // ── Bot signatures to filter out from analytics ──
@@ -15,13 +15,27 @@ const sanitizeKey = (str) => {
     return String(str).replace(/\./g, "_").replace(/\$/g, "_").toLowerCase();
 };
 
+// ── Scan Deduplication Cache ──
+// Prevents Chrome's speculative preload from registering double scans.
+// Key: "ip|shortId", auto-expires after 5 seconds.
+const recentScans = new Map();
+const DEDUP_WINDOW_MS = 5000;
+
+function isDuplicateScan(ip, shortId) {
+    const key = `${ip}|${shortId}`;
+    if (recentScans.has(key)) return true;
+    recentScans.set(key, Date.now());
+    // Auto-cleanup after the window expires
+    setTimeout(() => recentScans.delete(key), DEDUP_WINDOW_MS);
+    return false;
+}
+
 // @desc    Redirect to the target URL and log the scan
 // @route   GET /r/:shortId
 // @access  Public
 export const redirectQR = async (req, res) => {
     try {
         const { shortId } = req.params;
-
         // 1. Find the QR Code by shortId
         const qr = await QRCode.findOne({ short_id: shortId });
         if (!qr) return res.status(404).send("<h1>404 - QR Code Not Found</h1>");
@@ -42,20 +56,8 @@ export const redirectQR = async (req, res) => {
         else if (result.device.type === "wearable") deviceType = "wearable";
         else if (!result.device.type) deviceType = "unknown";
 
-        // 3. Geolocation — geoip-lite only (synchronous, local DB)
-        let ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "";
-        if (ip.includes(",")) ip = ip.split(",")[0].trim();
-        if (ip === "::1" || ip === "127.0.0.1") ip = "49.36.12.94";
-
-        const geo = geoip.lookup(ip);
-        const locationData = {
-            country: geo?.country || "Unknown",
-            country_code: geo?.country || "Unknown",
-            city: geo?.city || "Unknown",
-            region: geo?.region || "Unknown",
-            timezone: geo?.timezone || "UTC",
-            ll: geo?.ll || []
-        };
+        // 3. Extract client IP (synchronous — needed for session hash)
+        const ip = getClientIp(req);
 
         // 4. Session hash for unique-scanner tracking (DPDP Compliant)
         const salt = env.ANALYTICS_SALT || "qrvibe-fallback-salt-7729";
@@ -122,6 +124,8 @@ export const redirectQR = async (req, res) => {
         // 6. Background Analytics Processing (Fire and Forget)
         const processAnalytics = async () => {
             try {
+                // Geo lookup: freeipapi.com first → geoip-lite fallback (async, non-blocking)
+                const locationData = await getLocationAsync(ip);
                 // strict lock DailyScanStats to YYYY-MM-DD
                 const dateStr = new Date().toISOString().split('T')[0];
                 const startOfDay = new Date(dateStr);
@@ -180,10 +184,13 @@ export const redirectQR = async (req, res) => {
         };
 
         // Execute background tasks without awaiting them (Promise.allSettled)
-        Promise.allSettled([
-            qr.recordScan(), // Increment QRCode raw total
-            processAnalytics() // Execute raw Scan insert and materialized view upsert
-        ]);
+        // Dedup: skip analytics if this is a duplicate hit within 5s (Chrome preload)
+        if (!isDuplicateScan(ip, shortId)) {
+            Promise.allSettled([
+                qr.recordScan(), // Increment QRCode raw total
+                processAnalytics() // Execute raw Scan insert and materialized view upsert
+            ]);
+        }
 
         // 7. Instant Redirect Handling
         const frontendUrl = env.FRONTEND_URL;
