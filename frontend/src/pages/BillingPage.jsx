@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { Check, Crown, Zap, Building2, Loader, CreditCard, FileText, AlertCircle } from 'lucide-react';
+import { useSelector, useDispatch } from 'react-redux';
+import { loadUser } from '../redux/authSlice';
+import { Check, Crown, Zap, Building2, Loader, CreditCard, FileText, AlertCircle, ShieldCheck } from 'lucide-react';
 import api from '../api/axios';
 
 const PLANS = {
@@ -49,6 +50,8 @@ const PLANS = {
 
 const BillingPage = () => {
     const { user } = useSelector((state) => state.auth);
+    const dispatch = useDispatch();
+    const [showCancelModal, setShowCancelModal] = useState(false);
     const [billingCycle, setBillingCycle] = useState('annual');
     const [loading, setLoading] = useState(false);
     const [subscriptionStatus, setSubscriptionStatus] = useState(null);
@@ -93,6 +96,7 @@ const BillingPage = () => {
             // Test mode: subscription is instant, just refresh
             if (data.testMode) {
                 fetchSubscriptionStatus();
+                dispatch(loadUser()); // Sync sidebar
                 setLoading(false);
                 return;
             }
@@ -108,17 +112,20 @@ const BillingPage = () => {
         }
     };
 
-    const handleCancelSubscription = async () => {
-        if (!confirm('Are you sure you want to cancel your subscription? You will lose access to premium features at the end of your billing period.')) {
-            return;
-        }
+    const handleCancelSubscription = () => {
+        setShowCancelModal(true);
+    };
 
+    const confirmCancelSubscription = async () => {
         setLoading(true);
         try {
             await api.post('/razorpay/cancel');
             fetchSubscriptionStatus();
+            dispatch(loadUser()); // Sync sidebar
+            setShowCancelModal(false);
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to cancel subscription');
+            setShowCancelModal(false);
         } finally {
             setLoading(false);
         }
@@ -141,10 +148,11 @@ const BillingPage = () => {
         }
     };
 
-    const currentPlan = subscriptionStatus?.subscription?.plan || user?.subscription?.plan || 'starter';
-    const isTrialing = subscriptionStatus?.subscription?.status === 'trialing';
-    const trialEndsAt = subscriptionStatus?.subscription?.trialEndsAt ? new Date(subscriptionStatus.subscription.trialEndsAt) : null;
+    const currentPlan = subscriptionStatus?.plan || user?.subscription?.plan || 'starter';
+    const isTrialing = (subscriptionStatus?.subscriptionStatus || user?.subscription?.status) === 'trialing';
+    const trialEndsAt = (subscriptionStatus?.trialEndsAt || user?.subscription?.trialEndsAt) ? new Date(subscriptionStatus?.trialEndsAt || user?.subscription?.trialEndsAt) : null;
     const daysLeftInTrial = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt - new Date()) / (1000 * 60 * 60 * 24))) : 0;
+    const subStatus = subscriptionStatus?.subscriptionStatus || user?.subscription?.status;
 
     return (
         <div className="p-6 max-w-6xl mx-auto">
@@ -176,21 +184,33 @@ const BillingPage = () => {
                 <div className="flex items-center justify-between flex-wrap gap-4">
                     <div>
                         <p className="text-sm text-slate-500 mb-1">Current Plan</p>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xl font-bold text-slate-900">{PLANS[currentPlan]?.name || 'Starter'}</span>
-                            {isTrialing && (
-                                <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full">
-                                    Trial: {daysLeftInTrial} days left
-                                </span>
-                            )}
-                            {subscriptionStatus?.subscription?.status === 'active' && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xl font-bold text-slate-900">
+                                {PLANS[currentPlan]?.name || 'Starter'}
+                                {isTrialing && (
+                                    <span className="text-amber-600 font-semibold text-base ml-1">
+                                        (Trial · {daysLeftInTrial} {daysLeftInTrial === 1 ? 'day' : 'days'} left)
+                                    </span>
+                                )}
+                            </span>
+                            {subStatus === 'active' && (
                                 <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
                                     Active
                                 </span>
                             )}
+                            {subStatus === 'expired' && (
+                                <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs font-semibold rounded-full">
+                                    Expired
+                                </span>
+                            )}
+                            {subStatus === 'canceled' && (
+                                <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full">
+                                    Canceled
+                                </span>
+                            )}
                         </div>
                     </div>
-                    {subscriptionStatus?.subscription?.razorpaySubscriptionId && subscriptionStatus?.subscription?.status === 'active' && (
+                    {subscriptionStatus?.razorpaySubscriptionId && subStatus === 'active' && (
                         <button
                             onClick={handleCancelSubscription}
                             disabled={loading}
@@ -284,9 +304,9 @@ const BillingPage = () => {
 
                             <button
                                 onClick={() => handleSubscribe(key)}
-                                disabled={loading || isCurrentPlan || key === 'starter'}
+                                disabled={loading || (isCurrentPlan && !isTrialing) || key === 'starter'}
                                 className={`w-full py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
-                                    isCurrentPlan
+                                    (isCurrentPlan && !isTrialing)
                                         ? 'bg-slate-100 text-slate-500 cursor-default'
                                         : key === 'starter'
                                             ? 'bg-slate-100 text-slate-500 cursor-default'
@@ -296,14 +316,21 @@ const BillingPage = () => {
                                 }`}
                             >
                                 {loading && <Loader className="w-4 h-4 animate-spin" />}
-                                {isCurrentPlan ? 'Current Plan' : key === 'starter' ? 'Free Forever' : 'Upgrade'}
+                                {(isCurrentPlan && !isTrialing) ? 'Current Plan' : key === 'starter' ? 'Free Forever' : 'Upgrade'}
                             </button>
                         </div>
                     );
                 })}
             </div>
 
-            {/* GST & Billing Info */}
+            {/* Money-Back Guarantee */}
+            <div className="flex items-center justify-center gap-3 mb-12 py-4 px-6 bg-emerald-50 border border-emerald-200 rounded-2xl max-w-lg mx-auto">
+                <ShieldCheck className="w-8 h-8 text-emerald-600 flex-shrink-0" />
+                <div>
+                    <p className="text-sm font-bold text-emerald-800">7-Day Money-Back Guarantee</p>
+                    <p className="text-xs text-emerald-600">Not satisfied? Get a full refund within 7 days of your first payment. No questions asked.</p>
+                </div>
+            </div>
             <div className="bg-white rounded-2xl border border-slate-200 p-6">
                 <div className="flex items-center gap-3 mb-6">
                     <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
@@ -387,6 +414,40 @@ const BillingPage = () => {
                     Save Billing Details
                 </button>
             </div>
+
+            {/* Cancel Confirmation Modal */}
+            {showCancelModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-300">
+                        <div className="p-6 text-center">
+                            <div className="mx-auto w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-red-100">
+                                <AlertCircle size={32} />
+                            </div>
+                            <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Cancel Subscription?</h2>
+                            <p className="text-slate-500 mb-6 text-sm">
+                                Are you sure you want to cancel? You will lose access to premium features at the end of your current billing period.
+                            </p>
+                            
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={confirmCancelSubscription}
+                                    disabled={loading}
+                                    className="w-full py-3.5 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors shadow-md shadow-red-200 flex items-center justify-center gap-2"
+                                >
+                                    {loading ? <Loader className="w-5 h-5 animate-spin" /> : 'Yes, Cancel Subscription'}
+                                </button>
+                                <button
+                                    onClick={() => setShowCancelModal(false)}
+                                    disabled={loading}
+                                    className="w-full py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-600 font-semibold rounded-xl transition-colors"
+                                >
+                                    Keep My Subscription
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

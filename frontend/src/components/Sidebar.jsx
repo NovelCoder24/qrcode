@@ -39,7 +39,7 @@ const Sidebar = ({ isOpen, overlay = false }) => {
             const endsAt = new Date(subscription.trialEndsAt);
             const now = new Date();
             const diff = Math.max(0, endsAt - now);
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
             setDaysLeft(days);
         }, 1000);
         return () => clearInterval(interval);
@@ -98,7 +98,7 @@ const Sidebar = ({ isOpen, overlay = false }) => {
                 ))} */}
             </nav>
 
-            {/* Upgrade Card */}
+            {/* Subscription Card */}
             <div className="px-4 py-8 mt-auto w-full">
                 <div className="group relative flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-200 transition-all duration-300 hover:border-indigo-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
                     
@@ -106,26 +106,45 @@ const Sidebar = ({ isOpen, overlay = false }) => {
                     <div className="absolute inset-0 bg-gradient-to-tr from-indigo-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
                     {/* Icon/Avatar for the Tier */}
-                    <div className="relative flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-200">
-                        <span className="text-xs font-black">PV</span>
+                    <div className={`relative flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl text-white shadow-lg ${
+                        subscription?.status === 'active' ? 'bg-emerald-600 shadow-emerald-200' 
+                        : subscription?.status === 'canceled' || subscription?.status === 'expired' ? 'bg-slate-400 shadow-slate-200' 
+                        : 'bg-indigo-600 shadow-indigo-200'
+                    }`}>
+                        <span className="text-xs font-black">
+                            {subscription?.plan === 'business' ? 'AG' : subscription?.plan === 'pro' ? 'PV' : 'FR'}
+                        </span>
                     </div>
 
-                    <div className="relative flex flex-col min-w-0">
-                        <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-[0.1em] leading-none mb-1">
-                            {isTrialing ? 'Trial Active' : 'Active Tier'}
+                    <div className="relative flex flex-col min-w-0 flex-1">
+                        <span className={`text-[10px] font-bold uppercase tracking-[0.1em] leading-none mb-1 truncate ${
+                            subscription?.status === 'active' ? 'text-emerald-500'
+                            : subscription?.status === 'canceled' ? 'text-amber-500'
+                            : subscription?.status === 'expired' ? 'text-red-500'
+                            : isTrialing ? 'text-indigo-500'
+                            : 'text-slate-400'
+                        }`}>
+                            {subscription?.status === 'active' ? 'Active Plan'
+                            : subscription?.status === 'canceled' ? 'Canceling'
+                            : subscription?.status === 'expired' ? 'Plan Expired'
+                            : isTrialing ? 'Trial Active'
+                            : 'Free Tier'}
                         </span>
                         <h4 className="text-[13px] font-bold text-slate-800 truncate">
                             {subscription?.plan === 'pro' ? 'Pro Vibe' : subscription?.plan === 'business' ? 'Agency' : 'Free Starter'}
                         </h4>
                         {isTrialing && (
-                            <p className="text-[10px] font-semibold text-amber-500 mt-0.5">{daysLeft} days left</p>
+                            <p className="text-[10px] font-semibold text-amber-500 mt-0.5 truncate">{daysLeft} days left</p>
+                        )}
+                        {subscription?.status === 'canceled' && (
+                            <p className="text-[10px] font-semibold text-amber-500 mt-0.5 truncate">Until billing period ends</p>
                         )}
                     </div>
 
-                    {/* Minimalist Upgrade Action */}
+                    {/* Action Button — show upgrade for non-active, manage for active */}
                     <NavLink 
                         to="/billing" 
-                        className="relative ml-auto flex items-center justify-center w-8 h-8 rounded-full bg-slate-50 text-slate-400 hover:bg-indigo-600 hover:text-white hover:shadow-md transition-all duration-300"
+                        className="relative flex-shrink-0 ml-auto flex items-center justify-center w-8 h-8 rounded-full bg-slate-50 text-slate-400 hover:bg-indigo-600 hover:text-white hover:shadow-md transition-all duration-300"
                     >
                         <svg xmlns="http://www.w3.org/2000/01/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                     </NavLink>
