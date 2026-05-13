@@ -45,6 +45,11 @@ const dailyScanStatsSchema = new mongoose.Schema({
         of: Number,
         default: {}
     },
+    locations: {
+        type: Map,
+        of: Number,
+        default: {}
+    },
     campaigns: {
         type: Map,
         of: Number,

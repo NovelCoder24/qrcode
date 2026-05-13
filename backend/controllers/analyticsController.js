@@ -62,8 +62,7 @@ export const getDashboardAnalytics = async (req, res) => {
 
         // Device, Location, Campaign accumulators
         const osCounts = {};
-        const cityCounts = {};
-        const regionMap = {};
+        const locationCounts = {};
 
         // Process Current Period
         currentStats.forEach(stat => {
@@ -81,10 +80,16 @@ export const getDashboardAnalytics = async (req, res) => {
                 }
             }
 
-            // Merge City Maps (for map display)
-            if (stat.cities) {
+            // Merge Location Maps
+            if (stat.locations) {
+                for (const [locKey, count] of stat.locations.entries()) {
+                    locationCounts[locKey] = (locationCounts[locKey] || 0) + count;
+                }
+            } else if (stat.cities) {
+                // Fallback for old data
                 for (const [city, count] of stat.cities.entries()) {
-                    cityCounts[city] = (cityCounts[city] || 0) + count;
+                    const fallbackKey = `${city}::Unknown::Unknown::Unknown`;
+                    locationCounts[fallbackKey] = (locationCounts[fallbackKey] || 0) + count;
                 }
             }
         });
@@ -110,16 +115,20 @@ export const getDashboardAnalytics = async (req, res) => {
 
         const botFilteredCount = Math.floor(currentTotalScans * 0.08) + 3; // Keep mock stat for marketing
 
-        const topLocations = Object.entries(cityCounts)
+        const topLocations = Object.entries(locationCounts)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 15)
-            .map(([city, count]) => ({
-                city,
-                region: '',
-                countryCode: '',
-                count,
-                coordinates: null // Coordinates stripped per user instructions
-            }));
+            .map(([locKey, count]) => {
+                const parts = locKey.split('::');
+                return {
+                    city: parts[0] !== 'Unknown' ? parts[0] : null,
+                    region: parts[1] !== 'Unknown' ? parts[1] : null,
+                    countryCode: parts[2] !== 'Unknown' ? parts[2] : null,
+                    countryname: parts[3] !== 'Unknown' ? parts[3] : null,
+                    count,
+                    coordinates: null // Coordinates stripped per user instructions
+                };
+            });
 
         const topQRs = await QRCode.find({ user_id: userId })
             .sort({ "stats.total_scans": -1 })
@@ -238,7 +247,7 @@ export const getQRAnalytics = async (req, res) => {
 
         const osCounts = {};
         const browserCounts = {};
-        const cityCounts = {};
+        const locationCounts = {};
         const campaignCounts = {};
 
         currentStats.forEach(stat => {
@@ -259,9 +268,16 @@ export const getQRAnalytics = async (req, res) => {
                     browserCounts[browser] = (browserCounts[browser] || 0) + count;
                 }
             }
-            if (stat.cities) {
+            // Merge Location Maps
+            if (stat.locations) {
+                for (const [locKey, count] of stat.locations.entries()) {
+                    locationCounts[locKey] = (locationCounts[locKey] || 0) + count;
+                }
+            } else if (stat.cities) {
+                // Fallback for old data
                 for (const [city, count] of stat.cities.entries()) {
-                    cityCounts[city] = (cityCounts[city] || 0) + count;
+                    const fallbackKey = `${city}::Unknown::Unknown::Unknown`;
+                    locationCounts[fallbackKey] = (locationCounts[fallbackKey] || 0) + count;
                 }
             }
             if (stat.campaigns) {
@@ -281,10 +297,19 @@ export const getQRAnalytics = async (req, res) => {
             return Math.round(((current - previous) / previous) * 100);
         };
 
-        const topLocations = Object.entries(cityCounts)
+        const topLocations = Object.entries(locationCounts)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 10)
-            .map(([city, count]) => ({ city, countryCode: '', region: '', count }));
+            .map(([locKey, count]) => {
+                const parts = locKey.split('::');
+                return {
+                    city: parts[0] !== 'Unknown' ? parts[0] : null,
+                    region: parts[1] !== 'Unknown' ? parts[1] : null,
+                    countryCode: parts[2] !== 'Unknown' ? parts[2] : null,
+                    countryname: parts[3] !== 'Unknown' ? parts[3] : null,
+                    count
+                };
+            });
 
         const campaignsList = Object.entries(campaignCounts)
             .sort((a, b) => b[1] - a[1])

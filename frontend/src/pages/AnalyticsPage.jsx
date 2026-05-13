@@ -256,47 +256,69 @@ const ChartsSection = ({ scansOverTime, deviceStats, locations, copied, onCopyLa
 
         </div>
 
-        {/* Top Cities */}
+        {/* Geographical Distribution */}
 
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
 
-            <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
-
-                <MapPin size={18} className="text-orange-500" /> Top Cities
-
-            </h2>
+            <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500">
+                    <MapPin size={24} />
+                </div>
+                <div>
+                    <h2 className="text-xl font-bold text-slate-900">Geographical Distribution</h2>
+                    <p className="text-sm text-slate-400 font-medium">Top locations by scan volume</p>
+                </div>
+            </div>
 
             {locations?.length > 0 ? (
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 max-h-[350px] overflow-y-auto pr-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8 max-h-[400px] overflow-y-auto pr-2">
 
                     {locations.map((loc, idx) => {
 
                         const maxCount = Math.max(...locations.map(l => l.count));
+                        // Format region & country code
+                        const regionText = loc.region && loc.region !== 'Unknown' ? loc.region : '';
+                        const countryCodeText = loc.countryCode && loc.countryCode !== 'Unknown' ? loc.countryCode : '';
+                        
+                        let subText = '';
+                        if (regionText && countryCodeText) {
+                            subText = `${regionText} • ${countryCodeText}`;
+                        } else if (regionText) {
+                            subText = regionText;
+                        } else if (countryCodeText) {
+                            subText = countryCodeText;
+                        } else {
+                            subText = 'N/A';
+                        }
 
                         return (
 
-                            <div key={idx}>
+                            <div key={idx} className="flex gap-4">
 
-                                <div className="flex items-center justify-between text-sm mb-2">
+                                <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <span className="font-bold text-slate-400 text-sm">{idx + 1}</span>
+                                </div>
 
-                                    <div className="flex items-center gap-2">
+                                <div className="flex-1">
 
-                                        <span className="font-bold text-slate-400 text-xs w-4">#{idx + 1}</span>
+                                    <div className="flex items-start justify-between mb-3">
 
-                                        <span className="font-bold text-slate-800">{loc.city || loc.region || 'Unknown City'}</span>
+                                        <div>
+                                            <h3 className="font-bold text-slate-900 text-base">{loc.city && loc.city !== 'Unknown' ? loc.city : loc.region || 'Unknown'}</h3>
+                                            <p className="text-xs text-slate-500 font-medium mt-0.5 tracking-wide">{subText}</p>
+                                        </div>
 
-                                        <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold uppercase">{loc.countryCode || 'N/A'}</span>
+                                        <div className="text-right">
+                                            <div className="font-bold text-indigo-700 text-base leading-none">{loc.count}</div>
+                                            <div className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-widest">Scans</div>
+                                        </div>
 
                                     </div>
 
-                                    <span className="font-bold text-indigo-600">{loc.count} scans</span>
-
-                                </div>
-
-                                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-
-                                    <div className="bg-indigo-500 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${(loc.count / maxCount) * 100}%` }}></div>
+                                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                        <div className="bg-indigo-500 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${(loc.count / maxCount) * 100}%` }}></div>
+                                    </div>
 
                                 </div>
 

@@ -9,10 +9,17 @@ import { env } from "../config/env.js";
 // ── Bot signatures to filter out from analytics ──
 const BOT_PATTERN = /whatsapp|slack|telegram|bot|crawler|spider|crawl|preview|fetch|headless|lighthouse/i;
 
-// ── Utility to sanitize MongoDB Map Keys (remove . and $) ──
 const sanitizeKey = (str) => {
     if (!str) return "unknown";
     return String(str).replace(/\./g, "_").replace(/\$/g, "_").toLowerCase();
+};
+
+const formatLocationKey = (loc) => {
+    const city = String(loc.city || 'Unknown').replace(/\./g, "_").replace(/\$/g, "_");
+    const region = String(loc.region || 'Unknown').replace(/\./g, "_").replace(/\$/g, "_");
+    const code = String(loc.country_code || 'Unknown').replace(/\./g, "_").replace(/\$/g, "_");
+    const name = String(loc.country || 'Unknown').replace(/\./g, "_").replace(/\$/g, "_");
+    return `${city}::${region}::${code}::${name}`;
 };
 
 // ── Scan Deduplication Cache ──
@@ -159,6 +166,7 @@ export const redirectQR = async (req, res) => {
                     const browserKey = sanitizeKey(result.browser.name);
                     const countryKey = sanitizeKey(locationData.country_code);
                     const cityKey = sanitizeKey(locationData.city);
+                    const locKey = formatLocationKey(locationData);
                     const campaignKey = sanitizeKey(campaignData.slug || "organic");
 
                     await DailyScanStats.findOneAndUpdate(
@@ -172,6 +180,7 @@ export const redirectQR = async (req, res) => {
                                 [`browsers.${browserKey}`]: 1,
                                 [`countries.${countryKey}`]: 1,
                                 [`cities.${cityKey}`]: 1,
+                                [`locations.${locKey}`]: 1,
                                 [`campaigns.${campaignKey}`]: 1
                             }
                         },
