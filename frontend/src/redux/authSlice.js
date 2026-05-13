@@ -66,6 +66,11 @@ const authSlice = createSlice({
     reducers: {
         clearError: (state) => {
             state.error = null;
+        },
+        updateSubscriptionStatus: (state, action) => {
+            if (state.user) {
+                state.user.subscription = action.payload;
+            }
         }
     },
     // Handle the Thunk lifecycles (Pending, Fulfilled, Rejected)
@@ -137,5 +142,5 @@ const authSlice = createSlice({
     }
 });
 
-export const { clearError } = authSlice.actions;
+export const { clearError, updateSubscriptionStatus } = authSlice.actions;
 export default authSlice.reducer;

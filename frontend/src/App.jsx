@@ -21,6 +21,9 @@ import VCardViewPage from './pages/VCardViewPage.jsx';
 import SocialViewPage from './pages/SocialViewPage.jsx';
 import MediaViewPage from './pages/MediaViewPage.jsx';
 
+import TrialWarningBanner from './components/TrialWarningBanner.jsx';
+import TrialExpiredModal from './components/TrialExpiredModal.jsx';
+
 // 1. Dashboard Layout (Uses Outlet for child routes)
 const DashboardLayout = ({ isSidebarOpen, onToggle }) => (
   <div className="flex min-h-screen w-full">
@@ -32,24 +35,34 @@ const DashboardLayout = ({ isSidebarOpen, onToggle }) => (
       />
     )}
     <Sidebar isOpen={isSidebarOpen} />
-    <main className="flex-1 overflow-auto transition-all duration-300 w-full mt-16 lg:mt-0">
-      <Outlet />
+    <main className="flex-1 flex flex-col overflow-auto transition-all duration-300 w-full mt-16 lg:mt-0">
+      <TrialWarningBanner />
+      <TrialExpiredModal />
+      <div className="flex-1">
+        <Outlet />
+      </div>
     </main>
   </div>
 );
 
 // 2. Create Wizard Layout (Special header + Sidebar overlay)
 const CreateWizardLayout = ({ isSidebarOpen, onToggle }) => (
-  <>
-    <CreateQRPage isOpen={isSidebarOpen} onToggle={onToggle} />
+  <div className="flex min-h-screen w-full">
+    <Sidebar isOpen={isSidebarOpen} overlay={true} />
+    <main className="flex-1 flex flex-col overflow-auto w-full">
+      <TrialWarningBanner />
+      <TrialExpiredModal />
+      <div className="flex-1">
+        <CreateQRPage isOpen={isSidebarOpen} onToggle={onToggle} />
+      </div>
+    </main>
     {isSidebarOpen && (
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30"
         onClick={onToggle}
       />
     )}
-    <Sidebar isOpen={isSidebarOpen} overlay={true} />
-  </>
+  </div>
 );
 
 const App = () => {

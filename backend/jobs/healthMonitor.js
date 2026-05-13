@@ -74,20 +74,35 @@ export const runHealthCheck = async () => {
 export const runTrialExpirationCheck = async () => {
     console.log(`[Trial Monitor] Running trial expiration check at ${new Date().toISOString()}`);
     try {
-        const result = await User.updateMany(
-            {
-                "subscription.status": "trialing",
-                "subscription.trialEndsAt": { $lt: new Date() }
-            },
-            {
-                $set: {
-                    "subscription.plan": "starter",
-                    "subscription.status": "expired"
+        const expiredUsers = await User.find({
+            "subscription.status": "trialing",
+            "subscription.trialEndsAt": { $lt: new Date() }
+        });
+
+        if (expiredUsers.length > 0) {
+            for (const user of expiredUsers) {
+                user.subscription.plan = "starter";
+                user.subscription.status = "expired";
+                user.subscription.hasSeenTrialExpiredPopup = false;
+                await user.save();
+
+                // Enforce 5 active QR codes limit by deactivating older ones
+                const activeQRs = await QRCode.find({ 
+                    user_id: user._id,
+                    isActive: true
+                }).sort({ createdAt: -1 });
+
+                if (activeQRs.length > 5) {
+                    const qrsToDeactivate = activeQRs.slice(5);
+                    const qrIds = qrsToDeactivate.map(qr => qr._id);
+                    await QRCode.updateMany(
+                        { _id: { $in: qrIds } },
+                        { $set: { isActive: false } }
+                    );
+                    console.log(`[Trial Monitor] Deactivated ${qrIds.length} QR codes for expired user ${user._id}`);
                 }
             }
-        );
-        if (result.modifiedCount > 0) {
-            console.log(`[Trial Monitor] Automatically downgraded ${result.modifiedCount} expired trials to free starter plan.`);
+            console.log(`[Trial Monitor] Automatically downgraded ${expiredUsers.length} expired trials to free starter plan.`);
         }
     } catch (error) {
         console.error(`[Trial Monitor] Error running trial expiration check:`, error);

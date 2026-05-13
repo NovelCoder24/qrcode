@@ -228,6 +228,24 @@ export const updateProfile = async (req, res) => {
 // PHASE 6: DPDP & PRIVACY CONTROLLERS
 // ==========================================
 
+// @desc    Dismiss trial expired warning popup
+// @route   PUT /api/users/dismiss-trial-warning
+// @access  Private
+export const dismissTrialWarning = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        user.subscription.hasSeenTrialExpiredPopup = true;
+        await user.save();
+
+        res.json({ message: "Warning dismissed successfully" });
+    } catch (error) {
+        console.error("Dismiss warning error:", error);
+        res.status(500).json({ message: "Failed to dismiss warning" });
+    }
+};
+
 // @desc    Update specific privacy/consent settings
 // @route   PUT /api/users/privacy
 // @access  Private

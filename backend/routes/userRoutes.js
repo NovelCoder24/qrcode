@@ -1,7 +1,7 @@
 import express from 'express';
 import { 
     registerUser, loginUser, getMe, googleAuth, refreshToken, logoutUser, updateProfile,
-    updatePrivacySettings, exportUserData, requestDataErasure
+    updatePrivacySettings, exportUserData, requestDataErasure, dismissTrialWarning
 } from '../controllers/userController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -32,6 +32,9 @@ router.put('/profile', protect, updateProfile);
 
 // PUT /api/users/privacy - Toggle privacy settings & log consent
 router.put('/privacy', protect, updatePrivacySettings);
+
+// PUT /api/users/dismiss-trial-warning - Dismiss the trial expired popup
+router.put('/dismiss-trial-warning', protect, dismissTrialWarning);
 
 // GET /api/users/export - Export all user data (DPDP)
 router.get('/export', protect, exportUserData);

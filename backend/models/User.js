@@ -43,6 +43,10 @@ const userSchema = new mongoose.Schema({
             type: Date, 
             default: () => new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14-Day trial
         },
+        hasSeenTrialExpiredPopup: {
+            type: Boolean,
+            default: false
+        },
         gateway: {
             type: String,
             enum: ["razorpay", "stripe"],
