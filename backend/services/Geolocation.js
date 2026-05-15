@@ -131,6 +131,7 @@ export async function getLocationAsync(ip) {
           ll: [data.latitude, data.longitude].filter(Boolean)
         };
       }
+      console.log(data);
     } catch (apiErr) {
       // API failed (rate limited, timeout, network error) — fall through to offline
       console.warn(`[Geolocation] freeipapi.com failed for ${ip}: ${apiErr.message}. Falling back to geoip-lite.`);
