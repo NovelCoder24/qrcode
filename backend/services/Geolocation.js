@@ -1,21 +1,40 @@
 // backend/services/geolocation.js
 import geoip from "geoip-lite";
-import axios from "axios";
 
 // 1. IP Normalization & Validation
 function normalizeIp(ip) {
   if (!ip || typeof ip !== "string") return null;
   ip = ip.trim();
-  // Convert IPv4-mapped IPv6 (::ffff:127.0.0.1 → 127.0.0.1)
+
+  if (!ip) return null;
+
+  // Headers sometimes include quoted/bracketed values or ports.
+  ip = ip.replace(/^"|"$/g, "");
+  if (ip.startsWith("[") && ip.includes("]")) {
+    ip = ip.slice(1, ip.indexOf("]"));
+  }
+
+  // Convert IPv4-mapped IPv6 (::ffff:127.0.0.1 -> 127.0.0.1)
   if (ip.startsWith("::ffff:")) ip = ip.slice(7);
+
+  // Strip IPv4 ports such as 203.0.113.10:443.
+  if (/^\d{1,3}(\.\d{1,3}){3}:\d+$/.test(ip)) {
+    ip = ip.slice(0, ip.lastIndexOf(":"));
+  }
+
   return ip || null;
 }
 
 function isPrivateIp(ip) {
   if (!ip) return true;
   if (ip === "127.0.0.1" || ip === "::1" || ip === "localhost") return true;
+  if (ip === "0.0.0.0" || ip === "::") return true;
   if (ip.startsWith("10.") || ip.startsWith("192.168.")) return true;
   if (ip.startsWith("169.254.")) return true; // link-local
+  if (ip.startsWith("100.")) {
+    const octet = parseInt(ip.split(".")[1], 10);
+    if (octet >= 64 && octet <= 127) return true; // carrier-grade NAT
+  }
   if (ip.startsWith("172.")) {
     const octet = parseInt(ip.split(".")[1], 10);
     if (octet >= 16 && octet <= 31) return true;
@@ -24,46 +43,61 @@ function isPrivateIp(ip) {
   return false;
 }
 
-// ==========================================
-// FREEIPAPI RATE LIMITER (60 req/min)
-// ==========================================
-let apiCallCount = 0;
-let windowStart = Date.now();
-const API_LIMIT = 55; // Stay 5 under the 60/min limit for safety margin
-const WINDOW_MS = 60 * 1000;
-
-function canCallApi() {
-  const now = Date.now();
-  if (now - windowStart >= WINDOW_MS) {
-    // Reset the window
-    apiCallCount = 0;
-    windowStart = now;
-  }
-  return apiCallCount < API_LIMIT;
+function headerValue(req, name) {
+  const value = req.headers?.[name];
+  if (Array.isArray(value)) return value[0];
+  return value;
 }
 
-function recordApiCall() {
-  apiCallCount++;
+function addCandidate(candidates, value) {
+  const ip = normalizeIp(value);
+  if (ip) candidates.push(ip);
+}
+
+function addForwardedHeaderCandidates(candidates, forwarded) {
+  if (!forwarded || typeof forwarded !== "string") return;
+
+  for (const part of forwarded.split(",")) {
+    const match = part.match(/for="?([^;,"]+)"?/i);
+    if (match?.[1]) addCandidate(candidates, match[1]);
+  }
 }
 
 // 2. Client IP Extraction
 export function getClientIp(req) {
-  let ip = null;
+  const candidates = [];
 
-  if (req.ip) {
-    ip = normalizeIp(req.ip);
-  } else if (req.headers["x-forwarded-for"]) {
-    const ips = req.headers["x-forwarded-for"]
-      .split(",")
-      .map((s) => normalizeIp(s))
-      .filter(Boolean);
-    ip = ips.find((i) => !isPrivateIp(i)) || ips[0]; 
-  } else if (req.socket?.remoteAddress) {
-    ip = normalizeIp(req.socket.remoteAddress);
+  // Express req.ip is the primary source once app.set("trust proxy", 1)
+  // is enabled, but hosted proxy chains can still surface private hops.
+  addCandidate(candidates, req.ip);
+
+  for (const ip of req.ips || []) {
+    addCandidate(candidates, ip);
   }
 
-  // 🚨 LOCAL TESTING OVERRIDE 🚨
-  // If we are on local dev, and the IP is private/local, inject a real IP
+  addCandidate(candidates, headerValue(req, "cf-connecting-ip"));
+  addCandidate(candidates, headerValue(req, "true-client-ip"));
+  addCandidate(candidates, headerValue(req, "x-real-ip"));
+  addForwardedHeaderCandidates(candidates, headerValue(req, "forwarded"));
+
+  const forwardedFor = headerValue(req, "x-forwarded-for");
+  if (forwardedFor) {
+    for (const part of forwardedFor.split(",")) {
+      addCandidate(candidates, part);
+    }
+  }
+
+  addCandidate(candidates, req.socket?.remoteAddress);
+
+  const publicIp = candidates.find((candidate) => !isPrivateIp(candidate));
+  const ip = publicIp || candidates[0] || null;
+
+  if (process.env.LOG_GEO_IP_DEBUG === "true") {
+    console.log("[Geolocation] IP candidates:", candidates, "selected:", ip);
+  }
+
+  // LOCAL TESTING OVERRIDE
+  // If we are on local dev, and the IP is private/local, inject a real IP.
   if (process.env.NODE_ENV !== "production" && isPrivateIp(ip)) {
     return "207.97.227.239"; // Test IP
   }
@@ -71,7 +105,7 @@ export function getClientIp(req) {
   return ip;
 }
 
-// 3. GeoIP Lookup (Synchronous — geoip-lite only, used as fallback)
+// 3. GeoIP Lookup (Synchronous, geoip-lite only)
 export function getLocationOffline(ip) {
   if (!ip || isPrivateIp(ip)) {
     return {
@@ -96,13 +130,6 @@ export function getLocationOffline(ip) {
     };
   } catch (err) {
     console.error("[Geolocation] Offline lookup failed:", err.message);
-    return { country: "Unknown", country_code: "Unknown", city: "Unknown", region: "Unknown", timezone: "UTC", ll: [] };
-  }
-}
-
-// 4. Async Geo Lookup — freeipapi.com first, geoip-lite fallback
-export async function getLocationAsync(ip) {
-  if (!ip || isPrivateIp(ip)) {
     return {
       country: "Unknown",
       country_code: "Unknown",
@@ -112,32 +139,10 @@ export async function getLocationAsync(ip) {
       ll: []
     };
   }
+}
 
-  // Try freeipapi.com if within rate limit
-  if (canCallApi()) {
-    try {
-      recordApiCall();
-      const { data } = await axios.get(`https://freeipapi.com/api/json/${ip}`, {
-        timeout: 3000 // 3s hard timeout — don't let it slow down analytics
-      });
-
-      if (data && data.countryCode) {
-        return {
-          country: data.countryName || data.countryCode || "Unknown",
-          country_code: data.countryCode || "Unknown",
-          city: data.cityName || "Unknown",
-          region: data.regionName || "Unknown",
-          timezone: data.timeZone || "UTC",
-          ll: [data.latitude, data.longitude].filter(Boolean)
-        };
-      }
-      console.log(data);
-    } catch (apiErr) {
-      // API failed (rate limited, timeout, network error) — fall through to offline
-      console.warn(`[Geolocation] freeipapi.com failed for ${ip}: ${apiErr.message}. Falling back to geoip-lite.`);
-    }
-  }
-
-  // Fallback: geoip-lite (synchronous, local DB)
+// 4. Async Geo Lookup: keep async interface, but use stateless local lookup only.
+export async function getLocationAsync(ip) {
+  // This avoids redirect analytics depending on third-party network calls.
   return getLocationOffline(ip);
 }
