@@ -36,6 +36,12 @@ const qrCodeSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  accessMode: {
+    type: String,
+    enum: ['dynamic_active', 'static_locked', 'disabled'],
+    default: 'dynamic_active',
+    index: true
+  },
   isActive: {
     type: Boolean,
     default: true,

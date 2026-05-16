@@ -46,7 +46,9 @@ export const redirectQR = async (req, res) => {
         // 1. Find the QR Code by shortId
         const qr = await QRCode.findOne({ short_id: shortId });
         if (!qr) return res.status(404).send("<h1>404 - QR Code Not Found</h1>");
-        if (!qr.isActive) return res.status(410).send("<h1>This QR Code is inactive</h1>");
+        if (!qr.isActive || qr.accessMode === 'disabled') {
+            return res.status(410).send("<h1>This QR Code is inactive</h1>");
+        }
 
         // 2. Parse User-Agent — safe fallback to empty string
         const ua = req.headers["user-agent"] || "";
@@ -194,7 +196,8 @@ export const redirectQR = async (req, res) => {
 
         // Execute background tasks without awaiting them (Promise.allSettled)
         // Dedup: skip analytics if this is a duplicate hit within 5s (Chrome preload)
-        if (!isDuplicateScan(ip, shortId)) {
+        // Soft Downgrade: skip analytics entirely if accessMode is static_locked
+        if (!isDuplicateScan(ip, shortId) && qr.accessMode !== 'static_locked') {
             Promise.allSettled([
                 qr.recordScan(), // Increment QRCode raw total
                 processAnalytics() // Execute raw Scan insert and materialized view upsert

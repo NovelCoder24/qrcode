@@ -12,6 +12,14 @@ export const createQR = async (req, res) => {
         if (!target_url) {
             return res.status(400).json({ message: "Target URL is required" });
         }
+
+        // Check limits for free plan
+        if (req.user.subscription?.plan === 'free') {
+            const activeQrCount = await QRCode.countDocuments({ user_id: req.user._id, accessMode: 'dynamic_active' });
+            if (activeQrCount >= req.user.subscription.dynamicQrLimit) {
+                return res.status(403).json({ message: "Limit reached. Upgrade to Pro." });
+            }
+        }
  
         const short_id = nanoid(6);
 
@@ -84,6 +92,11 @@ export const updateQR = async (req, res) => {
         // Check ownership
         if (qr.user_id.toString() !== req.user._id.toString()) {
             return res.status(401).json({ message: "Not authorized to update this QR" });
+        }
+
+        // Prevent edits if the QR is locked due to downgrade
+        if (qr.accessMode === 'static_locked') {
+            return res.status(403).json({ message: "This QR code is locked. Please upgrade your plan to unlock editing features." });
         }
 
         // Update fields

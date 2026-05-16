@@ -3,6 +3,7 @@ import connectDB from "./config/db.js";
 import mongoose from "mongoose";
 import app from "./app.js";
 import { initHealthMonitor } from "./jobs/healthMonitor.js";
+import runDowngradeSweep from "./jobs/downgradeSweep.js";
 
 // Connect to database
 connectDB();
@@ -17,6 +18,9 @@ const server = app.listen(PORT, HOST, () => {
     if (env.ENABLE_IN_PROCESS_JOBS) {
         console.log("[Service] In-process jobs are enabled. Initializing health monitor.");
         initHealthMonitor();
+        // downgradeSweep registers its cron automatically on import, but we can call it manually once if we wanted to. 
+        // Just importing it is enough, but to be safe and explicit we can just let it be.
+        console.log("[Service] Downgrade Sweep CRON registered.");
     }
 });
 

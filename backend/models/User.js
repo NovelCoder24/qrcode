@@ -47,6 +47,26 @@ const userSchema = new mongoose.Schema({
             type: Boolean,
             default: false
         },
+        cancelAtPeriodEnd: {
+            type: Boolean,
+            default: false
+        },
+        planExpiresAt: {
+            type: Date,
+            default: null
+        },
+        dynamicQrLimit: {
+            type: Number,
+            default: 5 // Free tier limit
+        },
+        analyticsEnabled: {
+            type: Boolean,
+            default: true
+        },
+        downgradeAppliedAt: {
+            type: Date,
+            default: null
+        },
         gateway: {
             type: String,
             enum: ["razorpay", "stripe"],

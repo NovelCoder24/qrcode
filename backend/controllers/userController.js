@@ -181,6 +181,8 @@ export const getMe = async (req, res) => {
         const user = await User.findById(req.user._id);
 
         if (user) {
+            const activeQrCount = await QRCode.countDocuments({ user_id: user._id, accessMode: 'dynamic_active' });
+
             res.json({
                 _id: user._id,
                 name: user.name,
@@ -190,6 +192,7 @@ export const getMe = async (req, res) => {
                 whatsappNumber: user.whatsappNumber,
                 whatsappOptIn: user.whatsappOptIn,
                 hasCreatedFirstQR: user.hasCreatedFirstQR,
+                activeQrCount,
             });
         } else {
             res.status(404).json({ message: "User not found" });
