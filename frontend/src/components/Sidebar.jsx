@@ -12,6 +12,7 @@ import {
     QrCode,
     Shield
 } from 'lucide-react';
+import UpgradeModal from './UpgradeModal';
 
 const Sidebar = ({ isOpen, overlay = false }) => {
     const primaryNav = [
@@ -33,6 +34,8 @@ const Sidebar = ({ isOpen, overlay = false }) => {
     const isTrialing = subscription?.status === 'trialing';
 
     const [daysLeft, setDaysLeft] = useState(0);
+    const [showLimitModal, setShowLimitModal] = useState(false);
+
     useEffect(() => {
         if (!subscription?.trialEndsAt) return;
         const interval = setInterval(() => {
@@ -46,6 +49,7 @@ const Sidebar = ({ isOpen, overlay = false }) => {
     }, [subscription?.trialEndsAt]);
 
     return (
+        <>
         <aside className={`
             fixed top-0 left-0 z-50
             ${overlay ? '' : 'lg:sticky'}
@@ -68,6 +72,14 @@ const Sidebar = ({ isOpen, overlay = false }) => {
                     <NavLink
                         key={item.id}
                         to={item.path}
+                        onClick={(e) => {
+                            if (item.id === 'create') {
+                                if (subscription?.plan === 'free' && user?.activeQrCount >= subscription?.dynamicQrLimit) {
+                                    e.preventDefault();
+                                    setShowLimitModal(true);
+                                }
+                            }
+                        }}
                         className={({ isActive }) => `
                             w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors
                             ${isActive
@@ -151,6 +163,13 @@ const Sidebar = ({ isOpen, overlay = false }) => {
                 </div>
             </div>
         </aside>
+
+        <UpgradeModal 
+            isOpen={showLimitModal} 
+            onClose={() => setShowLimitModal(false)} 
+            type="limit" 
+        />
+        </>
     );
 };
 

@@ -5,12 +5,14 @@ import {
     MoreHorizontal, Loader2, Trash2, Edit2, Calendar, Folder, ExternalLink, PencilLine, Image as ImageIcon,
     Square, CheckSquare, Palette, ArrowRightLeft, Copy, PauseCircle, X, Check, Share,
     Globe, FileText, Contact, Share2, MessageCircle, Film,
-    PartyPopper, Link as LinkIcon, LogOut, CreditCard, Settings, User, BarChart3, Layers, Menu, ChevronRight, Eye
+    PartyPopper, Link as LinkIcon, LogOut, CreditCard, Settings, User, BarChart3, Layers, Menu, ChevronRight, Eye,
+    Lock, AlertTriangle
 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { logout } from '../redux/authSlice';
 import { useSelector } from 'react-redux';
 import StyledQRCode from './StyledQRCode';
+import UpgradeModal from './UpgradeModal';
 import api from '../api/axios';
 
 
@@ -177,6 +179,8 @@ const Dashboard = () => {
     const [selectedQRs, setSelectedQRs] = useState(new Set());
     const [searchQuery, setSearchQuery] = useState('');
     const [showUserMenu, setShowUserMenu] = useState(false);
+    const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+    const [upgradeModalType, setUpgradeModalType] = useState('locked');
     const userMenuRef = useRef(null);
 
     // Close dropdowns when clicking outside
@@ -204,6 +208,9 @@ const Dashboard = () => {
         const shortId = (qr.short_id || '').toLowerCase();
         return title.includes(query) || url.includes(query) || shortId.includes(query);
     });
+
+    const activeDynamicCodes = filteredQRCodes.filter(qr => qr.accessMode !== 'static_locked');
+    const lockedStaticCodes = filteredQRCodes.filter(qr => qr.accessMode === 'static_locked');
 
     const handleLogout = () => {
         dispatch(logout());
@@ -414,6 +421,21 @@ const Dashboard = () => {
         { id: 'MEDIA', label: 'Media', icon: <Film size={24} /> },
     ];
 
+    const warningBanner = lockedStaticCodes.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex gap-3">
+                <AlertTriangle className="text-amber-500 shrink-0 w-6 h-6 mt-0.5 sm:mt-0" />
+                <div className="text-sm">
+                    <p className="font-bold text-slate-800">Your Pro trial has expired.</p>
+                    <p className="text-slate-600">We kept your top 5 most scanned QR codes fully dynamic. Your other QR codes are locked to their current link and analytics are paused.</p>
+                </div>
+            </div>
+            <button onClick={() => navigate('/billing')} className="whitespace-nowrap px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-sm transition-colors text-sm shrink-0 w-full sm:w-auto">
+                Upgrade to Unlock All
+            </button>
+        </div>
+    );
+
     return (
         <>
         {/* Mobile View */}
@@ -421,6 +443,7 @@ const Dashboard = () => {
 
             {loading ? <LoadingSkeleton /> : (
             <main className="max-w-md mx-auto px-4 pt-6">
+                {warningBanner}
                 {/* Welcome Section */}
                 <section className="mb-6">
                     <div className="flex justify-between items-start">
@@ -481,14 +504,14 @@ const Dashboard = () => {
                 {/* QR List Section */}
                 <section>
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="font-bold text-lg">Your Recent Codes</h2>
+                        <h2 className="font-bold text-lg">{lockedStaticCodes.length > 0 ? "Active Dynamic QR Codes" : "Your Recent Codes"}</h2>
                         <button className="text-indigo-600 text-sm font-bold flex items-center" onClick={() => navigate('/analytics')}>
                             View All <ChevronRight size={16} />
                         </button>
                     </div>
 
                     <div className="space-y-3">
-                        {filteredQRCodes.map((qr) => {
+                        {activeDynamicCodes.map((qr) => {
                             const typeLower = qr.qr_type?.toLowerCase() || 'url';
                             const typeIconMap = {
                                 url: <Globe size={24} />,
@@ -582,8 +605,41 @@ const Dashboard = () => {
                                 </div>
                             );
                         })}
-                        {filteredQRCodes.length === 0 && (
+                        {activeDynamicCodes.length === 0 && lockedStaticCodes.length === 0 && (
                             <div className="text-center py-8 text-slate-500">No QR codes found.</div>
+                        )}
+
+                        {lockedStaticCodes.length > 0 && (
+                            <>
+                                <div className="mt-8 mb-4 px-1">
+                                    <h2 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+                                        <Lock className="w-5 h-5 text-amber-500" />
+                                        Locked Static Codes
+                                    </h2>
+                                    <p className="text-xs text-slate-500 mt-1">These still scan but editing/analytics are paused. <button onClick={() => navigate('/billing')} className="text-indigo-600 underline font-bold">Upgrade to unlock</button>.</p>
+                                </div>
+                                {lockedStaticCodes.map((qr) => (
+                                    <div key={qr._id} onClick={() => { setUpgradeModalType('locked'); setUpgradeModalOpen(true); }} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-sm opacity-90 flex cursor-pointer relative">
+                                        <div className="flex gap-4 w-full">
+                                            <div className="w-16 h-16 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center shrink-0">
+                                                <QrCode size={28} className="text-slate-400" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <h3 className="font-bold text-slate-700 truncate pr-2">{qr.metadata?.title || 'Untitled QR Code'}</h3>
+                                                    <Lock size={16} className="text-amber-500 shrink-0" />
+                                                </div>
+                                                <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium mb-3">
+                                                    <span className="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wide">{qr.qr_type || 'URL'}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-[10px] text-amber-700 font-bold bg-amber-100 px-2 py-1 rounded-md">LOCKED PLAN LIMIT</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </>
                         )}
                     </div>
 
@@ -600,6 +656,7 @@ const Dashboard = () => {
         {loading ? <DesktopLoadingSkeleton /> : (
         <>
         <div className="hidden md:block p-6 md:p-10 bg-slate-50 min-h-full">
+            {warningBanner}
             {/* Top Header */}
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
                 <div>
@@ -802,7 +859,7 @@ const Dashboard = () => {
                             </div>
                         )}
                         <div className="space-y-4">
-                        {filteredQRCodes.map((qr) => {
+                        {activeDynamicCodes.map((qr) => {
                             const colors = getTypeColor(qr.qr_type);
                             const isSelected = selectedQRs.has(qr._id);
 
@@ -993,7 +1050,86 @@ const Dashboard = () => {
                             );
                         })}
 
-                        <div className="text-sm text-slate-500 font-medium py-4 px-2">
+                        {lockedStaticCodes.length > 0 && (
+                            <div className="mt-12">
+                                <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-4">
+                                    <div className="bg-amber-100 p-2 rounded-lg shrink-0 mt-0.5">
+                                        <AlertTriangle className="w-5 h-5 text-amber-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-amber-800 font-bold text-base">Locked Static QR Codes</h3>
+                                        <p className="text-amber-700 text-sm mt-1 mb-2">Your plan supports a limited number of dynamic QR codes. The codes below will continue to scan and direct users to their destination, but you cannot edit their destination, design, or view their analytics.</p>
+                                        <button onClick={() => navigate('/billing')} className="text-sm font-bold text-amber-800 hover:text-amber-900 underline">Upgrade Plan to Unlock</button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {lockedStaticCodes.map((qr) => {
+                                        const colors = getTypeColor(qr.qr_type);
+                                        const createdDate = qr.createdAt ? new Date(qr.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Unknown';
+                                        
+                                        return (
+                                            <div key={qr._id} onClick={() => { setUpgradeModalType('locked'); setUpgradeModalOpen(true); }} className="cursor-pointer flex flex-col xl:flex-row items-start xl:items-center gap-4 p-4 md:p-6 bg-slate-50 opacity-90 rounded-2xl border border-slate-200 shadow-sm transition-all hover:border-slate-300">
+                                                
+                                                <div className="flex items-center gap-4 w-full xl:w-auto opacity-60">
+                                                    <div className="w-5 h-5 flex-shrink-0"></div> {/* Spacer for checkbox */}
+                                                    <div className="w-20 h-20 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center flex-shrink-0">
+                                                        <QrCode size={36} className="text-slate-400" />
+                                                    </div>
+                                                    <div className="flex-1 xl:hidden">
+                                                        <p className={`text-[11px] font-bold ${colors.text} mb-1 flex items-center gap-1`}>{qr.qr_type}</p>
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <h4 className="font-extrabold text-slate-700 text-base">{qr.metadata?.title || 'Untitled QR'}</h4>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="hidden xl:block flex-1 min-w-[200px] opacity-60">
+                                                    <p className={`text-[11px] font-bold ${colors.text} mb-1`}>{qr.qr_type}</p>
+                                                    <div className="flex items-center gap-2 mb-1.5 line-clamp-1">
+                                                        <h4 className="font-extrabold text-slate-700 text-base m-0 leading-tight">{qr.metadata?.title || 'Untitled QR'}</h4>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-medium">
+                                                        <Calendar className="w-3.5 h-3.5" />
+                                                        <span>{createdDate}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex-1 min-w-[250px] space-y-2.5 w-full xl:w-auto border-t border-slate-200 pt-4 xl:border-0 xl:pt-0 opacity-60">
+                                                    <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
+                                                        <Folder className="w-3.5 h-3.5" />
+                                                        <span>No folder</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <ExternalLink className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                                                        <span className="text-slate-500 text-sm font-medium truncate max-w-[200px] xl:max-w-xs block">
+                                                            {qr.target_url}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-col items-center justify-center min-w-[80px] xl:border-l xl:border-r border-slate-200 xl:px-8 w-full xl:w-auto py-2 xl:py-0 border-t xl:border-t-0">
+                                                    <Lock className="w-6 h-6 text-amber-500 mb-2" />
+                                                    <span className="text-[10px] font-black uppercase text-amber-600 bg-amber-100 px-2 py-0.5 rounded">LOCKED</span>
+                                                </div>
+
+                                                <div className="flex items-center justify-end gap-3 w-full xl:w-auto mt-2 xl:mt-0 pt-4 xl:pt-0 border-t border-slate-200 xl:border-0 relative">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); navigate(`/qrcodes/${qr._id}`); }}
+                                                        className="px-4 py-2 border border-slate-300 bg-white text-slate-600 font-bold text-sm rounded-lg hover:bg-slate-50 transition-colors"
+                                                    >
+                                                        View Details
+                                                    </button>
+                                                </div>
+
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="text-sm text-slate-500 font-medium py-4 px-2 mt-8">
                             Showing {filteredQRCodes.length} of {qrCodes.length} results{searchQuery && ` for "${searchQuery}"`}
                         </div>
                     </div>
@@ -1363,6 +1499,12 @@ const Dashboard = () => {
             )}
         </>
         )}
+        
+        <UpgradeModal 
+            isOpen={upgradeModalOpen} 
+            onClose={() => setUpgradeModalOpen(false)} 
+            type={upgradeModalType} 
+        />
         </>
     );
 };

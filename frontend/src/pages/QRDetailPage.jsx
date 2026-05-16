@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit3, ExternalLink, Copy, Check, Loader2, QrCode as QrCodeIcon, Calendar, ScanLine, Clock, Globe, Palette } from 'lucide-react';
+import { ArrowLeft, Edit3, ExternalLink, Copy, Check, Loader2, QrCode as QrCodeIcon, Calendar, ScanLine, Clock, Globe, Palette, Lock, AlertTriangle } from 'lucide-react';
 import StyledQRCode from '../components/StyledQRCode';
 import api from '../api/axios';
 
@@ -111,12 +111,23 @@ const QRDetailPage = () => {
                         <span className="text-xs font-mono text-slate-400 mb-6">ID: {qr?.short_id}</span>
 
                         {/* Action Buttons */}
+                        {qr?.accessMode === 'static_locked' && (
+                            <div className="w-full mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-3 text-left">
+                                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-sm font-bold text-amber-800">Static Locked</p>
+                                    <p className="text-xs text-amber-700 mt-0.5">Your plan currently supports 5 dynamic QR codes. This QR code will still scan and open the last saved link, but editing and analytics are paused. Upgrade anytime to unlock.</p>
+                                    <button onClick={() => navigate('/billing')} className="mt-2 text-xs font-bold text-amber-700 hover:text-amber-900 underline">Upgrade Plan</button>
+                                </div>
+                            </div>
+                        )}
                         <div className="flex gap-3 w-full">
                             <button
                                 onClick={handleEdit}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors text-sm"
+                                disabled={qr?.accessMode === 'static_locked'}
+                                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition-colors text-sm ${qr?.accessMode === 'static_locked' ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
                             >
-                                <Edit3 className="w-4 h-4" />
+                                {qr?.accessMode === 'static_locked' ? <Lock className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
                                 Edit Design
                             </button>
                             <a
