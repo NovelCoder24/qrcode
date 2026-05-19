@@ -20,6 +20,7 @@ import PDFViewPage from './pages/PDFViewPage.jsx';
 import VCardViewPage from './pages/VCardViewPage.jsx';
 import SocialViewPage from './pages/SocialViewPage.jsx';
 import MediaViewPage from './pages/MediaViewPage.jsx';
+import MenuViewPage from './pages/MenuViewPage.jsx';
 
 import TrialWarningBanner from './components/TrialWarningBanner.jsx';
 import TrialExpiredModal from './components/TrialExpiredModal.jsx';
@@ -92,6 +93,7 @@ const App = () => {
         <Route path="/vcard/:shortId" element={<VCardViewPage />} />
         <Route path="/social/:shortId" element={<SocialViewPage />} />
         <Route path="/media/:shortId" element={<MediaViewPage />} />
+        <Route path="/menu/:shortId" element={<MenuViewPage />} />
 
         {/* Protected Routes */}
         <Route element={<PrivateRoute />}>

@@ -5,7 +5,8 @@ import {
     Contact,
     MessageCircle,
     Share2,
-    Film
+    Film,
+    Coffee
 } from 'lucide-react';
 
 const TypeSelection = ({ selectedType, onSelect, onProceed }) => {
@@ -23,6 +24,13 @@ const TypeSelection = ({ selectedType, onSelect, onProceed }) => {
             icon: <FileText size={24} />,
             desc: 'Show a PDF document',
             color: 'rose'
+        },
+        {
+            id: 'MENU',
+            label: 'Menu',
+            icon: <Coffee size={24} />,
+            desc: 'Restaurant or Cafe Menu',
+            color: 'orange'
         },
         {
             id: 'VCARD',

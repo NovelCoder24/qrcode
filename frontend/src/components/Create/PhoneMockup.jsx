@@ -360,7 +360,7 @@ const PhoneMockup = ({ type, data, step, design }) => {
                             <h3 className="text-slate-800 font-bold mb-6" style={{ color: design?.bgColor && design.bgColor !== '#ffffff' ? '#ffffff' : undefined }}>Scan to View</h3>
                             <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100">
                                 <StyledQRCode
-                                    data={data?.url || data?.pdfUrl || 'https://qr-code.io'}
+                                    data={data?.url || data?.pdfUrl || 'https://qrvibe.in'}
                                     size={180}
                                     ecLevel="H"
                                     primaryColor={design?.fgColor || '#000000'}

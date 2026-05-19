@@ -206,7 +206,7 @@ export const redirectQR = async (req, res) => {
 
         // 7. Instant Redirect Handling
         const frontendUrl = env.FRONTEND_URL;
-        const typeRedirects = { PDF: "/pdf", VCARD: "/vcard", SOCIAL: "/social", MEDIA: "/media" };
+        const typeRedirects = { PDF: "/pdf", VCARD: "/vcard", SOCIAL: "/social", MEDIA: "/media", MENU: "/menu" };
         
         if (typeRedirects[qr.qr_type]) {
             return res.redirect(302, `${frontendUrl}${typeRedirects[qr.qr_type]}/${shortId}`);

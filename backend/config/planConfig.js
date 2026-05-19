@@ -17,14 +17,14 @@ export const PLAN_LIMITS = {
     maxDynamicQR: Infinity,
     maxStaticQR: Infinity,
     maxScans: 50000,
-    allowedTypes: ['URL', 'PDF', 'VCARD', 'WHATSAPP', 'SOCIAL', 'MEDIA'],
+    allowedTypes: ['URL', 'PDF', 'VCARD', 'WHATSAPP', 'SOCIAL', 'MEDIA', 'MENU'],
     features: ['full_analytics', 'patterns', 'logos', 'svg_export']
   },
   business: {
     maxDynamicQR: Infinity,
     maxStaticQR: Infinity,
     maxScans: Infinity,
-    allowedTypes: ['URL', 'PDF', 'VCARD', 'WHATSAPP', 'SOCIAL', 'MEDIA'],
+    allowedTypes: ['URL', 'PDF', 'VCARD', 'WHATSAPP', 'SOCIAL', 'MEDIA', 'MENU'],
     features: ['full_analytics', 'patterns', 'logos', 'svg_export', 'bulk_create', 'team_members', 'api', 'custom_domain', 'priority_support']
   },
 };

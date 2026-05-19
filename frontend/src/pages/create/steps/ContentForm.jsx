@@ -5,9 +5,10 @@ import VCardForm from '../forms/VCardForm';
 import WhatsAppForm from '../forms/WhatsAppForm';
 import SocialMediaForm from '../forms/SocialMediaForm';
 import MediaForm from '../forms/MediaForm';
+import MenuForm from '../forms/MenuForm';
 
 const ContentForm = ({ type, data, onChange }) => {
-    // Map QR types to their respective form components (6 types only)
+    // Map QR types to their respective form components
     const formComponents = {
         URL: URLForm,
         PDF: PDFForm,
@@ -15,6 +16,7 @@ const ContentForm = ({ type, data, onChange }) => {
         WHATSAPP: WhatsAppForm,
         SOCIAL: SocialMediaForm,
         MEDIA: MediaForm,
+        MENU: MenuForm,
     };
 
     const FormComponent = formComponents[type];

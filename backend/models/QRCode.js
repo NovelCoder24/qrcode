@@ -20,7 +20,7 @@ const qrCodeSchema = new mongoose.Schema({
   },
   qr_type: {
     type: String,
-    enum: ['URL', 'PDF', 'VCARD', 'WHATSAPP', 'SOCIAL', 'MEDIA'],
+    enum: ['URL', 'PDF', 'VCARD', 'WHATSAPP', 'SOCIAL', 'MEDIA', 'MENU'],
     required: true,
     default: 'URL'
   },
@@ -72,7 +72,7 @@ const qrCodeSchema = new mongoose.Schema({
 // Only sanitize for types that use real HTTP URLs
 qrCodeSchema.pre("save", function () {
   if (this.isModified("target_url")) {
-    const skipTypes = ['VCARD', 'SOCIAL', 'MEDIA'];
+    const skipTypes = ['VCARD', 'SOCIAL', 'MEDIA', 'MENU'];
     if (!skipTypes.includes(this.qr_type) && !/^https?:\/\//i.test(this.target_url)) {
       this.target_url = `https://${this.target_url}`;
     };

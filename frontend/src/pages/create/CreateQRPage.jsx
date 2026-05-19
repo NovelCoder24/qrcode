@@ -37,7 +37,11 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
                 try {
                     const { data } = await api.get(`/qrcodes/${editId}`);
                     setQrType(data.qr_type || 'URL');
-                    setQrData({ url: data.target_url, title: data.metadata?.title });
+                    // Preserve all metadata (like menu categories, vcard info, etc)
+                    setQrData({ 
+                        url: data.target_url, 
+                        ...data.metadata 
+                    });
                     setQrDesign({
                         fgColor: data.customization?.fgColor || '#000000',
                         fgColor2: data.customization?.fgColor2 || '#4F46E5',
@@ -173,6 +177,16 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
                         target_url = qrData.audioUrl;
                         metadata = { ...metadata, ...qrData };
                     }
+                    break;
+
+                case 'MENU':
+                    if (!qrData?.restaurantName && (!qrData?.categories || qrData.categories.length === 0)) {
+                        setError('Please add a restaurant name or menu items.');
+                        setIsCreating(false);
+                        return;
+                    }
+                    metadata = { ...metadata, ...qrData };
+                    target_url = `menu://${Date.now()}`;
                     break;
 
                 default:
