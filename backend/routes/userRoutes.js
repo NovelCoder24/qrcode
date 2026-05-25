@@ -4,18 +4,20 @@ import {
     updatePrivacySettings, exportUserData, requestDataErasure, dismissTrialWarning
 } from '../controllers/userController.js';
 import { protect } from '../middleware/authMiddleware.js';
+import { validate } from '../middleware/validateMiddleware.js';
+import { registerSchema, loginSchema, googleSchema } from '../validators/userValidator.js';
 
 const router = express.Router();
 
 // Public Routes (Anyone can access)
 // POST /api/users/register
-router.post('/register', registerUser);
+router.post('/register', validate(registerSchema), registerUser);
 
 // POST /api/users/login
-router.post('/login', loginUser);
+router.post('/login', validate(loginSchema), loginUser);
 
 // POST /api/users/google
-router.post('/google', googleAuth);
+router.post('/google', validate(googleSchema), googleAuth);
 
 // POST /api/users/refresh - Issue new token pair
 router.post('/refresh', refreshToken);

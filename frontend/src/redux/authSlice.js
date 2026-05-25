@@ -67,6 +67,9 @@ const authSlice = createSlice({
         clearError: (state) => {
             state.error = null;
         },
+        setAuthError: (state, action) => {
+            state.error = action.payload;
+        },
         updateSubscriptionStatus: (state, action) => {
             if (state.user) {
                 state.user.subscription = action.payload;
@@ -142,5 +145,5 @@ const authSlice = createSlice({
     }
 });
 
-export const { clearError, updateSubscriptionStatus } = authSlice.actions;
+export const { clearError, setAuthError, updateSubscriptionStatus } = authSlice.actions;
 export default authSlice.reducer;

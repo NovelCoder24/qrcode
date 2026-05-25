@@ -1,4 +1,5 @@
 import { User } from "../models/User.js";
+import { env } from "../config/env.js";
 import { QRCode } from "../models/QRCode.js";
 import { Scan } from "../models/Scan.js";
 import { DailyScanStats } from "../models/DailyScanStats.js";
@@ -149,7 +150,7 @@ export const refreshToken = async (req, res) => {
             return res.status(401).json({ message: "No refresh token provided" });
         }
 
-        const decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+        const decoded = jwt.verify(token, env.REFRESH_TOKEN_SECRET);
         const user = await User.findById(decoded.id);
 
         if (!user) {

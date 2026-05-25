@@ -6,6 +6,7 @@ import ContentForm from './steps/ContentForm';
 import DesignStudio from './steps/DesignStudio';
 import { ChevronRight, HelpCircle, Menu, X, QrCode, Loader2 } from 'lucide-react';
 import api from '../../api/axios';
+import qrvibeLogoPrimary from '../../assets/qrvibe-logo-primary.svg';
 
 const CreateQRPage = ({ isOpen, onToggle }) => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -244,11 +245,8 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
             <div className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-30">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
                     {/* Logo Area (Left) */}
-                    <div className="flex items-center gap-2 font-bold text-xl text-slate-800">
-                        <div className="bg-indigo-600 p-1.5 rounded-lg">
-                            <QrCode className="text-white w-5 h-5" />
-                        </div>
-                        <span>QR<span className="text-indigo-600">Vibe</span></span>
+                    <div className="flex items-center">
+                        <img src={qrvibeLogoPrimary} alt="QRVibe Logo" className="h-10 w-auto object-contain" />
                     </div>
 
                     {/* Progress Steps (Center) */}

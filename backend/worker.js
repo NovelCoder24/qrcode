@@ -2,6 +2,7 @@ import { env } from "./config/env.js";
 import connectDB from "./config/db.js";
 import mongoose from "mongoose";
 import { initHealthMonitor } from "./jobs/healthMonitor.js";
+import { initDowngradeSweep } from "./jobs/downgradeSweep.js";
 
 const startWorker = async () => {
     if (!env.RUN_WORKER) {
@@ -14,6 +15,7 @@ const startWorker = async () => {
 
     console.log("[Worker] Initializing cron jobs...");
     initHealthMonitor();
+    initDowngradeSweep();
 
     console.log("[Worker] Background Worker is running and waiting for jobs.");
 };

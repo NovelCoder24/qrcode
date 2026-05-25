@@ -2,25 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loadUser } from './redux/authSlice';
+import { Loader2 } from 'lucide-react';
 
 import Sidebar from './components/Sidebar.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import Header from './components/Header.jsx';
 import PrivateRoute from './components/PrivateRoute.jsx';
-import LoginPage from './pages/LoginPage.jsx';
-import RegisterPage from './pages/RegisterPage.jsx';
-import CreateQRPage from './pages/create/CreateQRPage.jsx';
-import LandingPage from './pages/LandingPage.jsx';
-import QRDetailPage from './pages/QRDetailPage.jsx';
-import AnalyticsPage from './pages/AnalyticsPage.jsx';
-import AccountPage from './pages/AccountPage.jsx';
-import BillingPage from './pages/BillingPage.jsx';
-import PrivacyDataPage from './pages/PrivacyDataPage.jsx';
-import PDFViewPage from './pages/PDFViewPage.jsx';
-import VCardViewPage from './pages/VCardViewPage.jsx';
-import SocialViewPage from './pages/SocialViewPage.jsx';
-import MediaViewPage from './pages/MediaViewPage.jsx';
-import MenuViewPage from './pages/MenuViewPage.jsx';
+
+const LoginPage = React.lazy(() => import('./pages/LoginPage.jsx'));
+const RegisterPage = React.lazy(() => import('./pages/RegisterPage.jsx'));
+const CreateQRPage = React.lazy(() => import('./pages/create/CreateQRPage.jsx'));
+const LandingPage = React.lazy(() => import('./pages/LandingPage.jsx'));
+const QRDetailPage = React.lazy(() => import('./pages/QRDetailPage.jsx'));
+const AnalyticsPage = React.lazy(() => import('./pages/AnalyticsPage.jsx'));
+const AccountPage = React.lazy(() => import('./pages/AccountPage.jsx'));
+const BillingPage = React.lazy(() => import('./pages/BillingPage.jsx'));
+const PrivacyDataPage = React.lazy(() => import('./pages/PrivacyDataPage.jsx'));
+const PDFViewPage = React.lazy(() => import('./pages/PDFViewPage.jsx'));
+const VCardViewPage = React.lazy(() => import('./pages/VCardViewPage.jsx'));
+const SocialViewPage = React.lazy(() => import('./pages/SocialViewPage.jsx'));
+const MediaViewPage = React.lazy(() => import('./pages/MediaViewPage.jsx'));
+const MenuViewPage = React.lazy(() => import('./pages/MenuViewPage.jsx'));
 
 import TrialWarningBanner from './components/TrialWarningBanner.jsx';
 import TrialExpiredModal from './components/TrialExpiredModal.jsx';
@@ -84,37 +86,46 @@ const App = () => {
 
   return (
     <div className="flex min-h-screen bg-[#F8F9FB] relative">
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/pdf/:shortId" element={<PDFViewPage />} />
-        <Route path="/vcard/:shortId" element={<VCardViewPage />} />
-        <Route path="/social/:shortId" element={<SocialViewPage />} />
-        <Route path="/media/:shortId" element={<MediaViewPage />} />
-        <Route path="/menu/:shortId" element={<MenuViewPage />} />
+      <React.Suspense fallback={
+        <div className="flex items-center justify-center min-h-screen w-full bg-slate-50">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
+            <p className="text-sm font-semibold text-slate-500">Loading QRVibe...</p>
+          </div>
+        </div>
+      }>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/pdf/:shortId" element={<PDFViewPage />} />
+          <Route path="/vcard/:shortId" element={<VCardViewPage />} />
+          <Route path="/social/:shortId" element={<SocialViewPage />} />
+          <Route path="/media/:shortId" element={<MediaViewPage />} />
+          <Route path="/menu/:shortId" element={<MenuViewPage />} />
 
-        {/* Protected Routes */}
-        <Route element={<PrivateRoute />}>
-          {/* Create Wizard Route */}
-          <Route
-            path="/create"
-            element={<CreateWizardLayout isSidebarOpen={isSidebarOpen} onToggle={toggleSidebar} />}
-          />
+          {/* Protected Routes */}
+          <Route element={<PrivateRoute />}>
+            {/* Create Wizard Route */}
+            <Route
+              path="/create"
+              element={<CreateWizardLayout isSidebarOpen={isSidebarOpen} onToggle={toggleSidebar} />}
+            />
 
-          {/* Main Dashboard Routes */}
-          <Route element={<DashboardLayout isSidebarOpen={isSidebarOpen} onToggle={toggleSidebar} />}>
-            <Route path="/qrcodes" element={<Dashboard />} />
-            <Route path="/qrcodes/:id" element={<QRDetailPage />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
-            <Route path="/billing" element={<BillingPage />} />
-            <Route path="/account" element={<AccountPage />} />
-            <Route path="/privacy-data" element={<PrivacyDataPage />} />
+            {/* Main Dashboard Routes */}
+            <Route element={<DashboardLayout isSidebarOpen={isSidebarOpen} onToggle={toggleSidebar} />}>
+              <Route path="/qrcodes" element={<Dashboard />} />
+              <Route path="/qrcodes/:id" element={<QRDetailPage />} />
+              <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/billing" element={<BillingPage />} />
+              <Route path="/account" element={<AccountPage />} />
+              <Route path="/privacy-data" element={<PrivacyDataPage />} />
+            </Route>
+
           </Route>
-
-        </Route>
-      </Routes>
+        </Routes>
+      </React.Suspense>
     </div>
   );
 };

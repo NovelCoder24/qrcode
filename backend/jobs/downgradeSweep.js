@@ -18,13 +18,13 @@ const runDowngradeSweep = async () => {
             const now = new Date();
 
             // Find users who need downgrading:
-            // 1. Plan has expired (planExpiresAt is in the past)
+            // 1. Plan has expired (subscription.planExpiresAt is in the past)
             // 2. Not already downgraded (downgradeAppliedAt is null)
             // 3. Or, trial has ended and they haven't upgraded
             const usersToDowngrade = await User.find({
                 $or: [
                     {
-                        planExpiresAt: { $lt: now, $ne: null },
+                        'subscription.planExpiresAt': { $lt: now, $ne: null },
                         'subscription.downgradeAppliedAt': null
                     },
                     {
@@ -55,7 +55,10 @@ const runDowngradeSweep = async () => {
     });
 };
 
-// Run daily at midnight (server time)
-cron.schedule('0 0 * * *', runDowngradeSweep);
+// Explicit init function — cron only registers when called, not at import time
+export const initDowngradeSweep = () => {
+    cron.schedule('0 0 * * *', runDowngradeSweep);
+    console.log("[Service] Downgrade Sweep CRON registered (midnight daily).");
+};
 
 export default runDowngradeSweep;

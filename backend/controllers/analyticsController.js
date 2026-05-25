@@ -113,7 +113,11 @@ export const getDashboardAnalytics = async (req, res) => {
             scans: scansOverTimeMap[date]
         }));
 
-        const botFilteredCount = Math.floor(currentTotalScans * 0.08) + 3; // Keep mock stat for marketing
+        const botFilteredCount = await Scan.countDocuments({
+            owner_id: userId,
+            isBot: true,
+            createdAt: { $gte: currentPeriodStart, $lte: now }
+        });
 
         const topLocations = Object.entries(locationCounts)
             .sort((a, b) => b[1] - a[1])
@@ -315,6 +319,12 @@ export const getQRAnalytics = async (req, res) => {
             .sort((a, b) => b[1] - a[1])
             .map(([campaign, count]) => ({ campaign, count }));
 
+        const botFilteredCount = await Scan.countDocuments({
+            qr_id: qrId,
+            isBot: true,
+            createdAt: { $gte: currentPeriodStart, $lte: now }
+        });
+
         res.json({
             qr,
             totals: {
@@ -324,7 +334,7 @@ export const getQRAnalytics = async (req, res) => {
                 uniqueScanners: currentUniqueScanners,
                 uniqueDelta: getDelta(currentUniqueScanners, previousUniqueScanners),
                 previousUniqueScanners,
-                botFiltered: Math.floor(currentTotalScans * 0.08) + 3
+                botFiltered: botFilteredCount
             },
             scansOverTime: dateRange.map(date => ({ date, scans: scansOverTimeMap[date] })),
             deviceStats: {

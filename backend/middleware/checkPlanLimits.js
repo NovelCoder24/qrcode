@@ -1,5 +1,6 @@
 import { PLAN_LIMITS } from "../config/planConfig.js";
 import { QRCode } from "../models/QRCode.js";
+import { User } from "../models/User.js";
 
 export const checkPlanLimits = async (req, res, next) => {
     try {
@@ -32,8 +33,8 @@ export const checkPlanLimits = async (req, res, next) => {
             }
         }
 
-        // 2. Count existing Dynamic QRs
-        const qrCount = await QRCode.countDocuments({ user_id: user._id });
+        // 2. Count only dynamic_active QRs (static_locked codes must not count against the limit)
+        const qrCount = await QRCode.countDocuments({ user_id: user._id, accessMode: 'dynamic_active' });
 
         // 3. Check Limit
         if (qrCount >= limits.maxDynamicQR) {

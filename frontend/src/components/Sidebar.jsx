@@ -13,6 +13,7 @@ import {
     Shield
 } from 'lucide-react';
 import UpgradeModal from './UpgradeModal';
+import qrvibeLogoPrimary from '../assets/qrvibe-logo-primary.svg';
 
 const Sidebar = ({ isOpen, overlay = false }) => {
     const primaryNav = [
@@ -59,11 +60,8 @@ const Sidebar = ({ isOpen, overlay = false }) => {
             flex flex-col shadow-2xl lg:shadow-none
         `}>
             {/* Logo Section */}
-            <div className="p-8 flex items-center gap-2 mb-4">
-                <div className="bg-indigo-600 p-2 rounded-lg">
-                    <QrCode className="text-white w-5 h-5" />
-                </div>
-                <span className="text-xl font-bold tracking-tight text-slate-900">QR<span className="text-indigo-600">Vibe</span></span>
+            <div className="p-6 flex items-center mb-2">
+                <img src={qrvibeLogoPrimary} alt="QRVibe Logo" className="h-10 w-auto object-contain" />
             </div>
 
             {/* Navigation */}

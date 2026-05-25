@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
+import { env } from '../config/env.js';
 
 export const protect = async (req, res, next) => {
     let token;
@@ -10,7 +11,7 @@ export const protect = async (req, res, next) => {
     ) {
         try {
             token = req.headers.authorization.split(' ')[1];
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const decoded = jwt.verify(token, env.JWT_SECRET);
             /*
             - By adding req.user, we are passing this user data "down the chain."
             - Now, your userController.js(and any other controller) can just type req.user._id to know exactly who is making the request without doing any work! */

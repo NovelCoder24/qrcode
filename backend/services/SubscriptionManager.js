@@ -39,10 +39,12 @@ class SubscriptionManager {
         }
 
         // 4. Update User record
-        user.subscription.status = 'expired'; // Or starter, depending on your logic, but typical downgrade goes to expired if trial, or past_due/canceled. Let's assume the caller manages the exact status, but we record the downgrade time.
-        user.subscription.analyticsEnabled = false; // Disables account-wide advanced analytics if applicable
+        user.subscription.plan = 'starter';
+        user.subscription.status = 'expired';
+        user.subscription.dynamicQrLimit = 5; // Free tier limit
+        user.subscription.analyticsEnabled = false;
         user.subscription.downgradeAppliedAt = new Date();
-        user.subscription.cancelAtPeriodEnd = false; // Reset this flag since it's processed
+        user.subscription.cancelAtPeriodEnd = false;
         await user.save();
 
         return {

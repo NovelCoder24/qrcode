@@ -8,6 +8,7 @@ import {
     IndianRupee, Activity
 } from 'lucide-react';
 import founderImg from '../assets/founder.jpg';
+import qrvibeLogoPrimary from '../assets/qrvibe-logo-primary.svg';
 
 const LandingPage = () => {
     const [themeColor, setThemeColor] = useState('#4F46E5'); // Default indigo-600
@@ -52,11 +53,8 @@ const LandingPage = () => {
             {/* Navbar (Sticky, adds glass effect on scroll) */}
             <nav className={`fixed w-full z-50 top-0 transition-all duration-300 px-6 py-4 ${scrolled ? 'glass shadow-sm' : 'bg-transparent'}`}>
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
-                    <div className="flex items-center gap-2 cursor-pointer group">
-                        <div className="bg-indigo-600 p-2 rounded-xl group-hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200">
-                            <QrCode className="text-white w-6 h-6" />
-                        </div>
-                        <span className="text-2xl font-bold tracking-tight">QR<span className="text-indigo-600">Vibe</span></span>
+                    <div className="flex items-center cursor-pointer">
+                        <img src={qrvibeLogoPrimary} alt="QRVibe Logo" className="h-10 w-auto object-contain" />
                     </div>
 
                     <div className="hidden md:flex items-center gap-8 text-sm font-semibold">
@@ -727,11 +725,8 @@ const LandingPage = () => {
             <footer className="bg-white pt-24 pb-12 px-6 border-t border-slate-100 text-left">
                 <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-12 mb-20 text-center md:text-left">
                     <div className="md:col-span-4 lg:col-span-5 pr-0 md:pr-12 flex flex-col items-center md:items-start">
-                        <div className="flex items-center gap-2 mb-6">
-                            <div className="bg-indigo-600 p-2 rounded-xl shadow-sm">
-                                <QrCode className="text-white w-6 h-6" />
-                            </div>
-                            <span className="text-2xl font-bold tracking-tight text-slate-900">QR<span className="text-indigo-600">Vibe</span></span>
+                        <div className="flex items-center mb-6">
+                            <img src={qrvibeLogoPrimary} alt="QRVibe Logo" className="h-10 w-auto object-contain" />
                         </div>
                         <p className="text-slate-500 leading-relaxed mb-8 font-medium max-w-sm">Empowering leading brands to bridge the physical and digital worlds through beautiful, intelligent, and highly measurable QR experiences.</p>
                         <div className="flex gap-3 justify-center md:justify-start w-full">

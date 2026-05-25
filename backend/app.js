@@ -46,11 +46,10 @@ const authLimiter = rateLimit({
     message: { message: "Too many login attempts. Please try again in 15 minutes." }
 });
 
-// CORS configuration
+// CORS configuration — driven by env.CORS_ORIGIN (comma-separated list)
 const allowedOrigins = [
-  'http://localhost:5173', 
-  'https://qrcode-jade-chi.vercel.app',
-  'https://qrcode-git-dev-v2-novelsahu22-9572s-projects.vercel.app', 
+  'http://localhost:5173',
+  ...(env.CORS_ORIGIN ? env.CORS_ORIGIN.split(',').map(o => o.trim()).filter(Boolean) : [])
 ];
 
 app.use(cors({

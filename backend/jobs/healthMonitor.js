@@ -86,20 +86,22 @@ export const runTrialExpirationCheck = async () => {
                 user.subscription.hasSeenTrialExpiredPopup = false;
                 await user.save();
 
-                // Enforce 5 active QR codes limit by deactivating older ones
+                // Enforce 5 dynamic QR codes limit by locking older ones to static_locked
+                // (not isActive: false, which would break printed QR codes)
                 const activeQRs = await QRCode.find({ 
                     user_id: user._id,
-                    isActive: true
-                }).sort({ createdAt: -1 });
+                    isActive: true,
+                    accessMode: 'dynamic_active'
+                }).sort({ 'stats.total_scans': -1 }); // Keep highest-traffic ones active
 
                 if (activeQRs.length > 5) {
-                    const qrsToDeactivate = activeQRs.slice(5);
-                    const qrIds = qrsToDeactivate.map(qr => qr._id);
+                    const qrsToLock = activeQRs.slice(5);
+                    const qrIds = qrsToLock.map(qr => qr._id);
                     await QRCode.updateMany(
                         { _id: { $in: qrIds } },
-                        { $set: { isActive: false } }
+                        { $set: { accessMode: 'static_locked' } }
                     );
-                    console.log(`[Trial Monitor] Deactivated ${qrIds.length} QR codes for expired user ${user._id}`);
+                    console.log(`[Trial Monitor] Locked ${qrIds.length} QR codes to static_locked for expired user ${user._id}`);
                 }
             }
             console.log(`[Trial Monitor] Automatically downgraded ${expiredUsers.length} expired trials to free starter plan.`);
