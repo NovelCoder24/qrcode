@@ -232,17 +232,17 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
 
     if (editLoading) {
         return (
-            <div className="min-h-screen w-full bg-[#F8F9FB] flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+            <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-slate-900" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen w-full bg-[#F8F9FB] flex flex-col">
+        <div className="min-h-screen w-full bg-slate-50 flex flex-col">
 
             {/* Wizard Header */}
-            <div className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-30">
+            <div className="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
                     {/* Logo Area (Left) */}
                     <div className="flex items-center">
@@ -251,30 +251,30 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
 
                     {/* Progress Steps (Center) */}
                     <div className="hidden md:flex items-center gap-4 text-sm font-medium">
-                        <div className={`flex items-center gap-2 ${currentStep >= 1 ? 'text-indigo-600' : 'text-gray-400'}`}>
-                            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${currentStep >= 1 ? 'bg-indigo-100' : 'bg-gray-100'}`}>1</span>
+                        <div className={`flex items-center gap-2 ${currentStep >= 1 ? 'text-slate-900' : 'text-gray-400'}`}>
+                            <span className={`w-6 h-6 rounded-md flex items-center justify-center text-xs ${currentStep >= 1 ? 'bg-slate-900 text-white' : 'bg-gray-100'}`}>1</span>
                             <span>Type of QR code</span>
                         </div>
                         <ChevronRight size={16} className="text-gray-300" />
-                        <div className={`flex items-center gap-2 ${currentStep >= 2 ? 'text-indigo-600' : 'text-gray-400'}`}>
-                            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${currentStep >= 2 ? 'bg-indigo-100' : 'bg-gray-100'}`}>2</span>
+                        <div className={`flex items-center gap-2 ${currentStep >= 2 ? 'text-slate-900' : 'text-gray-400'}`}>
+                            <span className={`w-6 h-6 rounded-md flex items-center justify-center text-xs ${currentStep >= 2 ? 'bg-slate-900 text-white' : 'bg-gray-100'}`}>2</span>
                             <span>Content</span>
                         </div>
                         <ChevronRight size={16} className="text-gray-300" />
-                        <div className={`flex items-center gap-2 ${currentStep >= 3 ? 'text-indigo-600' : 'text-gray-400'}`}>
-                            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${currentStep >= 3 ? 'bg-indigo-100' : 'bg-gray-100'}`}>3</span>
+                        <div className={`flex items-center gap-2 ${currentStep >= 3 ? 'text-slate-900' : 'text-gray-400'}`}>
+                            <span className={`w-6 h-6 rounded-md flex items-center justify-center text-xs ${currentStep >= 3 ? 'bg-slate-900 text-white' : 'bg-gray-100'}`}>3</span>
                             <span>QR design</span>
                         </div>
                     </div>
 
                     {/* Actions (Right) */}
                     <div className="flex items-center gap-4">
-                        <button className="p-2 text-gray-400 hover:text-slate-600 rounded-full hover:bg-gray-100">
+                        <button className="p-2 text-gray-400 hover:text-slate-600 rounded-md hover:bg-gray-100">
                             <HelpCircle size={20} />
                         </button>
                         <button
                             onClick={onToggle}
-                            className="p-2 text-indigo-600 bg-indigo-50 rounded hover:bg-indigo-100">
+                            className="p-2 text-slate-700 bg-slate-100 rounded-md hover:bg-slate-200">
                             {isOpen ? <X size={20} /> : <Menu size={20} />}
                         </button>
                     </div>
@@ -314,7 +314,7 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
                         {currentStep > 1 ? (
                             <button
                                 onClick={prevStep}
-                                className="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors"
+                                className="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-md font-semibold hover:bg-slate-50 transition-colors"
                             >
                                 Back
                             </button>
@@ -326,7 +326,7 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
                             <button
                                 onClick={nextStep}
                                 disabled={!qrType}
-                                className="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-bold shadow-xl shadow-indigo-100 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                className="bg-slate-950 text-white px-12 py-4 rounded-md font-bold shadow-sm hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                             >
                                 Next Step
                             </button>
@@ -334,7 +334,7 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
                             <button
                                 onClick={handleCreateQR}
                                 disabled={isCreating}
-                                className="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-bold shadow-xl shadow-indigo-100 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                                className="bg-slate-950 text-white px-12 py-4 rounded-md font-bold shadow-sm hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                             >
                                 {isCreating ? (
                                     <>

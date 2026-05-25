@@ -127,12 +127,12 @@ const PrivacyDataPage = () => {
     };
 
     return (
-        <div className="p-6 md:p-10 bg-slate-50 min-h-full">
+        <div className="p-6 md:p-8 bg-slate-50 min-h-full">
             {/* Header */}
             <header className="mb-10">
                 <h1 className="text-3xl font-extrabold mb-1">Privacy & Data</h1>
                 <p className="text-slate-500 text-sm font-medium">
-                    Manage your data, privacy preferences, and account deletion options (DPDP Compliant).
+                    Manage consent, exports, and erasure requests for DPDP compliance.
                 </p>
             </header>
 
@@ -140,26 +140,26 @@ const PrivacyDataPage = () => {
                 {/* Left Column: Toggles and Export */}
                 <div className="space-y-6">
                     {/* Privacy Settings */}
-                    <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-8">
+                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-8">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
-                                <Shield className="w-5 h-5 text-indigo-600" />
+                            <div className="w-10 h-10 bg-slate-100 rounded-md flex items-center justify-center">
+                                <Shield className="w-5 h-5 text-slate-700" />
                             </div>
                             <h3 className="text-xl font-bold text-slate-900">Privacy Preferences</h3>
                         </div>
                         
                         <div className="space-y-6">
-                            <div className="flex items-center justify-between p-4 border border-slate-100 rounded-2xl bg-slate-50">
+                            <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg bg-slate-50">
                                 <div>
                                     <h4 className="font-bold text-slate-900 flex items-center gap-2">
-                                        <Bell className="w-4 h-4 text-indigo-500" />
+                                        <Bell className="w-4 h-4 text-slate-600" />
                                         WhatsApp Health Alerts
                                     </h4>
                                     <p className="text-xs text-slate-500 font-medium mt-1 pr-4">
                                         Allow QRVibe to send you automated WhatsApp alerts when your links break. We securely log your consent for DPDP compliance.
                                     </p>
                                     {user?.whatsappNumber && (
-                                        <p className="text-xs text-indigo-500 font-semibold mt-2">
+                                        <p className="text-xs text-slate-700 font-semibold mt-2">
                                             Linked: {user.whatsappNumber}
                                         </p>
                                     )}
@@ -167,13 +167,13 @@ const PrivacyDataPage = () => {
                                 <button
                                     onClick={handleToggleWhatsapp}
                                     disabled={savingPrivacy}
-                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${whatsappOptIn ? 'bg-indigo-600' : 'bg-slate-200'} ${savingPrivacy ? 'opacity-50 cursor-wait' : ''}`}
+                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${whatsappOptIn ? 'bg-slate-900' : 'bg-slate-200'} ${savingPrivacy ? 'opacity-50 cursor-wait' : ''}`}
                                 >
                                     <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${whatsappOptIn ? 'translate-x-5' : 'translate-x-0'}`} />
                                 </button>
                             </div>
                             {privacyError && (
-                                <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold border border-red-100">
+                                <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-bold border border-red-100">
                                     {privacyError}
                                 </div>
                             )}
@@ -181,9 +181,9 @@ const PrivacyDataPage = () => {
                     </div>
 
                     {/* Data Export */}
-                    <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-8">
+                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-8">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                            <div className="w-10 h-10 bg-blue-50 rounded-md flex items-center justify-center">
                                 <Download className="w-5 h-5 text-blue-600" />
                             </div>
                             <h3 className="text-xl font-bold text-slate-900">Data Portability</h3>
@@ -194,7 +194,7 @@ const PrivacyDataPage = () => {
                         <button
                             onClick={handleExportData}
                             disabled={exportLoading}
-                            className="w-full flex items-center justify-center gap-2 py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors disabled:opacity-50"
+                            className="w-full flex items-center justify-center gap-2 py-4 bg-slate-900 text-white rounded-md font-bold hover:bg-slate-800 transition-colors disabled:opacity-50"
                         >
                             {exportLoading ? (
                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -210,11 +210,11 @@ const PrivacyDataPage = () => {
 
                 {/* Right Column: Danger Zone */}
                 <div className="space-y-6">
-                    <div className="bg-white rounded-[32px] border border-red-100 shadow-sm p-8 relative overflow-hidden">
+                    <div className="bg-white rounded-lg border border-red-100 shadow-sm p-8 relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-full h-2 bg-red-500" />
                         
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center">
+                            <div className="w-10 h-10 bg-red-50 rounded-md flex items-center justify-center">
                                 <AlertTriangle className="w-5 h-5 text-red-600" />
                             </div>
                             <h3 className="text-xl font-bold text-red-600">Danger Zone</h3>
@@ -225,7 +225,7 @@ const PrivacyDataPage = () => {
                             Permanently delete your account and wipe all associated data. This action is irreversible. All active QR codes will immediately break.
                         </p>
 
-                        <div className="space-y-4 bg-red-50 p-5 rounded-2xl border border-red-100 mb-6">
+                        <div className="space-y-4 bg-red-50 p-5 rounded-lg border border-red-100 mb-6">
                             <h5 className="text-xs font-bold uppercase tracking-widest text-red-600">What happens:</h5>
                             <ul className="space-y-2">
                                 <li className="flex items-start gap-2 text-sm text-red-900 font-medium">
@@ -245,7 +245,7 @@ const PrivacyDataPage = () => {
 
                         <button
                             onClick={openErasureModal}
-                            className="w-full flex items-center justify-center gap-2 py-4 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors"
+                            className="w-full flex items-center justify-center gap-2 py-4 bg-red-600 text-white rounded-md font-bold hover:bg-red-700 transition-colors"
                         >
                             <Trash2 className="w-5 h-5" />
                             Delete My Account
@@ -268,8 +268,8 @@ const PrivacyDataPage = () => {
                         </button>
 
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center">
-                                <Phone className="w-6 h-6 text-indigo-600" />
+                            <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center">
+                                <Phone className="w-6 h-6 text-slate-700" />
                             </div>
                             <div>
                                 <h3 className="text-lg font-bold text-slate-900">Add WhatsApp Number</h3>
@@ -291,21 +291,21 @@ const PrivacyDataPage = () => {
                                 onChange={(e) => setPendingNumber(e.target.value)}
                                 placeholder="+919876543210"
                                 autoFocus
-                                className="w-full border border-slate-200 bg-white rounded-xl p-4 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all font-semibold"
+                                className="w-full border border-slate-200 bg-white rounded-lg p-4 focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-900/10 transition-all font-semibold"
                             />
                         </div>
 
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setShowNumberModal(false)}
-                                className="flex-1 py-3.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+                                className="flex-1 py-3.5 bg-slate-100 text-slate-700 rounded-md font-bold hover:bg-slate-200 transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleNumberModalSubmit}
                                 disabled={!pendingNumber.trim() || savingPrivacy}
-                                className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-slate-900 text-white rounded-md font-bold hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {savingPrivacy ? (
                                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -335,7 +335,7 @@ const PrivacyDataPage = () => {
                         </button>
 
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center">
+                            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                                 <AlertTriangle className="w-6 h-6 text-red-600" />
                             </div>
                             <div>
@@ -349,7 +349,7 @@ const PrivacyDataPage = () => {
                         </p>
 
                         {erasureError && (
-                            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-xl text-sm font-bold">
+                            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm font-bold">
                                 {erasureError}
                             </div>
                         )}
@@ -364,21 +364,21 @@ const PrivacyDataPage = () => {
                                 onChange={(e) => setErasurePassword(e.target.value)}
                                 placeholder="Enter your password"
                                 autoFocus
-                                className="w-full border border-slate-200 bg-white rounded-xl p-4 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all font-semibold"
+                                className="w-full border border-slate-200 bg-white rounded-lg p-4 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all font-semibold"
                             />
                         </div>
 
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setShowErasureModal(false)}
-                                className="flex-1 py-3.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+                                className="flex-1 py-3.5 bg-slate-100 text-slate-700 rounded-md font-bold hover:bg-slate-200 transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleErasure}
                                 disabled={erasureLoading || !erasurePassword}
-                                className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-red-600 text-white rounded-md font-bold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {erasureLoading ? (
                                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

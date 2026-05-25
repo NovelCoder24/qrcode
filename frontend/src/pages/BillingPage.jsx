@@ -155,14 +155,14 @@ const BillingPage = () => {
     const subStatus = subscriptionStatus?.subscriptionStatus || user?.subscription?.status;
 
     return (
-        <div className="p-6 max-w-6xl mx-auto">
+        <div className="p-6 md:p-8 max-w-6xl mx-auto">
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-slate-900">Billing & Plans</h1>
-                <p className="text-slate-500 mt-1">Manage your subscription and billing details</p>
+                <h1 className="text-3xl font-extrabold text-slate-900">Billing & Plans</h1>
+                <p className="text-slate-500 mt-1">Manage subscription access, invoices, and GST details.</p>
             </div>
 
             {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-700">
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3 text-red-700">
                     <AlertCircle className="w-5 h-5 flex-shrink-0" />
                     <p className="text-sm">{error}</p>
                 </div>
@@ -170,7 +170,7 @@ const BillingPage = () => {
 
             {/* Test Mode Banner */}
             {subscriptionStatus?.testMode && (
-                <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3 text-amber-700">
+                <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3 text-amber-700">
                     <AlertCircle className="w-5 h-5 flex-shrink-0" />
                     <div>
                         <p className="text-sm font-semibold">Test Mode Active</p>
@@ -180,7 +180,7 @@ const BillingPage = () => {
             )}
 
             {/* Current Plan Status */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-8">
+            <div className="bg-white rounded-lg border border-slate-200 p-6 mb-8 shadow-sm">
                 <div className="flex items-center justify-between flex-wrap gap-4">
                     <div>
                         <p className="text-sm text-slate-500 mb-1">Current Plan</p>
@@ -189,7 +189,7 @@ const BillingPage = () => {
                                 {PLANS[currentPlan]?.name || 'Starter'}
                                 {isTrialing && (
                                     <span className="text-amber-600 font-semibold text-base ml-1">
-                                        (Trial · {daysLeftInTrial} {daysLeftInTrial === 1 ? 'day' : 'days'} left)
+                                        (Trial - {daysLeftInTrial} {daysLeftInTrial === 1 ? 'day' : 'days'} left)
                                     </span>
                                 )}
                             </span>
@@ -224,10 +224,10 @@ const BillingPage = () => {
 
             {/* Billing Cycle Toggle */}
             <div className="flex justify-center mb-8">
-                <div className="bg-slate-100 p-1 rounded-xl inline-flex">
+                <div className="bg-slate-100 p-1 rounded-lg inline-flex">
                     <button
                         onClick={() => setBillingCycle('monthly')}
-                        className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
+                        className={`px-6 py-2 rounded-md text-sm font-semibold transition-all ${
                             billingCycle === 'monthly'
                                 ? 'bg-white text-slate-900 shadow-sm'
                                 : 'text-slate-600 hover:text-slate-900'
@@ -237,7 +237,7 @@ const BillingPage = () => {
                     </button>
                     <button
                         onClick={() => setBillingCycle('annual')}
-                        className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
+                        className={`px-6 py-2 rounded-md text-sm font-semibold transition-all ${
                             billingCycle === 'annual'
                                 ? 'bg-white text-slate-900 shadow-sm'
                                 : 'text-slate-600 hover:text-slate-900'
@@ -258,23 +258,23 @@ const BillingPage = () => {
                     return (
                         <div
                             key={key}
-                            className={`relative bg-white rounded-2xl border-2 p-6 transition-all ${
+                            className={`relative bg-white rounded-lg border p-6 transition-all shadow-sm ${
                                 plan.popular
-                                    ? 'border-indigo-500 shadow-lg shadow-indigo-100'
+                                    ? 'border-slate-900 ring-1 ring-slate-900'
                                     : 'border-slate-200 hover:border-slate-300'
                             }`}
                         >
                             {plan.popular && (
                                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                                    <span className="px-3 py-1 bg-indigo-600 text-white text-xs font-bold rounded-full">
+                                    <span className="px-3 py-1 bg-slate-950 text-white text-xs font-bold rounded-md">
                                         MOST POPULAR
                                     </span>
                                 </div>
                             )}
 
                             <div className="flex items-center gap-3 mb-4">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                                    plan.popular ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-600'
+                                <div className={`w-10 h-10 rounded-md flex items-center justify-center ${
+                                    plan.popular ? 'bg-slate-100 text-slate-900' : 'bg-slate-100 text-slate-600'
                                 }`}>
                                     <Icon className="w-5 h-5" />
                                 </div>
@@ -283,7 +283,7 @@ const BillingPage = () => {
 
                             <div className="mb-6">
                                 <span className="text-3xl font-bold text-slate-900">
-                                    {price === 0 ? 'Free' : `₹${price}`}
+                                    {price === 0 ? 'Free' : `Rs.${price}`}
                                 </span>
                                 {price > 0 && (
                                     <span className="text-slate-500 text-sm">/month</span>
@@ -305,13 +305,13 @@ const BillingPage = () => {
                             <button
                                 onClick={() => handleSubscribe(key)}
                                 disabled={loading || (isCurrentPlan && !isTrialing) || key === 'starter'}
-                                className={`w-full py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+                                className={`w-full py-3 rounded-md font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
                                     (isCurrentPlan && !isTrialing)
                                         ? 'bg-slate-100 text-slate-500 cursor-default'
                                         : key === 'starter'
                                             ? 'bg-slate-100 text-slate-500 cursor-default'
                                             : plan.popular
-                                                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                                ? 'bg-slate-950 text-white hover:bg-slate-800'
                                                 : 'bg-slate-900 text-white hover:bg-slate-800'
                                 }`}
                             >
@@ -324,16 +324,16 @@ const BillingPage = () => {
             </div>
 
             {/* Money-Back Guarantee */}
-            <div className="flex items-center justify-center gap-3 mb-12 py-4 px-6 bg-emerald-50 border border-emerald-200 rounded-2xl max-w-lg mx-auto">
+            <div className="flex items-center justify-center gap-3 mb-12 py-4 px-6 bg-emerald-50 border border-emerald-200 rounded-lg max-w-lg mx-auto">
                 <ShieldCheck className="w-8 h-8 text-emerald-600 flex-shrink-0" />
                 <div>
                     <p className="text-sm font-bold text-emerald-800">7-Day Money-Back Guarantee</p>
                     <p className="text-xs text-emerald-600">Not satisfied? Get a full refund within 7 days of your first payment. No questions asked.</p>
                 </div>
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200 p-6">
+            <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
                 <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 bg-slate-100 rounded-md flex items-center justify-center">
                         <FileText className="w-5 h-5 text-slate-600" />
                     </div>
                     <div>
@@ -350,7 +350,7 @@ const BillingPage = () => {
                             value={gstNumber}
                             onChange={(e) => setGstNumber(e.target.value.toUpperCase())}
                             placeholder="22AAAAA0000A1Z5"
-                            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500"
                         />
                     </div>
                     <div>
@@ -360,7 +360,7 @@ const BillingPage = () => {
                             value={billingAddress.companyName}
                             onChange={(e) => setBillingAddress(prev => ({ ...prev, companyName: e.target.value }))}
                             placeholder="Acme Corp Pvt. Ltd."
-                            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500"
                         />
                     </div>
                     <div className="md:col-span-2">
@@ -370,7 +370,7 @@ const BillingPage = () => {
                             value={billingAddress.address}
                             onChange={(e) => setBillingAddress(prev => ({ ...prev, address: e.target.value }))}
                             placeholder="123, Business Park, Sector 5"
-                            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500"
                         />
                     </div>
                     <div>
@@ -380,7 +380,7 @@ const BillingPage = () => {
                             value={billingAddress.city}
                             onChange={(e) => setBillingAddress(prev => ({ ...prev, city: e.target.value }))}
                             placeholder="Mumbai"
-                            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500"
                         />
                     </div>
                     <div>
@@ -390,7 +390,7 @@ const BillingPage = () => {
                             value={billingAddress.state}
                             onChange={(e) => setBillingAddress(prev => ({ ...prev, state: e.target.value }))}
                             placeholder="Maharashtra"
-                            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500"
                         />
                     </div>
                     <div>
@@ -400,7 +400,7 @@ const BillingPage = () => {
                             value={billingAddress.pincode}
                             onChange={(e) => setBillingAddress(prev => ({ ...prev, pincode: e.target.value }))}
                             placeholder="400001"
-                            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500"
                         />
                     </div>
                 </div>
@@ -408,7 +408,7 @@ const BillingPage = () => {
                 <button
                     onClick={handleSaveBillingInfo}
                     disabled={savingBilling}
-                    className="mt-6 px-6 py-3 bg-slate-900 text-white rounded-xl font-semibold text-sm hover:bg-slate-800 transition-colors flex items-center gap-2"
+                    className="mt-6 px-6 py-3 bg-slate-900 text-white rounded-md font-semibold text-sm hover:bg-slate-800 transition-colors flex items-center gap-2"
                 >
                     {savingBilling && <Loader className="w-4 h-4 animate-spin" />}
                     Save Billing Details
@@ -418,9 +418,9 @@ const BillingPage = () => {
             {/* Cancel Confirmation Modal */}
             {showCancelModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-                    <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-300">
+                    <div className="bg-white rounded-lg shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-300">
                         <div className="p-6 text-center">
-                            <div className="mx-auto w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-red-100">
+                            <div className="mx-auto w-16 h-16 bg-red-50 text-red-500 rounded-lg flex items-center justify-center mb-6 shadow-sm border border-red-100">
                                 <AlertCircle size={32} />
                             </div>
                             <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Cancel Subscription?</h2>
@@ -432,14 +432,14 @@ const BillingPage = () => {
                                 <button
                                     onClick={confirmCancelSubscription}
                                     disabled={loading}
-                                    className="w-full py-3.5 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors shadow-md shadow-red-200 flex items-center justify-center gap-2"
+                                    className="w-full py-3.5 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-md transition-colors shadow-md shadow-red-200 flex items-center justify-center gap-2"
                                 >
                                     {loading ? <Loader className="w-5 h-5 animate-spin" /> : 'Yes, Cancel Subscription'}
                                 </button>
                                 <button
                                     onClick={() => setShowCancelModal(false)}
                                     disabled={loading}
-                                    className="w-full py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-600 font-semibold rounded-xl transition-colors"
+                                    className="w-full py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-600 font-semibold rounded-md transition-colors"
                                 >
                                     Keep My Subscription
                                 </button>

@@ -53,20 +53,20 @@ const AccountPage = () => {
     };
 
     return (
-        <div className="p-6 md:p-10 bg-slate-50 min-h-full">
+        <div className="p-6 md:p-8 bg-slate-50 min-h-full">
             {/* Header */}
             <header className="mb-10">
-                <h1 className="text-3xl font-extrabold mb-1">My Account</h1>
+                <h1 className="text-3xl font-extrabold mb-1">Settings</h1>
                 <p className="text-slate-500 text-sm font-medium">
-                    Manage your profile, view summary statistics, and account settings.
+                    Manage profile details, alert contact, and account access.
                 </p>
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Column: User Profile Info */}
                 <div className="lg:col-span-1 space-y-6">
-                    <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-8 flex flex-col items-center text-center">
-                        <div className="w-24 h-24 rounded-3xl border border-slate-200 bg-indigo-100 text-indigo-700 font-extrabold text-4xl flex flex-col items-center justify-center mb-6 shadow-inner">
+                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-8 flex flex-col items-center text-center">
+                        <div className="w-24 h-24 rounded-lg border border-slate-200 bg-slate-100 text-slate-800 font-extrabold text-4xl flex flex-col items-center justify-center mb-6 shadow-inner">
                             {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                         </div>
                         <h2 className="text-xl font-black text-slate-900 mb-1">{user?.name || 'User'}</h2>
@@ -74,7 +74,7 @@ const AccountPage = () => {
 
                         <button
                             onClick={handleLogout}
-                            className="w-full flex items-center justify-center gap-2 py-3.5 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-100 transition-colors"
+                            className="w-full flex items-center justify-center gap-2 py-3.5 bg-red-50 text-red-600 rounded-md font-bold hover:bg-red-100 transition-colors"
                         >
                             <LogOut className="w-4 h-4" />
                             Sign Out
@@ -85,26 +85,26 @@ const AccountPage = () => {
                 {/* Right Column: Account Details & Stats */}
                 <div className="lg:col-span-2 space-y-6">
                     {/* User Details Form Card */}
-                    <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-8">
+                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-8">
                         <h3 className="text-lg font-bold text-slate-900 mb-6">Profile Details</h3>
                         <div className="space-y-4">
                             <div>
                                 <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 block">Full Name</label>
-                                <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-xl p-3">
+                                <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-lg p-3">
                                     <User className="w-5 h-5 text-slate-400" />
                                     <p className="font-semibold text-slate-900">{user?.name}</p>
                                 </div>
                             </div>
                             <div>
                                 <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 block">Email Address</label>
-                                <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-xl p-3">
+                                <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-lg p-3">
                                     <Mail className="w-5 h-5 text-slate-400" />
                                     <p className="font-semibold text-slate-900">{user?.email}</p>
                                 </div>
                             </div>
                             <div>
                                 <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 block">Account Created</label>
-                                <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-xl p-3">
+                                <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-lg p-3">
                                     <Calendar className="w-5 h-5 text-slate-400" />
                                     <p className="font-semibold text-slate-900">
                                         {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Unknown'}
@@ -122,7 +122,7 @@ const AccountPage = () => {
                                     {saveStatus === 'error' && <span className="text-red-500 normal-case">Error saving</span>}
                                 </label>
                                 <div className="flex flex-col sm:flex-row gap-3">
-                                    <div className="flex-1 flex items-center gap-3 bg-white border border-slate-200 rounded-xl p-3 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                                    <div className="flex-1 flex items-center gap-3 bg-white border border-slate-200 rounded-lg p-3 focus-within:border-slate-500 focus-within:ring-2 focus-within:ring-slate-900/10 transition-all">
                                         <MessageCircle className="w-5 h-5 text-slate-400" />
                                         <input 
                                             type="text" 
@@ -135,7 +135,7 @@ const AccountPage = () => {
                                     <button 
                                         onClick={handleSaveWhatsapp}
                                         disabled={isSaving || whatsappString === (user?.whatsappNumber || '')}
-                                        className="flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                        className="flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-md font-bold hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                                     >
                                         {isSaving ? (
                                             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -156,17 +156,17 @@ const AccountPage = () => {
 
                     {/* Quick Stats */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-6 flex items-center gap-4">
-                            <div className="w-12 h-12 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-                                <QrCode className="w-6 h-6 text-indigo-600" />
+                        <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-6 flex items-center gap-4">
+                            <div className="w-12 h-12 bg-slate-100 border border-slate-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <QrCode className="w-6 h-6 text-slate-700" />
                             </div>
                             <div>
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Total QR Codes</p>
                                 <h4 className="text-2xl font-black text-slate-900">{totalCodes}</h4>
                             </div>
                         </div>
-                        <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-6 flex items-center gap-4">
-                            <div className="w-12 h-12 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                        <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-6 flex items-center gap-4">
+                            <div className="w-12 h-12 bg-emerald-50 border border-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
                                 <ScanLine className="w-6 h-6 text-emerald-600" />
                             </div>
                             <div>

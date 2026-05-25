@@ -14,7 +14,7 @@ import axiosInstance from '../api/axios';
 
 
 
-const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+const COLORS = ['#0F172A', '#10B981', '#F59E0B', '#EF4444', '#2563EB'];
 
 
 
@@ -52,13 +52,13 @@ const StatCards = ({ totals, days }) => (
 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow relative">
 
             <div className="flex justify-between items-start mb-4">
 
                 <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Total scans</p>
 
-                <div className="h-8 w-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600"><Activity size={16} /></div>
+                <div className="h-8 w-8 rounded-md bg-slate-100 flex items-center justify-center text-slate-700"><Activity size={16} /></div>
 
             </div>
 
@@ -74,7 +74,7 @@ const StatCards = ({ totals, days }) => (
 
                 <div className="absolute bottom-4 left-6 flex items-center gap-1.5 text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
 
-                    <span role="img" aria-label="shield">🛡️</span> {totals.botFiltered} Bot scans filtered
+                    <span>{totals.botFiltered} bot scans filtered</span>
 
                 </div>
 
@@ -82,13 +82,13 @@ const StatCards = ({ totals, days }) => (
 
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
 
             <div className="flex justify-between items-start mb-4">
 
                 <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Unique scanners</p>
 
-                <div className="h-8 w-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600"><Users size={16} /></div>
+                <div className="h-8 w-8 rounded-md bg-emerald-50 flex items-center justify-center text-emerald-600"><Users size={16} /></div>
 
             </div>
 
@@ -102,13 +102,13 @@ const StatCards = ({ totals, days }) => (
 
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
 
             <div className="flex justify-between items-start mb-4">
 
                 <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{totals.activeQRs !== undefined ? 'Active QRs' : 'Total Scans (All Time)'}</p>
 
-                <div className="h-8 w-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600"><Globe size={16} /></div>
+                <div className="h-8 w-8 rounded-md bg-amber-50 flex items-center justify-center text-amber-600"><Globe size={16} /></div>
 
             </div>
 
@@ -118,23 +118,23 @@ const StatCards = ({ totals, days }) => (
 
             ) : (
 
-                <h3 className="text-3xl font-black text-slate-900">{totals.allTimeScans ?? '—'}</h3>
+                <h3 className="text-3xl font-black text-slate-900">{totals.allTimeScans ?? '--'}</h3>
 
             )}
 
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
 
             <div className="flex justify-between items-start mb-4">
 
                 <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Peak Scan Time</p>
 
-                <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600"><Activity size={16} /></div>
+                <div className="h-8 w-8 rounded-md bg-blue-50 flex items-center justify-center text-blue-600"><Activity size={16} /></div>
 
             </div>
 
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{totals.peakTime || '—'}</h3>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{totals.peakTime || '--'}</h3>
 
         </div>
 
@@ -154,11 +154,11 @@ const ChartsSection = ({ scansOverTime, deviceStats, locations, copied, onCopyLa
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-            <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+            <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-slate-200">
 
                 <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
 
-                    <Activity size={18} className="text-indigo-500" /> Scans Over Time
+                    <Activity size={18} className="text-slate-600" /> Scans Over Time
 
                 </h2>
 
@@ -172,9 +172,9 @@ const ChartsSection = ({ scansOverTime, deviceStats, locations, copied, onCopyLa
 
                                 <linearGradient id="colorScans" x1="0" y1="0" x2="0" y2="1">
 
-                                    <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.3}/>
+                                    <stop offset="5%" stopColor="#0F172A" stopOpacity={0.25}/>
 
-                                    <stop offset="95%" stopColor="#4F46E5" stopOpacity={0}/>
+                                    <stop offset="95%" stopColor="#0F172A" stopOpacity={0}/>
 
                                 </linearGradient>
 
@@ -188,7 +188,7 @@ const ChartsSection = ({ scansOverTime, deviceStats, locations, copied, onCopyLa
 
                             <RechartsTooltip labelFormatter={(str) => new Date(str).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)' }} />
 
-                            <Area type="monotone" dataKey="scans" stroke="#4F46E5" strokeWidth={3} fillOpacity={1} fill="url(#colorScans)" />
+                            <Area type="monotone" dataKey="scans" stroke="#0F172A" strokeWidth={3} fillOpacity={1} fill="url(#colorScans)" />
 
                         </AreaChart>
 
@@ -198,7 +198,7 @@ const ChartsSection = ({ scansOverTime, deviceStats, locations, copied, onCopyLa
 
             </div>
 
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col">
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 flex flex-col">
 
                 <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
 
@@ -258,7 +258,7 @@ const ChartsSection = ({ scansOverTime, deviceStats, locations, copied, onCopyLa
 
         {/* Geographical Distribution */}
 
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
 
             <div className="flex items-center gap-4 mb-8">
                 <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500">
@@ -317,7 +317,7 @@ const ChartsSection = ({ scansOverTime, deviceStats, locations, copied, onCopyLa
                                     </div>
 
                                     <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                                        <div className="bg-indigo-500 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${(loc.count / maxCount) * 100}%` }}></div>
+                                        <div className="bg-slate-900 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${(loc.count / maxCount) * 100}%` }}></div>
                                     </div>
 
                                 </div>
@@ -434,7 +434,7 @@ const QRTable = ({ onSelectQR }) => {
 
     return (
 
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
 
             <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 
@@ -442,7 +442,7 @@ const QRTable = ({ onSelectQR }) => {
 
                     <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
 
-                        <QrCode size={18} className="text-indigo-500" /> All QR Codes
+                        <QrCode size={18} className="text-slate-600" /> All QR Codes
 
                     </h2>
 
@@ -454,7 +454,7 @@ const QRTable = ({ onSelectQR }) => {
 
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
 
-                    <input type="text" value={searchInput} onChange={e => setSearchInput(e.target.value)} placeholder="Search by title..." className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
+                    <input type="text" value={searchInput} onChange={e => setSearchInput(e.target.value)} placeholder="Search by title..." className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-all" />
 
                 </form>
 
@@ -480,7 +480,7 @@ const QRTable = ({ onSelectQR }) => {
 
                         {qrs.map(qr => (
 
-                            <button key={qr._id} onClick={() => onSelectQR(qr._id)} className="w-full p-4 px-6 flex items-center justify-between hover:bg-indigo-50/40 transition-colors group text-left">
+                            <button key={qr._id} onClick={() => onSelectQR(qr._id)} className="w-full p-4 px-6 flex items-center justify-between hover:bg-slate-50 transition-colors group text-left">
 
                                 <div className="flex items-center gap-4">
 
@@ -718,7 +718,7 @@ const AnalyticsPage = () => {
 
         return (
 
-            <div className="p-8 max-w-7xl mx-auto space-y-8">
+            <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
 
                 {/* Header */}
 
@@ -726,7 +726,7 @@ const AnalyticsPage = () => {
 
                     <div className="flex items-center gap-4">
 
-                        <button onClick={handleBack} className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm">
+                        <button onClick={handleBack} className="p-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-950 hover:border-slate-300 transition-all shadow-sm">
 
                             <ArrowLeft size={20} />
 
@@ -740,7 +740,7 @@ const AnalyticsPage = () => {
 
                                 {qr.metadata?.title || 'Untitled'}
 
-                                <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg font-bold uppercase">{qr.qr_type}</span>
+                                <span className="text-[10px] bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md font-bold uppercase">{qr.qr_type}</span>
 
                             </h1>
 
@@ -748,11 +748,11 @@ const AnalyticsPage = () => {
 
                     </div>
 
-                    <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+                    <div className="flex items-center bg-white border border-slate-200 rounded-lg p-1 shadow-sm">
 
                         {[7, 30, 90].map(d => (
 
-                            <button key={d} onClick={() => setDays(d)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${days === d ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:text-slate-800'}`}>{d}D</button>
+                            <button key={d} onClick={() => setDays(d)} className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${days === d ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-800'}`}>{d}D</button>
 
                         ))}
 
@@ -782,7 +782,7 @@ const AnalyticsPage = () => {
 
     return (
 
-        <div className="p-8 max-w-7xl mx-auto space-y-8">
+        <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
 
             {/* Header & Date Range */}
 
@@ -796,11 +796,11 @@ const AnalyticsPage = () => {
 
                 </div>
 
-                <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+                <div className="flex items-center bg-white border border-slate-200 rounded-lg p-1 shadow-sm">
 
                     {[7, 30, 90].map(d => (
 
-                        <button key={d} onClick={() => setDays(d)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${days === d ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:text-slate-800'}`}>{d}D</button>
+                        <button key={d} onClick={() => setDays(d)} className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${days === d ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-800'}`}>{d}D</button>
 
                     ))}
 
