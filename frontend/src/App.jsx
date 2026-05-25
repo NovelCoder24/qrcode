@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react';
 
 import Sidebar from './components/Sidebar.jsx';
 import Dashboard from './components/Dashboard.jsx';
+import DashboardHome from './components/DashboardHome.jsx';
 import PrivateRoute from './components/PrivateRoute.jsx';
 import DashboardShell from './components/layout/DashboardShell.jsx';
 
@@ -96,7 +97,7 @@ const App = () => {
             />
 
             <Route element={<MainDashboardLayout />}>
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard" element={<DashboardHome />} />
               <Route path="/qrcodes" element={<Dashboard />} />
               <Route path="/qrcodes/:id" element={<QRDetailPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
@@ -112,3 +113,4 @@ const App = () => {
 };
 
 export default App;
+
