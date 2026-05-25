@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-    Search, ScanLine, Zap, MousePointer2, PlusCircle, ChevronDown, QrCode, Download,
+    Search, ScanLine, Zap, PlusCircle, ChevronDown, QrCode, Download,
     MoreHorizontal, Loader2, Trash2, Edit2, Calendar, Folder, ExternalLink, PencilLine, Image as ImageIcon,
     Square, CheckSquare, Palette, ArrowRightLeft, Copy, PauseCircle, X, Check, Share,
     Globe, FileText, Contact, Share2, MessageCircle, Film,
-    PartyPopper, Link as LinkIcon, LogOut, CreditCard, Settings, User, BarChart3, Layers, Menu, ChevronRight, Eye,
+    PartyPopper, Link as LinkIcon, LogOut, CreditCard, Settings, BarChart3, ChevronRight, Eye,
     Lock, AlertTriangle
 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
@@ -397,7 +397,8 @@ const Dashboard = () => {
 
     // Compute live stats from real data
     const totalScans = qrCodes.reduce((sum, qr) => sum + (qr.stats?.total_scans || 0), 0);
-    const activeCodes = qrCodes.filter(qr => qr.isActive).length;
+    const dynamicActiveCount = qrCodes.filter(qr => qr.accessMode !== 'static_locked' && qr.isActive).length;
+    const staticLockedCount = qrCodes.filter(qr => qr.accessMode === 'static_locked').length;
     const totalCodes = qrCodes.length;
 
     // Icon colors by QR type
@@ -422,7 +423,7 @@ const Dashboard = () => {
     ];
 
     const warningBanner = lockedStaticCodes.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex gap-3">
                 <AlertTriangle className="text-amber-500 shrink-0 w-6 h-6 mt-0.5 sm:mt-0" />
                 <div className="text-sm">
@@ -430,7 +431,7 @@ const Dashboard = () => {
                     <p className="text-slate-600">We kept your top 5 most scanned QR codes fully dynamic. Your other QR codes are locked to their current link and analytics are paused.</p>
                 </div>
             </div>
-            <button onClick={() => navigate('/billing')} className="whitespace-nowrap px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-sm transition-colors text-sm shrink-0 w-full sm:w-auto">
+            <button onClick={() => navigate('/billing')} className="whitespace-nowrap px-4 py-2 bg-slate-950 hover:bg-slate-800 text-white font-bold rounded-md shadow-sm transition-colors text-sm shrink-0 w-full sm:w-auto">
                 Upgrade to Unlock All
             </button>
         </div>
@@ -448,8 +449,8 @@ const Dashboard = () => {
                 <section className="mb-6">
                     <div className="flex justify-between items-start">
                         <div>
-                            <h1 className="text-2xl font-extrabold tracking-tight">Welcome back, {user?.name ? user.name.split(' ')[0] : 'User'}!</h1>
-                            <p className="text-slate-500 text-sm font-medium">You have {totalCodes} QR codes across {totalScans.toLocaleString()} total scans.</p>
+                            <h1 className="text-2xl font-extrabold tracking-tight">My QR Codes</h1>
+                            <p className="text-slate-500 text-sm font-medium">Manage destinations, downloads, and printed-code safety.</p>
                         </div>
                         <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold border-2 border-white shadow-sm shrink-0">
                             {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
@@ -459,32 +460,32 @@ const Dashboard = () => {
 
                 {/* Stats Grid */}
                 <section className="grid grid-cols-3 gap-3 mb-8">
-                    <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center text-center">
-                        <div className="bg-indigo-50 text-indigo-600 p-2 rounded-xl mb-2 flex items-center justify-center">
+                    <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-200 flex flex-col items-center text-center">
+                        <div className="bg-slate-100 text-slate-700 p-2 rounded-md mb-2 flex items-center justify-center">
                             <BarChart3 size={18} />
                         </div>
                         <span className="text-xl font-bold leading-none mb-1">{totalScans.toLocaleString()}</span>
                         <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Total Scans</span>
                     </div>
-                    <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center text-center">
-                        <div className="bg-purple-50 text-purple-600 p-2 rounded-xl mb-2 flex items-center justify-center">
+                    <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-200 flex flex-col items-center text-center">
+                        <div className="bg-emerald-50 text-emerald-600 p-2 rounded-md mb-2 flex items-center justify-center">
                             <Zap size={18} />
                         </div>
-                        <span className="text-xl font-bold leading-none mb-1">{activeCodes}</span>
-                        <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Active</span>
+                        <span className="text-xl font-bold leading-none mb-1">{dynamicActiveCount}</span>
+                        <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Dynamic</span>
                     </div>
-                    <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center text-center">
-                        <div className="bg-blue-50 text-blue-600 p-2 rounded-xl mb-2 flex items-center justify-center">
-                            <Layers size={18} />
+                    <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-200 flex flex-col items-center text-center">
+                        <div className="bg-amber-50 text-amber-600 p-2 rounded-md mb-2 flex items-center justify-center">
+                            <Lock size={18} />
                         </div>
-                        <span className="text-xl font-bold leading-none mb-1">{totalCodes}</span>
-                        <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Codes</span>
+                        <span className="text-xl font-bold leading-none mb-1">{staticLockedCount}</span>
+                        <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Static</span>
                     </div>
                 </section>
 
                 {/* Action Bar */}
                 <section className="mb-6 space-y-4">
-                    <button onClick={() => navigate('/create')} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                    <button onClick={() => navigate('/create')} className="w-full bg-slate-950 hover:bg-slate-800 text-white font-bold py-3.5 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
                         <PlusCircle size={20} strokeWidth={3} />
                         Create New Code
                     </button>
@@ -494,7 +495,7 @@ const Dashboard = () => {
                         <input
                             type="text"
                             placeholder="Search your codes..."
-                            className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
+                            className="w-full bg-white border border-slate-200 rounded-lg py-3.5 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-all shadow-sm"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -504,9 +505,9 @@ const Dashboard = () => {
                 {/* QR List Section */}
                 <section>
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="font-bold text-lg">{lockedStaticCodes.length > 0 ? "Active Dynamic QR Codes" : "Your Recent Codes"}</h2>
-                        <button className="text-indigo-600 text-sm font-bold flex items-center" onClick={() => navigate('/analytics')}>
-                            View All <ChevronRight size={16} />
+                        <h2 className="font-bold text-lg">{lockedStaticCodes.length > 0 ? "Dynamic QR Codes" : "All QR Codes"}</h2>
+                        <button className="text-slate-600 hover:text-slate-950 text-sm font-bold flex items-center" onClick={() => navigate('/analytics')}>
+                            Analytics <ChevronRight size={16} />
                         </button>
                     </div>
 
@@ -537,7 +538,7 @@ const Dashboard = () => {
                                         }
                                         navigate(`/qrcodes/${qr._id}`);
                                     }} 
-                                    className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow group flex cursor-pointer relative"
+                                    className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm hover:border-slate-300 hover:shadow-md transition-shadow group flex cursor-pointer relative"
                                 >
                                     <div className="flex gap-4 w-full">
                                         {/* Visual Preview Area */}
@@ -546,11 +547,11 @@ const Dashboard = () => {
                                                 e.stopPropagation();
                                                 setPreviewModal(qr);
                                             }}
-                                            className="w-16 h-16 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center relative shrink-0 overflow-hidden hover:bg-white hover:border-indigo-200 transition-all group/qr cursor-zoom-in"
+                                            className="w-16 h-16 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-center relative shrink-0 overflow-hidden hover:bg-white hover:border-slate-300 transition-all group/qr cursor-zoom-in"
                                             title="Click to view design"
                                         >
-                                            <QrCode size={28} className="text-slate-900 group-hover/qr:text-indigo-400 transition-colors" />
-                                            <div className="absolute inset-0 bg-indigo-600/0 group-hover/qr:bg-indigo-600/5 flex items-center justify-center transition-all">
+                                            <QrCode size={28} className="text-slate-900 group-hover/qr:text-slate-600 transition-colors" />
+                                            <div className="absolute inset-0 bg-slate-900/0 group-hover/qr:bg-slate-900/5 flex items-center justify-center transition-all">
                                                 <Eye size={16} className="text-white opacity-0 group-hover/qr:opacity-100 translate-y-1 group-hover/qr:translate-y-0 transition-all" />
                                             </div>
                                         </div>
@@ -575,7 +576,7 @@ const Dashboard = () => {
                                                 <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wide">
                                                     {qr.qr_type || 'URL'}
                                                 </span>
-                                                <span>•</span>
+                                                <span>|</span>
                                                 <span className="truncate max-w-[120px]">{qr.target_url?.replace('https://', '')}</span>
                                             </div>
 
@@ -583,7 +584,7 @@ const Dashboard = () => {
                                                 <div className="flex items-center gap-4">
                                                     <div className="flex flex-col">
                                                         <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Scans</span>
-                                                        <span className="text-sm font-extrabold text-indigo-600">{qr.stats?.total_scans || 0}</span>
+                                                        <span className="text-sm font-extrabold text-emerald-600">{qr.stats?.total_scans || 0}</span>
                                                     </div>
                                                     <div className="flex flex-col">
                                                         <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Created</span>
@@ -592,10 +593,10 @@ const Dashboard = () => {
                                                 </div>
 
                                                 <div className="flex gap-2 shrink-0">
-                                                    <button onClick={(e) => { e.stopPropagation(); setDownloadModal(qr); }} className="p-2 bg-slate-50 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 rounded-xl transition-colors border border-slate-100">
+                                                    <button onClick={(e) => { e.stopPropagation(); setDownloadModal(qr); }} className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-950 rounded-md transition-colors border border-slate-200">
                                                         <Download size={18} />
                                                     </button>
-                                                    <button onClick={(e) => { e.stopPropagation(); window.open(qr.target_url, '_blank'); }} className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-colors border border-indigo-100">
+                                                    <button onClick={(e) => { e.stopPropagation(); window.open(qr.target_url, '_blank'); }} className="p-2 bg-slate-950 hover:bg-slate-800 text-white rounded-md transition-colors border border-slate-950">
                                                         <ExternalLink size={18} />
                                                     </button>
                                                 </div>
@@ -616,10 +617,10 @@ const Dashboard = () => {
                                         <Lock className="w-5 h-5 text-amber-500" />
                                         Locked Static Codes
                                     </h2>
-                                    <p className="text-xs text-slate-500 mt-1">These still scan but editing/analytics are paused. <button onClick={() => navigate('/billing')} className="text-indigo-600 underline font-bold">Upgrade to unlock</button>.</p>
+                                    <p className="text-xs text-slate-500 mt-1">These still scan but editing and analytics are paused. <button onClick={() => navigate('/billing')} className="text-slate-900 underline font-bold">Upgrade to unlock</button>.</p>
                                 </div>
                                 {lockedStaticCodes.map((qr) => (
-                                    <div key={qr._id} onClick={() => { setUpgradeModalType('locked'); setUpgradeModalOpen(true); }} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-sm opacity-90 flex cursor-pointer relative">
+                                    <div key={qr._id} onClick={() => { setUpgradeModalType('locked'); setUpgradeModalOpen(true); }} className="bg-slate-50 border border-slate-200 rounded-lg p-4 shadow-sm opacity-90 flex cursor-pointer relative">
                                         <div className="flex gap-4 w-full">
                                             <div className="w-16 h-16 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center shrink-0">
                                                 <QrCode size={28} className="text-slate-400" />
@@ -655,15 +656,15 @@ const Dashboard = () => {
         {/* Desktop View */}
         {loading ? <DesktopLoadingSkeleton /> : (
         <>
-        <div className="hidden md:block p-6 md:p-10 bg-slate-50 min-h-full">
+        <div className="hidden md:block p-6 md:p-8 bg-slate-50 min-h-full">
             {warningBanner}
             {/* Top Header */}
-            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
                 <div>
-                    <h1 className="text-3xl font-extrabold mb-1">Welcome back, {user?.name ? user.name.split(' ')[0] : 'User'}!</h1>
+                    <h1 className="text-3xl font-extrabold mb-1">My QR Codes</h1>
                     <p className="text-slate-500 text-sm font-medium">
                         {totalCodes > 0
-                            ? `You have ${totalCodes} QR code${totalCodes !== 1 ? 's' : ''} with ${totalScans.toLocaleString()} total scans.`
+                            ? `Manage ${totalCodes} QR code${totalCodes !== 1 ? 's' : ''}, ${dynamicActiveCount} dynamic active, and ${staticLockedCount} static locked.`
                             : 'Create your first QR code to get started!'}
                     </p>
                 </div>
@@ -675,10 +676,17 @@ const Dashboard = () => {
                             placeholder="Search codes..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="bg-white border border-slate-200 pl-11 pr-4 py-2.5 rounded-xl text-sm outline-none focus:border-indigo-500 w-64 font-medium"
+                            className="bg-white border border-slate-200 pl-11 pr-4 py-2.5 rounded-lg text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-900/10 w-72 font-medium"
                         />
                     </div>
-                    <div className="relative ml-auto md:ml-0" ref={userMenuRef}>
+                    <button
+                        onClick={() => navigate('/create')}
+                        className="hidden lg:inline-flex items-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-slate-800"
+                    >
+                        <PlusCircle className="w-4 h-4" />
+                        Create QR
+                    </button>
+                    <div className="relative ml-auto md:ml-0 hidden" ref={userMenuRef}>
                         <button
                             onClick={(e) => { e.stopPropagation(); setShowUserMenu(!showUserMenu); }}
                             className="w-10 h-10 rounded-xl border border-slate-200 bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold overflow-hidden hover:bg-indigo-200 transition-colors"
@@ -737,47 +745,49 @@ const Dashboard = () => {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
-                        <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
-                            <ScanLine className="w-5 h-5 text-indigo-600" />
-                        </div>
-                    </div>
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Total Scans</p>
-                    <h4 className="text-2xl font-black">{totalScans.toLocaleString()}</h4>
-                </div>
-                <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
-                            <Zap className="w-5 h-5 text-purple-600" />
-                        </div>
-                    </div>
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Active Codes</p>
-                    <h4 className="text-2xl font-black">{activeCodes}</h4>
-                </div>
-                <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                            <MousePointer2 className="w-5 h-5 text-blue-600" />
+                        <div className="w-10 h-10 bg-slate-100 rounded-md flex items-center justify-center">
+                            <QrCode className="w-5 h-5 text-slate-700" />
                         </div>
                     </div>
                     <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Total Codes</p>
                     <h4 className="text-2xl font-black">{totalCodes}</h4>
                 </div>
-                <div
-                    onClick={() => navigate('/create')}
-                    className="bg-indigo-600 p-6 rounded-[32px] shadow-lg shadow-indigo-100 text-white flex flex-col justify-center items-center cursor-pointer hover:bg-indigo-700 transition-all"
-                >
-                    <PlusCircle className="w-8 h-8 mb-2" />
-                    <span className="font-bold text-sm">Create New Code</span>
+                <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="w-10 h-10 bg-emerald-50 rounded-md flex items-center justify-center">
+                            <Zap className="w-5 h-5 text-emerald-600" />
+                        </div>
+                    </div>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Dynamic Active</p>
+                    <h4 className="text-2xl font-black text-emerald-600">{dynamicActiveCount}</h4>
+                </div>
+                <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="w-10 h-10 bg-amber-50 rounded-md flex items-center justify-center">
+                            <Lock className="w-5 h-5 text-amber-600" />
+                        </div>
+                    </div>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Static Locked</p>
+                    <h4 className="text-2xl font-black text-amber-600">{staticLockedCount}</h4>
+                </div>
+                <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="w-10 h-10 bg-blue-50 rounded-md flex items-center justify-center">
+                            <ScanLine className="w-5 h-5 text-blue-600" />
+                        </div>
+                    </div>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Total Scans</p>
+                    <h4 className="text-2xl font-black">{totalScans.toLocaleString()}</h4>
                 </div>
             </div>
 
             {/* Codes Table / Recent Activity */}
             <div className="w-full mb-8">
                 {/* Search & Select All Bar (per design) */}
-                <div className="flex items-center gap-4 mb-6">
+                <div className="flex items-center justify-between gap-4 mb-4">
                     <button onClick={toggleSelectAll} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors">
                         {selectedQRs.size === qrCodes.length && qrCodes.length > 0 ? (
                             <CheckSquare className="w-5 h-5 text-indigo-500" />
@@ -786,13 +796,13 @@ const Dashboard = () => {
                         )}
                         <span className="text-sm font-medium">Select All</span>
                     </button>
-                    {/* The search bar was shown here in the design but we already have one in the header. We can skip adding another one to avoid redundancy. */}
+                    <span className="text-xs font-medium text-slate-500">{filteredQRCodes.length} shown</span>
                 </div>
 
                 {error ? (
                     <div className="p-8 text-center text-red-500 font-medium bg-white rounded-3xl border border-slate-100 shadow-sm">{error}</div>
                 ) : qrCodes.length === 0 ? (
-                    <div className="p-12 text-center bg-white rounded-[32px] border border-slate-100 shadow-sm">
+                    <div className="p-12 text-center bg-white rounded-lg border border-slate-200 shadow-sm">
                         <QrCode className="w-12 h-12 text-slate-200 mx-auto mb-4" />
                         <h4 className="font-bold text-slate-700 mb-1">No QR codes yet</h4>
                         <p className="text-slate-400 text-sm mb-6">Create your first QR code to start tracking scans.</p>
@@ -804,7 +814,7 @@ const Dashboard = () => {
                         </button>
                     </div>
                 ) : filteredQRCodes.length === 0 ? (
-                    <div className="p-12 text-center bg-white rounded-[32px] border border-slate-100 shadow-sm">
+                    <div className="p-12 text-center bg-white rounded-lg border border-slate-200 shadow-sm">
                         <Search className="w-12 h-12 text-slate-200 mx-auto mb-4" />
                         <h4 className="font-bold text-slate-700 mb-1">No results found</h4>
                         <p className="text-slate-400 text-sm mb-6">No QR codes match "{searchQuery}"</p>
@@ -819,7 +829,7 @@ const Dashboard = () => {
                     <>
                         {/* First QR Success Banner */}
                         {showFirstQRBanner && qrCodes.length > 0 && (
-                            <div className="mb-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200 relative">
+                            <div className="mb-6 p-5 bg-emerald-50 rounded-lg border border-emerald-200 relative">
                                 <button
                                     onClick={() => { setShowFirstQRBanner(false); setSearchParams({}); }}
                                     className="absolute top-4 right-4 text-green-400 hover:text-green-600"
@@ -843,14 +853,14 @@ const Dashboard = () => {
                                             const shortUrl = `${baseUrl}/r/${qr.short_id}`;
                                             navigator.clipboard.writeText(shortUrl);
                                         }}
-                                        className="flex items-center gap-2 px-4 py-2 bg-white border border-green-200 text-green-700 rounded-lg font-medium text-sm hover:bg-green-50 transition-colors"
+                                        className="flex items-center gap-2 px-4 py-2 bg-white border border-emerald-200 text-emerald-700 rounded-md font-medium text-sm hover:bg-emerald-50 transition-colors"
                                     >
                                         <LinkIcon className="w-4 h-4" />
                                         Copy QR Link
                                     </button>
                                     <button
                                         onClick={() => setDownloadModal(qrCodes[0])}
-                                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium text-sm hover:bg-green-700 transition-colors"
+                                        className="flex items-center gap-2 px-4 py-2 bg-slate-950 text-white rounded-md font-medium text-sm hover:bg-slate-800 transition-colors"
                                     >
                                         <Download className="w-4 h-4" />
                                         Download QR
@@ -858,7 +868,7 @@ const Dashboard = () => {
                                 </div>
                             </div>
                         )}
-                        <div className="space-y-4">
+                        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm divide-y divide-slate-100">
                         {activeDynamicCodes.map((qr) => {
                             const colors = getTypeColor(qr.qr_type);
                             const isSelected = selectedQRs.has(qr._id);
@@ -868,7 +878,7 @@ const Dashboard = () => {
                             const modifiedDate = qr.updatedAt ? new Date(qr.updatedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : createdDate;
 
                             return (
-                                <div key={qr._id} className="flex flex-col xl:flex-row items-start xl:items-center gap-4 p-4 md:p-6 bg-white rounded-2xl border border-slate-200 shadow-sm transition-all hover:border-indigo-200 hover:shadow-md">
+                                <div key={qr._id} className="flex flex-col xl:flex-row items-start xl:items-center gap-4 p-4 md:p-5 bg-white transition-colors hover:bg-slate-50">
 
                                     {/* Left: Checkbox & QR Image */}
                                     <div className="flex items-center gap-4 w-full xl:w-auto">
@@ -876,23 +886,23 @@ const Dashboard = () => {
                                             {isSelected ? <CheckSquare className="w-5 h-5 text-indigo-500" /> : <Square className="w-5 h-5" />}
                                         </button>
                                         <div
-                                            className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center flex-shrink-0 cursor-zoom-in overflow-hidden relative group"
+                                            className="w-16 h-16 bg-slate-50 border border-slate-200 rounded-md flex items-center justify-center flex-shrink-0 cursor-zoom-in overflow-hidden relative group"
                                             onClick={() => setPreviewModal(qr)}
                                             title="Click to view design"
                                         >
-                                            <QrCode size={36} className="text-slate-900 group-hover:text-indigo-400 transition-colors" />
-                                            <div className="absolute inset-0 bg-indigo-600/0 group-hover:bg-indigo-600/5 flex items-center justify-center transition-all">
+                                            <QrCode size={32} className="text-slate-900 group-hover:text-slate-600 transition-colors" />
+                                            <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/5 flex items-center justify-center transition-all">
                                                 <Eye size={20} className="text-white opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all" />
                                             </div>
                                         </div>
 
                                         {/* Main Details (Mobile/Tablet view inline) */}
                                         <div className="flex-1 xl:hidden">
-                                            <p className={`text-[11px] font-bold ${colors.text} mb-1 flex items-center gap-1`}>
+                                            <p className={`text-[11px] font-bold ${colors.text} mb-1 flex items-center gap-1 uppercase`}>
                                                 {qr.qr_type}
                                             </p>
                                             <div className="flex items-center gap-2 mb-1">
-                                                <h4 className="font-extrabold text-slate-900 text-base">{qr.metadata?.title || 'Untitled QR'}</h4>
+                                                <h4 className="font-bold text-slate-900 text-base">{qr.metadata?.title || 'Untitled QR'}</h4>
                                                 <button onClick={() => setEditingItem({ id: qr._id, field: 'title', value: qr.metadata?.title || '' })} className="text-blue-500 hover:text-blue-700 p-1">
                                                     <Edit2 className="w-3.5 h-3.5" />
                                                 </button>
@@ -902,9 +912,9 @@ const Dashboard = () => {
 
                                     {/* Details Group 1: Title & Dates (Desktop) */}
                                     <div className="hidden xl:block flex-1 min-w-[200px]">
-                                        <p className={`text-[11px] font-bold ${colors.text} mb-1`}>{qr.qr_type}</p>
+                                        <p className={`text-[11px] font-bold ${colors.text} mb-1 uppercase`}>{qr.qr_type}</p>
                                         <div className="flex items-center gap-2 mb-1.5 line-clamp-1">
-                                            <h4 className="font-extrabold text-slate-900 text-base m-0 leading-tight">{qr.metadata?.title || 'Untitled QR'}</h4>
+                                            <h4 className="font-bold text-slate-900 text-base m-0 leading-tight">{qr.metadata?.title || 'Untitled QR'}</h4>
                                             <button
                                                 onClick={() => setEditingItem({ id: qr._id, field: 'title', value: qr.metadata?.title || '' })}
                                                 className="text-blue-500 hover:text-blue-600 hover:bg-blue-50 p-1 rounded transition-colors"
@@ -945,10 +955,10 @@ const Dashboard = () => {
                                     </div>
 
                                     {/* Scans Badge */}
-                                    <div className="flex flex-col items-center justify-center min-w-[80px] xl:border-l xl:border-r border-slate-100 xl:px-8 w-full xl:w-auto py-2 xl:py-0 border-t xl:border-t-0">
-                                        <span className="text-[10px] font-black uppercase text-blue-500 mb-1">Scans</span>
-                                        <div className="w-12 h-12 bg-blue-50 border-2 border-blue-100 rounded-full flex items-center justify-center">
-                                            <span className="text-xl font-black text-blue-600">{(qr.stats?.total_scans || 0)}</span>
+                                    <div className="flex flex-col items-start xl:items-center justify-center min-w-[80px] xl:border-l xl:border-r border-slate-100 xl:px-8 w-full xl:w-auto py-2 xl:py-0 border-t xl:border-t-0">
+                                        <span className="text-[10px] font-black uppercase text-slate-400 mb-1">Scans</span>
+                                        <div className="min-w-14 h-9 px-3 bg-slate-50 border border-slate-200 rounded-md flex items-center justify-center">
+                                            <span className="text-lg font-black text-slate-900">{(qr.stats?.total_scans || 0)}</span>
                                         </div>
                                     </div>
 
@@ -956,14 +966,14 @@ const Dashboard = () => {
                                     <div className="flex items-center justify-end gap-3 w-full xl:w-auto mt-2 xl:mt-0 pt-4 xl:pt-0 border-t border-slate-100 xl:border-0 relative">
                                         <button
                                             onClick={(e) => { e.stopPropagation(); setDownloadModal(qr); }}
-                                            className="px-4 py-2 border border-blue-200 text-blue-500 font-bold text-sm rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors flex items-center gap-2"
+                                            className="px-4 py-2 border border-slate-200 text-slate-700 font-bold text-sm rounded-md hover:bg-slate-100 hover:border-slate-300 transition-colors flex items-center gap-2"
                                         >
                                             <Download className="w-4 h-4" />
                                             Download
                                         </button>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); navigate(`/qrcodes/${qr._id}`); }}
-                                            className="px-4 py-2 border border-blue-200 bg-blue-50 text-blue-600 font-bold text-sm rounded-lg hover:bg-blue-100 transition-colors"
+                                            className="px-4 py-2 border border-slate-200 bg-white text-slate-700 font-bold text-sm rounded-md hover:bg-slate-100 transition-colors"
                                         >
                                             Detail
                                         </button>
@@ -974,7 +984,7 @@ const Dashboard = () => {
                                                     e.stopPropagation();
                                                     setActiveMenuId(activeMenuId === qr._id ? null : qr._id);
                                                 }}
-                                                className={`px-3 py-2 rounded-lg transition-colors flex items-center justify-center ${activeMenuId === qr._id ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                                                className={`px-3 py-2 rounded-md transition-colors flex items-center justify-center ${activeMenuId === qr._id ? 'bg-slate-950 text-white' : 'bg-slate-900 text-white hover:bg-slate-700'}`}
                                                 title="More Actions"
                                             >
                                                 <MoreHorizontal className="w-5 h-5" />
@@ -1051,9 +1061,9 @@ const Dashboard = () => {
                         })}
 
                         {lockedStaticCodes.length > 0 && (
-                            <div className="mt-12">
-                                <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-4">
-                                    <div className="bg-amber-100 p-2 rounded-lg shrink-0 mt-0.5">
+                            <div className="mt-8">
+                                <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-4">
+                                    <div className="bg-amber-100 p-2 rounded-md shrink-0 mt-0.5">
                                         <AlertTriangle className="w-5 h-5 text-amber-600" />
                                     </div>
                                     <div>
@@ -1063,23 +1073,23 @@ const Dashboard = () => {
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
+                                <div className="overflow-hidden rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
                                     {lockedStaticCodes.map((qr) => {
                                         const colors = getTypeColor(qr.qr_type);
                                         const createdDate = qr.createdAt ? new Date(qr.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Unknown';
                                         
                                         return (
-                                            <div key={qr._id} onClick={() => { setUpgradeModalType('locked'); setUpgradeModalOpen(true); }} className="cursor-pointer flex flex-col xl:flex-row items-start xl:items-center gap-4 p-4 md:p-6 bg-slate-50 opacity-90 rounded-2xl border border-slate-200 shadow-sm transition-all hover:border-slate-300">
+                                            <div key={qr._id} onClick={() => { setUpgradeModalType('locked'); setUpgradeModalOpen(true); }} className="cursor-pointer flex flex-col xl:flex-row items-start xl:items-center gap-4 p-4 md:p-5 bg-slate-50 opacity-90 transition-colors hover:bg-slate-100">
                                                 
                                                 <div className="flex items-center gap-4 w-full xl:w-auto opacity-60">
                                                     <div className="w-5 h-5 flex-shrink-0"></div> {/* Spacer for checkbox */}
-                                                    <div className="w-20 h-20 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center flex-shrink-0">
-                                                        <QrCode size={36} className="text-slate-400" />
+                                                    <div className="w-16 h-16 bg-slate-100 border border-slate-200 rounded-md flex items-center justify-center flex-shrink-0">
+                                                        <QrCode size={32} className="text-slate-400" />
                                                     </div>
                                                     <div className="flex-1 xl:hidden">
                                                         <p className={`text-[11px] font-bold ${colors.text} mb-1 flex items-center gap-1`}>{qr.qr_type}</p>
                                                         <div className="flex items-center gap-2 mb-1">
-                                                            <h4 className="font-extrabold text-slate-700 text-base">{qr.metadata?.title || 'Untitled QR'}</h4>
+                                                            <h4 className="font-bold text-slate-700 text-base">{qr.metadata?.title || 'Untitled QR'}</h4>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1087,7 +1097,7 @@ const Dashboard = () => {
                                                 <div className="hidden xl:block flex-1 min-w-[200px] opacity-60">
                                                     <p className={`text-[11px] font-bold ${colors.text} mb-1`}>{qr.qr_type}</p>
                                                     <div className="flex items-center gap-2 mb-1.5 line-clamp-1">
-                                                        <h4 className="font-extrabold text-slate-700 text-base m-0 leading-tight">{qr.metadata?.title || 'Untitled QR'}</h4>
+                                                        <h4 className="font-bold text-slate-700 text-base m-0 leading-tight">{qr.metadata?.title || 'Untitled QR'}</h4>
                                                     </div>
                                                     <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-medium">
                                                         <Calendar className="w-3.5 h-3.5" />
@@ -1116,7 +1126,7 @@ const Dashboard = () => {
                                                 <div className="flex items-center justify-end gap-3 w-full xl:w-auto mt-2 xl:mt-0 pt-4 xl:pt-0 border-t border-slate-200 xl:border-0 relative">
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); navigate(`/qrcodes/${qr._id}`); }}
-                                                        className="px-4 py-2 border border-slate-300 bg-white text-slate-600 font-bold text-sm rounded-lg hover:bg-slate-50 transition-colors"
+                                                        className="px-4 py-2 border border-slate-300 bg-white text-slate-600 font-bold text-sm rounded-md hover:bg-slate-50 transition-colors"
                                                     >
                                                         View Details
                                                     </button>
