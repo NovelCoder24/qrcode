@@ -17,6 +17,11 @@ const UpgradeModal = ({ isOpen, onClose, type = 'locked' }) => {
             title: "Limit Reached",
             description: "You have reached your limit of 5 Dynamic QR Codes on the free plan. Upgrade to create unlimited QRs.",
             icon: <Zap className="w-8 h-8 text-amber-500" />
+        },
+        premium_feature: {
+            title: "Premium Feature",
+            description: "Folders and Custom UTM Tracking are available on Local, Starter, and Growth plans. Upgrade to unlock.",
+            icon: <Zap className="w-8 h-8 text-amber-500" />
         }
     };
 

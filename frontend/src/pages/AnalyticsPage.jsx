@@ -1,832 +1,550 @@
-import React, { useEffect, useState, useCallback } from 'react';
+"use client"
 
+import * as React from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
+  TrendingUp,
+  TrendingDown,
+  Users,
+  Smartphone,
+  Monitor,
+  Tablet,
+  Globe,
+  MapPin,
+  Filter,
+  Download,
+  Bot,
+  ChevronDown,
+  BarChart3,
+  QrCode
+} from "lucide-react"
+import { Area, AreaChart, XAxis, YAxis, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts"
 
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/UI/card"
+import { Button } from "@/components/UI/button"
+import { Badge } from "@/components/UI/badge"
+import { Progress } from "@/components/UI/progress"
+import { cn } from "@/lib/utils"
+import axiosInstance from "../api/axios"
 
-    PieChart, Pie, Cell, Legend
+function formatNumber(num) {
+  return new Intl.NumberFormat("en-IN").format(num || 0)
+}
 
-} from 'recharts';
+// Inline Table Components mapped exactly to Shadcn
+const Table = React.forwardRef(({ className, ...props }, ref) => (
+  <div className="relative w-full overflow-auto">
+    <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
+  </div>
+))
+Table.displayName = "Table"
 
-import { Users, Smartphone, Globe, ArrowUpRight, ArrowDownRight, Activity, MapPin, Copy, Link, Check, ArrowLeft, Search, ChevronLeft, ChevronRight, QrCode } from 'lucide-react';
+const TableHeader = React.forwardRef(({ className, ...props }, ref) => (
+  <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
+))
+TableHeader.displayName = "TableHeader"
 
-import axiosInstance from '../api/axios';
+const TableBody = React.forwardRef(({ className, ...props }, ref) => (
+  <tbody ref={ref} className={cn("[&_tr:last-child]:border-0", className)} {...props} />
+))
+TableBody.displayName = "TableBody"
 
+const TableRow = React.forwardRef(({ className, ...props }, ref) => (
+  <tr ref={ref} className={cn("border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted", className)} {...props} />
+))
+TableRow.displayName = "TableRow"
 
+const TableHead = React.forwardRef(({ className, ...props }, ref) => (
+  <th ref={ref} className={cn("h-10 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0", className)} {...props} />
+))
+TableHead.displayName = "TableHead"
 
-const COLORS = ['#0F172A', '#10B981', '#F59E0B', '#EF4444', '#2563EB'];
+const TableCell = React.forwardRef(({ className, ...props }, ref) => (
+  <td ref={ref} className={cn("p-4 align-middle [&:has([role=checkbox])]:pr-0", className)} {...props} />
+))
+TableCell.displayName = "TableCell"
 
-
-
-// Shared MetricDelta component
-
-const MetricDelta = ({ current, previous, delta, days }) => {
-
-    if (delta === 0 && current === previous) return <span className="text-xs font-semibold text-slate-400 ml-2">Flat vs prior {days}d</span>;
-
-    const isUp = current > previous;
-
-    const diff = current - previous;
-
-    const displayValue = previous < 10 ? `${diff > 0 ? '+' : ''}${diff}` : `${isUp ? '+' : ''}${Math.abs(delta)}%`;
-
-    return (
-
-        <span className={`text-xs flex items-center gap-0.5 ml-2 font-semibold ${isUp ? 'text-emerald-600' : 'text-rose-600'}`}>
-
-            {isUp ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-
-            {displayValue}
-
-        </span>
-
-    );
-
-};
-
-
-
-// Shared KPI Cards
-
-const StatCards = ({ totals, days }) => (
-
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow relative">
-
-            <div className="flex justify-between items-start mb-4">
-
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Total scans</p>
-
-                <div className="h-8 w-8 rounded-md bg-slate-100 flex items-center justify-center text-slate-700"><Activity size={16} /></div>
-
+// KPI Card Component
+function KPICard({ title, value, change, changeLabel, icon: Icon }) {
+  const isPositive = change && change > 0
+  const isNegative = change && change < 0
+  
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <Icon className="h-4 w-4 text-muted-foreground" />
+          {change !== undefined && change !== 0 && (
+            <div className={cn(
+              "flex items-center gap-1 text-xs font-medium",
+              isPositive ? "text-emerald-500" : "text-rose-500"
+            )}>
+              {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+              {Math.abs(change)}%
             </div>
+          )}
+          {change === 0 && (
+            <span className="text-xs text-muted-foreground font-medium">Flat</span>
+          )}
+        </div>
+        <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
+        <p className="text-xs text-muted-foreground">{title}</p>
+        {changeLabel && (
+          <p className="mt-1 text-xs text-muted-foreground">{changeLabel}</p>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
 
-            <div className="flex items-baseline mb-2">
+// Scans Over Time Chart
+function ScansOverTimeChart({ data, days, onDaysChange }) {
+  const chartData = data?.map(item => ({
+    date: new Date(item.date).toLocaleDateString("en-IN", { weekday: "short", month: "short", day: "numeric" }),
+    scans: item.scans,
+  })) || []
 
-                <h3 className="text-3xl font-black text-slate-900">{totals.scans}</h3>
+  return (
+    <Card className="col-span-full lg:col-span-2">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-base font-semibold">Scans Over Time</CardTitle>
+            <CardDescription>Last {days} days of scan activity</CardDescription>
+          </div>
+          <select 
+            value={days} 
+            onChange={(e) => onDaysChange(Number(e.target.value))}
+            className="flex h-9 items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+          >
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+          </select>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="h-[250px] w-full mt-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="fillScans" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#0f172a" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#0f172a" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis
+                dataKey="date"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                fontSize={12}
+                stroke="#64748b"
+              />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                fontSize={12}
+                stroke="#64748b"
+              />
+              <RechartsTooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }} />
+              <Area
+                type="monotone"
+                dataKey="scans"
+                stroke="#0f172a"
+                strokeWidth={2}
+                fill="url(#fillScans)"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
-                <MetricDelta current={totals.scans} previous={totals.previousScans} delta={totals.scansDelta} days={days} />
+// Device Breakdown Chart
+function DeviceBreakdownChart({ data, totalScans }) {
+  const deviceIcons = { mobile: Smartphone, desktop: Monitor, tablet: Tablet }
 
-            </div>
-
-            {totals.botFiltered > 0 && (
-
-                <div className="absolute bottom-4 left-6 flex items-center gap-1.5 text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
-
-                    <span>{totals.botFiltered} bot scans filtered</span>
-
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-semibold">Device Breakdown</CardTitle>
+        <CardDescription>How users scan your QR codes</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {data?.length > 0 ? data.map((item) => {
+            const Icon = deviceIcons[item.name.toLowerCase()] || Smartphone
+            const percentage = Math.round((item.value / (totalScans || 1)) * 100)
+            return (
+              <div key={item.name} className="flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-secondary">
+                  <Icon className="h-4 w-4 text-muted-foreground" />
                 </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">{item.name}</span>
+                    <span className="text-muted-foreground">{percentage}%</span>
+                  </div>
+                  <Progress value={percentage} className="mt-1 h-1.5" />
+                </div>
+              </div>
+            )
+          }) : <p className="text-sm text-muted-foreground">No device data available.</p>}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
+// Browser Breakdown Chart
+function BrowserBreakdownChart({ data, totalScans }) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-semibold">Browser Breakdown</CardTitle>
+        <CardDescription>Browsers used to scan QR codes</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {data?.length > 0 ? data.slice(0, 5).map((item) => {
+            const percentage = Math.round((item.value / (totalScans || 1)) * 100)
+            return (
+              <div key={item.name} className="flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-secondary">
+                  <Globe className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">{item.name}</span>
+                    <span className="text-muted-foreground">{percentage}%</span>
+                  </div>
+                  <Progress value={percentage} className="mt-1 h-1.5" />
+                </div>
+              </div>
+            )
+          }) : <p className="text-sm text-muted-foreground">No browser data available.</p>}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Top Cities Table
+function TopCitiesTable({ data, totalScans }) {
+  return (
+    <Card className="col-span-full lg:col-span-2">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-base font-semibold">Top Cities</CardTitle>
+            <CardDescription>Where your QR codes are being scanned</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="pl-6">City</TableHead>
+              <TableHead className="text-right">Scans</TableHead>
+              <TableHead className="text-right pr-6">Share</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data?.length > 0 ? data.slice(0, 6).map((city, index) => {
+              const cityName = city.city && city.city !== 'Unknown' ? city.city : city.region || 'Unknown';
+              const regionText = city.region && city.region !== 'Unknown' && city.region !== cityName ? city.region : '';
+              const countryText = city.countryCode && city.countryCode !== 'Unknown' ? city.countryCode : '';
+              
+              let subText = '';
+              if (regionText && countryText) subText = `${regionText}, ${countryText}`;
+              else if (regionText) subText = regionText;
+              else if (countryText) subText = countryText;
+
+              const percentage = Math.round((city.count / (totalScans || 1)) * 100)
+              return (
+                <TableRow key={index}>
+                  <TableCell className="pl-6 py-2">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-medium">
+                        {index + 1}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div className="flex flex-col">
+                          <span className="font-medium truncate max-w-[150px] leading-tight">{cityName}</span>
+                          {subText && <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">{subText}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
+                    {formatNumber(city.count)}
+                  </TableCell>
+                  <TableCell className="text-right pr-6 w-40">
+                    <div className="flex items-center justify-end gap-2">
+                      <Progress value={percentage} className="w-16 h-1.5" />
+                      <span className="w-10 text-muted-foreground text-xs">{percentage}%</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )
+            }) : (
+              <TableRow>
+                <TableCell colSpan={3} className="h-24 text-center">
+                  <p className="text-muted-foreground">No location data available.</p>
+                </TableCell>
+              </TableRow>
             )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  )
+}
 
+// Campaign Comparison Table
+function CampaignComparisonTable({ qrs, onSelectQR }) {
+  return (
+    <Card className="col-span-full">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-base font-semibold">Campaign Comparison</CardTitle>
+            <CardDescription>Performance by campaign</CardDescription>
+          </div>
+          <Button variant="outline" size="sm">
+            <Filter className="mr-2 h-4 w-4" />
+            Filter
+          </Button>
         </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
-
-            <div className="flex justify-between items-start mb-4">
-
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Unique scanners</p>
-
-                <div className="h-8 w-8 rounded-md bg-emerald-50 flex items-center justify-center text-emerald-600"><Users size={16} /></div>
-
-            </div>
-
-            <div className="flex items-baseline">
-
-                <h3 className="text-3xl font-black text-slate-900">{totals.uniqueScanners}</h3>
-
-                <MetricDelta current={totals.uniqueScanners} previous={totals.previousUniqueScanners || 0} delta={totals.uniqueDelta} days={days} />
-
-            </div>
-
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
-
-            <div className="flex justify-between items-start mb-4">
-
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{totals.activeQRs !== undefined ? 'Active QRs' : 'Total Scans (All Time)'}</p>
-
-                <div className="h-8 w-8 rounded-md bg-amber-50 flex items-center justify-center text-amber-600"><Globe size={16} /></div>
-
-            </div>
-
-            {totals.activeQRs !== undefined ? (
-
-                <h3 className="text-3xl font-black text-slate-900">{totals.activeQRs} <span className="text-slate-400 font-medium text-lg">/ {totals.totalQRs}</span></h3>
-
+      </CardHeader>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="pl-6">Campaign</TableHead>
+              <TableHead className="text-center">QR Type</TableHead>
+              <TableHead className="text-right">Total Scans</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {qrs?.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={3} className="h-24 text-center">
+                  <p className="text-muted-foreground">No campaigns found.</p>
+                </TableCell>
+              </TableRow>
             ) : (
-
-                <h3 className="text-3xl font-black text-slate-900">{totals.allTimeScans ?? '--'}</h3>
-
+              qrs?.map((qr) => (
+                <TableRow key={qr._id} onClick={() => onSelectQR(qr._id)} className="cursor-pointer group hover:bg-muted/50">
+                  <TableCell className="pl-6">
+                    <Badge variant="outline" className="font-medium bg-background">
+                      {qr.metadata?.title || 'Untitled'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-center">
+                     <span className="text-xs font-bold text-muted-foreground bg-secondary px-2 py-1 rounded uppercase">
+                      {qr.qr_type}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right font-medium pr-6">
+                    {formatNumber(qr.stats?.total_scans)}
+                  </TableCell>
+                </TableRow>
+              ))
             )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  )
+}
 
+// Bot Filtered Notice
+function BotFilteredNotice({ count }) {
+  if (!count) return null;
+  return (
+    <Card className="border-dashed bg-muted/20">
+      <CardContent className="flex items-center gap-4 p-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary border border-border">
+          <Bot className="h-5 w-5 text-muted-foreground" />
         </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
-
-            <div className="flex justify-between items-start mb-4">
-
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Peak Scan Time</p>
-
-                <div className="h-8 w-8 rounded-md bg-blue-50 flex items-center justify-center text-blue-600"><Activity size={16} /></div>
-
-            </div>
-
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{totals.peakTime || '--'}</h3>
-
+        <div className="flex-1">
+          <p className="text-sm font-medium">Bot Traffic Filtered</p>
+          <p className="text-sm text-muted-foreground">
+            {formatNumber(count)} bot scans were detected and excluded from analytics this period.
+          </p>
         </div>
+        <Badge variant="outline" className="bg-background">Auto-filtered</Badge>
+      </CardContent>
+    </Card>
+  )
+}
 
+export default function AnalyticsPage() {
+  const [globalData, setGlobalData] = useState(null)
+  const [drillData, setDrillData] = useState(null)
+  const [selectedQrId, setSelectedQrId] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [days, setDays] = useState(30)
+  const [qrs, setQrs] = useState([])
+
+  // Fetch Global Data
+  useEffect(() => {
+    if (selectedQrId) return;
+    const fetchAll = async () => {
+      setLoading(true)
+      try {
+        const [dashRes, tableRes] = await Promise.all([
+          axiosInstance.get(`/analytics/dashboard?days=${days}`),
+          axiosInstance.get(`/analytics/table?limit=50&sort=-scans`)
+        ]);
+        setGlobalData(dashRes.data)
+        setQrs(tableRes.data.qrs)
+      } catch (err) {
+        setError('Failed to load analytics')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchAll()
+  }, [days, selectedQrId])
+
+  // Fetch Drill Data
+  useEffect(() => {
+    if (!selectedQrId) { setDrillData(null); return; }
+    const fetchDrill = async () => {
+      setLoading(true)
+      try {
+        const res = await axiosInstance.get(`/analytics/qrcodes/${selectedQrId}?days=${days}`)
+        setDrillData(res.data)
+      } catch (err) {
+        setError('Failed to load QR analytics')
+        setSelectedQrId(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchDrill()
+  }, [selectedQrId, days])
+
+  if (loading && !globalData && !drillData) {
+    return <div className="flex justify-center items-center h-full min-h-[500px]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
+  }
+
+  if (error && !globalData && !drillData) {
+    return <div className="p-8"><div className="bg-destructive/10 text-destructive p-4 rounded-xl font-medium">{error}</div></div>
+  }
+
+  const isDrillDown = !!selectedQrId;
+  const dataContext = isDrillDown ? drillData : globalData;
+  if (!dataContext) return null;
+
+  const { totals, scansOverTime, deviceStats, locations } = dataContext;
+
+  const topCity = locations?.length > 0 ? {
+    name: locations[0].city && locations[0].city !== 'Unknown' ? locations[0].city : locations[0].region || 'Unknown',
+    share: Math.round((locations[0].count / (totals?.scans || 1)) * 100)
+  } : { name: '--', share: 0 };
+
+  const topDevice = deviceStats?.types?.length > 0 ? {
+    name: deviceStats.types[0].name,
+    share: Math.round((deviceStats.types[0].value / (totals?.scans || 1)) * 100)
+  } : { name: '--', share: 0 };
+
+  return (
+    <div className="space-y-6 max-w-7xl mx-auto p-6 md:p-8">
+      {/* Page Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          {isDrillDown && (
+            <Button variant="outline" size="icon" onClick={() => setSelectedQrId(null)} className="h-9 w-9">
+              <ChevronDown className="h-4 w-4 rotate-90" />
+            </Button>
+          )}
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {isDrillDown ? drillData.qr?.metadata?.title || 'QR Analytics' : 'Analytics'}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {isDrillDown ? 'Analytics for specific QR code.' : 'Track scan performance and understand your audience.'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {!isDrillDown && (
+            <select 
+              className="flex h-9 w-[180px] items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              onChange={(e) => {
+                if (e.target.value !== 'all') setSelectedQrId(e.target.value);
+              }}
+              value="all"
+            >
+              <option value="all">All QR Codes</option>
+              {qrs.map(qr => (
+                <option key={qr._id} value={qr._id}>{qr.metadata?.title || 'Untitled'}</option>
+              ))}
+            </select>
+          )}
+          <Button variant="outline">
+            <Download className="mr-2 h-4 w-4" />
+            Export Report
+          </Button>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KPICard
+          title="Total Scans"
+          value={formatNumber(totals?.scans)}
+          change={totals?.scansDelta}
+          changeLabel="vs. last period"
+          icon={BarChart3}
+        />
+        <KPICard
+          title="Unique Scanners"
+          value={formatNumber(totals?.uniqueScanners)}
+          change={totals?.uniqueDelta}
+          changeLabel="vs. last period"
+          icon={Users}
+        />
+        <KPICard
+          title="Top City"
+          value={topCity.name}
+          changeLabel={`${topCity.share}% of scans`}
+          icon={MapPin}
+        />
+        <KPICard
+          title="Top Device"
+          value={topDevice.name}
+          changeLabel={`${topDevice.share}% of scans`}
+          icon={Smartphone}
+        />
+      </div>
+
+      {/* Bot Filtered Notice */}
+      <BotFilteredNotice count={totals?.botFiltered} />
+
+      {/* Charts Grid */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <ScansOverTimeChart data={scansOverTime} days={days} onDaysChange={setDays} />
+        <DeviceBreakdownChart data={deviceStats?.types} totalScans={totals?.scans} />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <TopCitiesTable data={locations} totalScans={totals?.scans} />
+        <BrowserBreakdownChart data={deviceStats?.browsers} totalScans={totals?.scans} />
+      </div>
+
+      {/* Campaign Comparison Table */}
+      {!isDrillDown && <CampaignComparisonTable qrs={qrs} onSelectQR={setSelectedQrId} />}
     </div>
-
-);
-
-
-
-// Shared Charts section
-
-const ChartsSection = ({ scansOverTime, deviceStats, locations, copied, onCopyLatest, hasQRs }) => (
-
-    <>
-
-        {/* Main Charts */}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-            <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-
-                <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
-
-                    <Activity size={18} className="text-slate-600" /> Scans Over Time
-
-                </h2>
-
-                <div className="h-[300px] w-full">
-
-                    <ResponsiveContainer width="100%" height="100%">
-
-                        <AreaChart data={scansOverTime} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-
-                            <defs>
-
-                                <linearGradient id="colorScans" x1="0" y1="0" x2="0" y2="1">
-
-                                    <stop offset="5%" stopColor="#0F172A" stopOpacity={0.25}/>
-
-                                    <stop offset="95%" stopColor="#0F172A" stopOpacity={0}/>
-
-                                </linearGradient>
-
-                            </defs>
-
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-
-                            <XAxis dataKey="date" tickFormatter={(str) => new Date(str).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12, fontWeight: 500 }} dy={10} />
-
-                            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12, fontWeight: 500 }} />
-
-                            <RechartsTooltip labelFormatter={(str) => new Date(str).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)' }} />
-
-                            <Area type="monotone" dataKey="scans" stroke="#0F172A" strokeWidth={3} fillOpacity={1} fill="url(#colorScans)" />
-
-                        </AreaChart>
-
-                    </ResponsiveContainer>
-
-                </div>
-
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 flex flex-col">
-
-                <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
-
-                    <Smartphone size={18} className="text-emerald-500" /> OS Breakdown
-
-                </h2>
-
-                <div className="flex-1 w-full flex flex-col justify-center relative">
-
-                    {deviceStats.types.length > 0 ? (
-
-                        <ResponsiveContainer width="100%" height={220}>
-
-                            <PieChart>
-
-                                <Pie data={deviceStats.types} cx="50%" cy="50%" innerRadius={65} outerRadius={85} paddingAngle={5} dataKey="value">
-
-                                    {deviceStats.types.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeWidth={0} />))}
-
-                                </Pie>
-
-                                <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }} />
-
-                                <Legend iconType="circle" wrapperStyle={{ fontSize: '13px', fontWeight: 600, paddingTop: '20px' }}/>
-
-                            </PieChart>
-
-                        </ResponsiveContainer>
-
-                    ) : (
-
-                        <div className="text-center">
-
-                            <p className="text-sm text-slate-500 font-medium mb-4">Share your QR code to start seeing OS data.</p>
-
-                            {hasQRs && (
-
-                                <button onClick={onCopyLatest} className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white font-semibold rounded-xl text-sm hover:bg-slate-800">
-
-                                    {copied ? <Check size={16}/> : <Copy size={16} />}
-
-                                    {copied ? 'Copied!' : 'Copy Link'}
-
-                                </button>
-
-                            )}
-
-                        </div>
-
-                    )}
-
-                </div>
-
-            </div>
-
-        </div>
-
-        {/* Geographical Distribution */}
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-
-            <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500">
-                    <MapPin size={24} />
-                </div>
-                <div>
-                    <h2 className="text-xl font-bold text-slate-900">Geographical Distribution</h2>
-                    <p className="text-sm text-slate-400 font-medium">Top locations by scan volume</p>
-                </div>
-            </div>
-
-            {locations?.length > 0 ? (
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8 max-h-[400px] overflow-y-auto pr-2">
-
-                    {locations.map((loc, idx) => {
-
-                        const maxCount = Math.max(...locations.map(l => l.count));
-                        // Format region & country code
-                        const regionText = loc.region && loc.region !== 'Unknown' ? loc.region : '';
-                        const countryCodeText = loc.countryCode && loc.countryCode !== 'Unknown' ? loc.countryCode : '';
-                        
-                        let subText = '';
-                        if (regionText && countryCodeText) {
-                            subText = `${regionText} • ${countryCodeText}`;
-                        } else if (regionText) {
-                            subText = regionText;
-                        } else if (countryCodeText) {
-                            subText = countryCodeText;
-                        } else {
-                            subText = 'N/A';
-                        }
-
-                        return (
-
-                            <div key={idx} className="flex gap-4">
-
-                                <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    <span className="font-bold text-slate-400 text-sm">{idx + 1}</span>
-                                </div>
-
-                                <div className="flex-1">
-
-                                    <div className="flex items-start justify-between mb-3">
-
-                                        <div>
-                                            <h3 className="font-bold text-slate-900 text-base">{loc.city && loc.city !== 'Unknown' ? loc.city : loc.region || 'Unknown'}</h3>
-                                            <p className="text-xs text-slate-500 font-medium mt-0.5 tracking-wide">{subText}</p>
-                                        </div>
-
-                                        <div className="text-right">
-                                            <div className="font-bold text-indigo-700 text-base leading-none">{loc.count}</div>
-                                            <div className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-widest">Scans</div>
-                                        </div>
-
-                                    </div>
-
-                                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                                        <div className="bg-slate-900 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${(loc.count / maxCount) * 100}%` }}></div>
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        );
-
-                    })}
-
-                </div>
-
-            ) : (
-
-                <div className="text-center py-8">
-
-                    <p className="text-sm text-slate-500 font-medium">Share your QR code to see geographic scan data.</p>
-
-                </div>
-
-            )}
-
-        </div>
-
-    </>
-
-);
-
-
-
-// QR Table with pagination + search
-
-const QRTable = ({ onSelectQR }) => {
-
-    const [qrs, setQrs] = useState([]);
-
-    const [loading, setLoading] = useState(true);
-
-    const [page, setPage] = useState(1);
-
-    const [totalPages, setTotalPages] = useState(1);
-
-    const [totalCount, setTotalCount] = useState(0);
-
-    const [search, setSearch] = useState('');
-
-    const [searchInput, setSearchInput] = useState('');
-
-    const limit = 10;
-
-
-
-    const fetchTable = useCallback(async () => {
-
-        setLoading(true);
-
-        try {
-
-            const res = await axiosInstance.get(`/analytics/table?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&sort=-scans`);
-
-            setQrs(res.data.qrs);
-
-            setTotalPages(res.data.totalPages);
-
-            setTotalCount(res.data.totalCount);
-
-        } catch {
-
-            // silently fail
-
-        } finally {
-
-            setLoading(false);
-
-        }
-
-    }, [page, search]);
-
-
-
-    useEffect(() => { fetchTable(); }, [fetchTable]);
-
-
-
-    const handleSearch = (e) => {
-
-        e.preventDefault();
-
-        setPage(1);
-
-        setSearch(searchInput);
-
-    };
-
-
-
-    const typeColors = {
-
-        URL: 'bg-indigo-50 text-indigo-700',
-
-        PDF: 'bg-rose-50 text-rose-700',
-
-        VCARD: 'bg-emerald-50 text-emerald-700',
-
-        WHATSAPP: 'bg-green-50 text-green-700',
-
-        SOCIAL: 'bg-blue-50 text-blue-700',
-
-        MEDIA: 'bg-purple-50 text-purple-700',
-
-    };
-
-
-
-    return (
-
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-
-            <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-
-                <div>
-
-                    <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-
-                        <QrCode size={18} className="text-slate-600" /> All QR Codes
-
-                    </h2>
-
-                    <p className="text-xs text-slate-400 font-medium mt-1">{totalCount} total · Click to drill down</p>
-
-                </div>
-
-                <form onSubmit={handleSearch} className="relative w-full sm:w-64">
-
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-
-                    <input type="text" value={searchInput} onChange={e => setSearchInput(e.target.value)} placeholder="Search by title..." className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-all" />
-
-                </form>
-
-            </div>
-
-            {loading ? (
-
-                <div className="p-12 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>
-
-            ) : qrs.length === 0 ? (
-
-                <div className="p-12 text-center text-slate-500 font-medium text-sm">
-
-                    {search ? `No QR codes matching "${search}"` : 'No QR codes created yet.'}
-
-                </div>
-
-            ) : (
-
-                <>
-
-                    <div className="divide-y divide-slate-100">
-
-                        {qrs.map(qr => (
-
-                            <button key={qr._id} onClick={() => onSelectQR(qr._id)} className="w-full p-4 px-6 flex items-center justify-between hover:bg-slate-50 transition-colors group text-left">
-
-                                <div className="flex items-center gap-4">
-
-                                    <div className="w-10 h-10 bg-slate-100 rounded-lg border border-slate-200 flex items-center justify-center">
-
-                                        <QrCode className="text-slate-400 w-5 h-5"/>
-
-                                    </div>
-
-                                    <div>
-
-                                        <p className="font-bold text-slate-900 text-sm truncate max-w-[250px]">{qr.metadata?.title || 'Untitled'}</p>
-
-                                        <div className="flex items-center gap-2 mt-1">
-
-                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase ${typeColors[qr.qr_type] || typeColors.URL}`}>{qr.qr_type}</span>
-
-                                            <span className="text-[11px] text-slate-400 font-medium">{new Date(qr.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-
-                                        </div>
-
-                                    </div>
-
-                                </div>
-
-                                <div className="text-right flex items-center gap-4">
-
-                                    <div>
-
-                                        <span className="block text-xl font-black text-slate-900 leading-none mb-1">{qr.stats?.total_scans || 0}</span>
-
-                                        <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Scans</span>
-
-                                    </div>
-
-                                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
-
-                                        <ArrowUpRight size={16} />
-
-                                    </div>
-
-                                </div>
-
-                            </button>
-
-                        ))}
-
-                    </div>
-
-                    {/* Pagination */}
-
-                    <div className="p-4 border-t border-slate-100 flex items-center justify-between">
-
-                        <p className="text-xs text-slate-500 font-medium">Page {page} of {totalPages} ({totalCount} codes)</p>
-
-                        <div className="flex items-center gap-2">
-
-                            <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-
-                                <ChevronLeft size={16} />
-
-                            </button>
-
-                            <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-
-                                <ChevronRight size={16} />
-
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                </>
-
-            )}
-
-        </div>
-
-    );
-
-};
-
-
-
-// ============ MAIN COMPONENT ============
-
-const AnalyticsPage = () => {
-
-    const [globalData, setGlobalData] = useState(null);
-
-    const [drillData, setDrillData] = useState(null);
-
-    const [selectedQrId, setSelectedQrId] = useState(null);
-
-    const [loading, setLoading] = useState(true);
-
-    const [drillLoading, setDrillLoading] = useState(false);
-
-    const [error, setError] = useState('');
-
-    const [days, setDays] = useState(30);
-
-    const [copied, setCopied] = useState(false);
-
-
-
-    // Fetch global dashboard data
-
-    useEffect(() => {
-
-        const fetchGlobal = async () => {
-
-            setLoading(true);
-
-            try {
-
-                const response = await axiosInstance.get(`/analytics/dashboard?days=${days}`);
-
-                setGlobalData(response.data);
-
-            } catch (err) {
-
-                setError(err.response?.data?.message || 'Failed to load analytics');
-
-            } finally {
-
-                setLoading(false);
-
-            }
-
-        };
-
-        if (!selectedQrId) fetchGlobal();
-
-    }, [days, selectedQrId]);
-
-
-
-    // Fetch drill-down data when a QR is selected
-
-    useEffect(() => {
-
-        if (!selectedQrId) { setDrillData(null); return; }
-
-        const fetchDrill = async () => {
-
-            setDrillLoading(true);
-
-            try {
-
-                const response = await axiosInstance.get(`/analytics/qrcodes/${selectedQrId}?days=${days}`);
-
-                setDrillData(response.data);
-
-            } catch (err) {
-
-                setError(err.response?.data?.message || 'Failed to load QR analytics');
-
-                setSelectedQrId(null);
-
-            } finally {
-
-                setDrillLoading(false);
-
-            }
-
-        };
-
-        fetchDrill();
-
-    }, [selectedQrId, days]);
-
-
-
-    const handleCopyLatest = () => {
-
-        const performers = globalData?.topPerformers;
-
-        if (performers?.length > 0) {
-
-            const shortUrl = `${import.meta.env.VITE_API_URL.replace('/api', '')}/r/${performers[0].short_id}`;
-
-            navigator.clipboard.writeText(shortUrl);
-
-            setCopied(true);
-
-            setTimeout(() => setCopied(false), 2000);
-
-        }
-
-    };
-
-
-
-    const handleBack = () => { setSelectedQrId(null); setDrillData(null); setError(''); };
-
-
-
-    // Loading state
-
-    if (loading && !globalData) {
-
-        return (<div className="flex justify-center items-center h-full min-h-[500px]"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>);
-
-    }
-
-    if (error && !globalData && !drillData) {
-
-        return (<div className="p-8"><div className="bg-red-50 text-red-600 p-4 rounded-xl font-medium border border-red-200">{error}</div></div>);
-
-    }
-
-
-
-    // ========== DRILL-DOWN VIEW ==========
-
-    if (selectedQrId) {
-
-        if (drillLoading || !drillData) {
-
-            return (<div className="flex justify-center items-center h-full min-h-[500px]"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>);
-
-        }
-
-
-
-        const { qr, totals, scansOverTime, deviceStats, locations } = drillData;
-
-        // Build drill-down totals with allTimeScans for the 3rd KPI card
-
-        const drillTotals = { ...totals, allTimeScans: qr.stats?.total_scans || 0 };
-
-
-
-        return (
-
-            <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
-
-                {/* Header */}
-
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-
-                    <div className="flex items-center gap-4">
-
-                        <button onClick={handleBack} className="p-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-950 hover:border-slate-300 transition-all shadow-sm">
-
-                            <ArrowLeft size={20} />
-
-                        </button>
-
-                        <div>
-
-                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mb-1">QR Code Analytics</p>
-
-                            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-
-                                {qr.metadata?.title || 'Untitled'}
-
-                                <span className="text-[10px] bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md font-bold uppercase">{qr.qr_type}</span>
-
-                            </h1>
-
-                        </div>
-
-                    </div>
-
-                    <div className="flex items-center bg-white border border-slate-200 rounded-lg p-1 shadow-sm">
-
-                        {[7, 30, 90].map(d => (
-
-                            <button key={d} onClick={() => setDays(d)} className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${days === d ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-800'}`}>{d}D</button>
-
-                        ))}
-
-                    </div>
-
-                </div>
-
-
-
-                <StatCards totals={drillTotals} days={days} />
-
-                <ChartsSection scansOverTime={scansOverTime} deviceStats={deviceStats} locations={locations} copied={copied} onCopyLatest={handleCopyLatest} hasQRs={true} />
-
-            </div>
-
-        );
-
-    }
-
-
-
-    // ========== GLOBAL VIEW ==========
-
-    const { totals, scansOverTime, deviceStats, locations, topPerformers } = globalData;
-
-
-
-    return (
-
-        <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
-
-            {/* Header & Date Range */}
-
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-
-                <div>
-
-                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Scan Analytics</h1>
-
-                    <p className="text-slate-500 mt-1 font-medium">Detailed breakdown of your QR code performance.</p>
-
-                </div>
-
-                <div className="flex items-center bg-white border border-slate-200 rounded-lg p-1 shadow-sm">
-
-                    {[7, 30, 90].map(d => (
-
-                        <button key={d} onClick={() => setDays(d)} className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${days === d ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-800'}`}>{d}D</button>
-
-                    ))}
-
-                </div>
-
-            </div>
-
-
-
-            <StatCards totals={totals} days={days} />
-
-            <ChartsSection scansOverTime={scansOverTime} deviceStats={deviceStats} locations={locations} copied={copied} onCopyLatest={handleCopyLatest} hasQRs={topPerformers?.length > 0} />
-
-
-
-            {/* QR Codes Table (Paginated) */}
-
-            <QRTable onSelectQR={(id) => setSelectedQrId(id)} />
-
-        </div>
-
-    );
-
-};
-
-
-
-export default AnalyticsPage;
-
+  )
+}
