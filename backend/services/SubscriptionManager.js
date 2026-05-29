@@ -1,5 +1,6 @@
 import { User } from "../models/User.js";
 import { QRCode } from "../models/QRCode.js";
+import { getPlanLimits } from "../config/planConfig.js";
 
 /**
  * Service to manage subscription state transitions, specifically
@@ -8,7 +9,7 @@ import { QRCode } from "../models/QRCode.js";
 class SubscriptionManager {
     /**
      * Executes a soft-downgrade for a user.
-     * Keeps the Top N (based on dynamicQrLimit) QR codes dynamic,
+     * Keeps the Top N (based on plan's maxQR) QR codes dynamic,
      * and sets the rest to static_locked.
      * @param {string} userId - The user's ID
      */
@@ -16,7 +17,8 @@ class SubscriptionManager {
         const user = await User.findById(userId);
         if (!user) throw new Error("User not found");
 
-        const limit = user.subscription?.dynamicQrLimit || 5;
+        const limits = getPlanLimits('free');
+        const limit = limits.maxQR; // 1
 
         // 1. Find all active QRs for the user
         const qrs = await QRCode.find({
@@ -39,12 +41,13 @@ class SubscriptionManager {
         }
 
         // 4. Update User record
-        user.subscription.plan = 'starter';
+        user.subscription.plan = 'free';
         user.subscription.status = 'expired';
-        user.subscription.dynamicQrLimit = 5; // Free tier limit
-        user.subscription.analyticsEnabled = false;
+        user.subscription.dynamicQrLimit = limits.maxQR;
+        user.subscription.analyticsEnabled = limits.analytics;
         user.subscription.downgradeAppliedAt = new Date();
         user.subscription.cancelAtPeriodEnd = false;
+        user.subscription.whatsappAlertsUsedThisMonth = 0;
         await user.save();
 
         return {
@@ -58,11 +61,13 @@ class SubscriptionManager {
     /**
      * Restores locked QR codes when a user upgrades.
      * @param {string} userId - The user's ID
-     * @param {string} newPlan - The new plan name (e.g., 'pro')
+     * @param {string} newPlan - The new plan name (e.g., 'starter', 'growth')
      */
-    static async upgradeUser(userId, newPlan = 'pro') {
+    static async upgradeUser(userId, newPlan = 'growth') {
         const user = await User.findById(userId);
         if (!user) throw new Error("User not found");
+
+        const limits = getPlanLimits(newPlan);
 
         // 1. Restore all static_locked QRs back to dynamic_active
         const result = await QRCode.updateMany(
@@ -73,9 +78,8 @@ class SubscriptionManager {
         // 2. Update user limits and status
         user.subscription.plan = newPlan;
         user.subscription.status = 'active';
-        user.subscription.analyticsEnabled = true;
-        // Typically these would be based on plan tiers:
-        user.subscription.dynamicQrLimit = newPlan === 'pro' ? 50 : (newPlan === 'business' ? 500 : 5); 
+        user.subscription.analyticsEnabled = limits.analytics;
+        user.subscription.dynamicQrLimit = limits.maxQR;
         user.subscription.downgradeAppliedAt = null;
         await user.save();
 

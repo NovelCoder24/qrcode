@@ -22,7 +22,7 @@ if (!isTestMode) {
 // @access  Private
 export const createSubscription = async (req, res) => {
     try {
-        const { plan, cycle } = req.body; // plan: 'pro' | 'business', cycle: 'monthly' | 'annual'
+        const { plan, cycle } = req.body; // plan: 'local' | 'starter' | 'growth', cycle: 'monthly' | 'annual'
         const user = await User.findById(req.user._id);
 
         if (!user) {
@@ -152,9 +152,12 @@ export const cancelSubscription = async (req, res) => {
 
         // TEST MODE: Just update local state
         if (isTestMode) {
-            user.subscription.plan = "starter";
+            user.subscription.plan = "free";
             user.subscription.status = "canceled";
             user.subscription.razorpaySubscriptionId = null;
+            user.subscription.dynamicQrLimit = 1;
+            user.subscription.analyticsEnabled = false;
+            user.subscription.whatsappAlertsUsedThisMonth = 0;
             await user.save();
 
             return res.status(200).json({
@@ -371,9 +374,12 @@ async function handleSubscriptionCancelled(payload) {
         userId,
         {
             $set: {
-                "subscription.plan": "starter",
+                "subscription.plan": "free",
                 "subscription.status": "canceled",
-                "subscription.razorpaySubscriptionId": null
+                "subscription.razorpaySubscriptionId": null,
+                "subscription.dynamicQrLimit": 1,
+                "subscription.analyticsEnabled": false,
+                "subscription.whatsappAlertsUsedThisMonth": 0
             }
         },
         { new: true }

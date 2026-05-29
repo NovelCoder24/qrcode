@@ -43,12 +43,14 @@ function isDuplicateScan(ip, shortId) {
 export const redirectQR = async (req, res) => {
     try {
         const { shortId } = req.params;
-        // 1. Find the QR Code by shortId
-        const qr = await QRCode.findOne({ short_id: shortId });
+        // 1. Find the QR Code by shortId and populate user to check plan
+        const qr = await QRCode.findOne({ short_id: shortId }).populate('user_id', 'subscription.plan');
         if (!qr) return res.status(404).send("<h1>404 - QR Code Not Found</h1>");
         if (!qr.isActive || qr.accessMode === 'disabled') {
             return res.status(410).send("<h1>This QR Code is inactive</h1>");
         }
+
+        // Free plan 100-scan soft-lock is now checked safely in the background processAnalytics promise.
 
         // 2. Parse User-Agent — safe fallback to empty string
         const ua = req.headers["user-agent"] || "";
@@ -97,32 +99,57 @@ export const redirectQR = async (req, res) => {
             try {
                 const urlObj = new URL(finalUrl);
                 
-                // If it doesn't have source, we inject defaults
-                if (!urlObj.searchParams.has("utm_source")) {
-                    urlObj.searchParams.set("utm_source", "qrvibe");
-                    urlObj.searchParams.set("utm_medium", "qr_code");
+                // Security Check: Only allow Pass-Through UTMs for Growth/Business plans
+                const plan = qr.user_id?.subscription?.plan || 'free';
+                const canPassThrough = plan === 'growth' || plan === 'business';
+
+                // Read from Query Params (Pass-through)
+                const queryUtms = canPassThrough ? {
+                    source: req.query.utm_source,
+                    medium: req.query.utm_medium,
+                    campaign: req.query.utm_campaign,
+                    content: req.query.utm_content,
+                    term: req.query.utm_term
+                } : {};
+
+                // Read from QR Schema
+                const storedUtms = qr.utm || {};
+
+                // Determine final UTM values (Priority: Query > Stored > URL > Default)
+                const finalSource = queryUtms.source || storedUtms.source || urlObj.searchParams.get("utm_source") || "qrvibe";
+                const finalMedium = queryUtms.medium || storedUtms.medium || urlObj.searchParams.get("utm_medium") || "qr_code";
+                
+                const defaultCampaign = (qr.metadata?.title || qr.short_id)
+                    .toString().toLowerCase()
+                    .replace(/\s+/g, "-")
+                    .replace(/[^\w-]+/g, "")
+                    .replace(/--+/g, "-")
+                    .replace(/^-+/, "")
+                    .replace(/-+$/, "") || "qr_campaign";
                     
-                    const campaignName = (qr.metadata?.title || qr.short_id)
-                        .toString().toLowerCase()
-                        .replace(/\s+/g, "-")
-                        .replace(/[^\w-]+/g, "")
-                        .replace(/--+/g, "-")
-                        .replace(/^-+/, "")
-                        .replace(/-+$/, "");
-                        
-                    urlObj.searchParams.set("utm_campaign", campaignName || "qr_campaign");
-                    finalUrl = urlObj.toString();
-                }
+                const finalCampaign = queryUtms.campaign || storedUtms.campaign || urlObj.searchParams.get("utm_campaign") || defaultCampaign;
+                
+                const finalContent = queryUtms.content || storedUtms.content || urlObj.searchParams.get("utm_content") || "";
+                const finalTerm = queryUtms.term || storedUtms.term || urlObj.searchParams.get("utm_term") || "";
+
+                // Set them in the URL
+                if (finalSource) urlObj.searchParams.set("utm_source", finalSource);
+                if (finalMedium) urlObj.searchParams.set("utm_medium", finalMedium);
+                if (finalCampaign) urlObj.searchParams.set("utm_campaign", finalCampaign);
+                if (finalContent) urlObj.searchParams.set("utm_content", finalContent);
+                if (finalTerm) urlObj.searchParams.set("utm_term", finalTerm);
+
+                finalUrl = urlObj.toString();
 
                 // Extract final UTMs for DB logging
                 campaignData = {
-                    category: urlObj.searchParams.get("utm_campaign") || "organic",
-                    slug: urlObj.searchParams.get("utm_campaign") || "organic",
+                    category: finalCampaign,
+                    slug: finalCampaign,
                     channel: "qr",
-                    source: urlObj.searchParams.get("utm_source") || "qrvibe",
-                    medium: urlObj.searchParams.get("utm_medium") || "qr_code",
-                    content: urlObj.searchParams.get("utm_content") || "",
-                    term: urlObj.searchParams.get("utm_term") || ""
+                    source: finalSource,
+                    medium: finalMedium,
+                    content: finalContent,
+                    term: finalTerm
                 };
 
             } catch (urlError) {
@@ -133,6 +160,21 @@ export const redirectQR = async (req, res) => {
         // 6. Background Analytics Processing (Fire and Forget)
         const processAnalytics = async () => {
             try {
+                // ── FREE PLAN SCAN CAP (Background Enforcement) ──────────
+                // Safe DB query in the background to check the plan and enforce the hard 100-scan limit.
+                if (qr.stats.total_scans >= 99 && qr.accessMode === 'dynamic_active') {
+                    // Import User if not imported (Wait, is User imported in redirectController? No. I need to import it at the top).
+                    const { User } = await import('../models/User.js');
+                    const user = await User.findById(qr.user_id).select('subscription.plan');
+                    if (user && user.subscription.plan === 'free') {
+                        await QRCode.updateOne(
+                            { _id: qr._id },
+                            { $set: { accessMode: 'static_locked' } }
+                        );
+                        console.log(`[ScanCap] Locked QR ${qr.short_id} for Free user exceeding 100 scans.`);
+                    }
+                }
+
                 // Geo lookup: freeipapi.com first → geoip-lite fallback (async, non-blocking)
                 const locationData = await getLocationAsync(ip);
                 // strict lock DailyScanStats to YYYY-MM-DD

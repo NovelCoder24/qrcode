@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema({
     subscription: {
         plan: {
             type: String,
-            default: "pro" // Reverse Trial Strategy
+            default: "growth" // Reverse Trial: 30-day Growth experience
         },
         status: {
             type: String,
@@ -42,7 +42,7 @@ const userSchema = new mongoose.Schema({
         },
         trialEndsAt: { 
             type: Date, 
-            default: () => new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14-Day trial
+            default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30-Day trial
         },
         hasSeenTrialExpiredPopup: {
             type: Boolean,
@@ -56,13 +56,29 @@ const userSchema = new mongoose.Schema({
             type: Date,
             default: null
         },
+        currentPeriodStart: {
+            type: Date,
+            default: Date.now
+        },
+        currentPeriodEnd: {
+            type: Date,
+            default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        },
         dynamicQrLimit: {
             type: Number,
-            default: 5 // Free tier limit
+            default: 50 // Growth tier limit during trial
         },
         analyticsEnabled: {
             type: Boolean,
-            default: true
+            default: true // Growth trial has full analytics
+        },
+        whatsappAlertsUsedThisMonth: {
+            type: Number,
+            default: 0
+        },
+        hasReceivedOverageWarningThisMonth: {
+            type: Boolean,
+            default: false
         },
         downgradeAppliedAt: {
             type: Date,

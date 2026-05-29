@@ -9,6 +9,8 @@ import { Notification } from "../models/Notification.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import { ZipArchive } from "archiver";
+import { parse as json2csv } from "json2csv";
 
 // Helper: Cookie options for refresh token
 const REFRESH_COOKIE_OPTIONS = {
@@ -44,7 +46,7 @@ const sendTokens = (res, user, statusCode = 200) => {
 // @access  Public
 export const registerUser = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { name, email, password, startFree } = req.body;
 
         if (!name || !email || !password) {
             return res.status(400).json({ message: "Please fill in all fields" });
@@ -55,7 +57,34 @@ export const registerUser = async (req, res) => {
             return res.status(400).json({ message: "User already exists" });
         }
 
-        const user = await User.create({ name, email, password });
+        // Build user data — defaults to Growth trial (from schema)
+        // If startFree=true ("Get Started Free" CTA), override to free plan
+        // Secure against Postman payload manipulation
+        const isStartFree = startFree === true || startFree === 'true';
+        const userData = { name, email, password };
+        
+        if (isStartFree) {
+            userData.subscription = {
+                plan: 'free',
+                status: 'active',
+                trialEndsAt: null,
+                dynamicQrLimit: 1,
+                analyticsEnabled: false,
+                whatsappAlertsUsedThisMonth: 0
+            };
+        } else {
+            // Explicitly set growth trial defaults to prevent any manipulation
+            userData.subscription = {
+                plan: 'growth',
+                status: 'trialing',
+                trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                dynamicQrLimit: 50,
+                analyticsEnabled: true,
+                whatsappAlertsUsedThisMonth: 0
+            };
+        }
+
+        const user = await User.create(userData);
 
         if (user) {
             sendTokens(res, user, 201);
@@ -123,7 +152,20 @@ export const googleAuth = async (req, res) => {
             sendTokens(res, user);
         } else {
             console.log('[GoogleAuth] Creating new user');
-            user = await User.create({ name, email, authProvider: "google" });
+            // Google signups default to Growth trial (schema defaults)
+            // Frontend can pass startFree=true for free-tier signup
+            const userData = { name, email, authProvider: "google" };
+            if (req.body.startFree) {
+                userData.subscription = {
+                    plan: 'free',
+                    status: 'active',
+                    trialEndsAt: null,
+                    dynamicQrLimit: 1,
+                    analyticsEnabled: false,
+                    whatsappAlertsUsedThisMonth: 0
+                };
+            }
+            user = await User.create(userData);
             sendTokens(res, user, 201);
         }
     } catch (error) {
@@ -305,30 +347,72 @@ export const exportUserData = async (req, res) => {
 
         // Fetch remaining associated data using Promise.all for speed
         // NOTE: We intentionally OMIT raw `Scan` collection to prevent OOM crashes on large accounts.
-        const [qrcodes, dailyStats, alerts, consents] = await Promise.all([
+        const [qrcodes, dailyStats, consents] = await Promise.all([
             QRCode.find({ user_id: userId }).lean(),
             DailyScanStats.find({ qr_id: { $in: await QRCode.find({ user_id: userId }).distinct('_id') } }).lean(),
-            AlertEvent.find({ qr_id: { $in: await QRCode.find({ user_id: userId }).distinct('_id') } }).lean(),
             ConsentRecord.find({ user_id: userId }).lean()
         ]);
 
-        const exportPayload = {
-            exportDate: new Date().toISOString(),
-            user,
-            qrcodes,
-            dailyScanStats: dailyStats,
-            alertEvents: alerts,
-            consentLedger: consents
-        };
+        const profileData = [{
+            Name: user.name,
+            Email: user.email,
+            Plan: user.subscription?.plan,
+            WhatsAppNumber: user.whatsappNumber || '',
+            CreatedAt: user.createdAt
+        }];
 
-        // Send as downloadable JSON file
-        res.setHeader('Content-disposition', `attachment; filename=qrvibe_data_${userId}.json`);
-        res.setHeader('Content-type', 'application/json');
-        res.status(200).send(JSON.stringify(exportPayload, null, 2));
+        const qrData = qrcodes.map(qr => ({
+            ShortID: qr.short_id,
+            TargetURL: qr.target_url,
+            Type: qr.qr_type,
+            Title: qr.metadata?.title || '',
+            TotalScans: qr.stats?.total_scans || 0,
+            CreatedAt: qr.createdAt
+        }));
+
+        const scanStatsData = dailyStats.map(stat => ({
+            Date: stat.date,
+            QR_ID: stat.qr_id,
+            TotalScans: stat.total_scans,
+            UniqueScans: stat.unique_scans
+        }));
+
+        const consentData = consents.map(consent => ({
+            Type: consent.consentType,
+            Granted: consent.granted,
+            Timestamp: consent.createdAt
+        }));
+
+        // Convert to CSV
+        const profileCsv = json2csv(profileData);
+        const qrCsv = qrData.length ? json2csv(qrData) : '';
+        const scanStatsCsv = scanStatsData.length ? json2csv(scanStatsData) : '';
+        const consentCsv = consentData.length ? json2csv(consentData) : '';
+
+        // Prepare ZIP stream
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', 'attachment; filename=qrvibe_data_export.zip');
+
+        const archive = new ZipArchive({ zlib: { level: 9 } });
+        
+        archive.on('error', (err) => {
+            throw err;
+        });
+        
+        archive.pipe(res);
+
+        archive.append(profileCsv, { name: 'profile.csv' });
+        if (qrCsv) archive.append(qrCsv, { name: 'qrcodes.csv' });
+        if (scanStatsCsv) archive.append(scanStatsCsv, { name: 'scan_stats.csv' });
+        if (consentCsv) archive.append(consentCsv, { name: 'consent_history.csv' });
+
+        await archive.finalize();
 
     } catch (error) {
         console.error("Data Export Error:", error);
-        res.status(500).json({ message: "Failed to generate export file" });
+        if (!res.headersSent) {
+            res.status(500).json({ message: "Failed to generate export file" });
+        }
     }
 };
 
