@@ -43,7 +43,16 @@ const LighthouseTemplate = ({ restaurantName, currency, categories }) => {
         setActiveCategory(key);
     };
 
-    let hasMatchesOverall = false;
+    const hasMatchesOverall = categories.some((cat, idx) => {
+        if (activeCategory !== "all" && activeCategory !== idx.toString()) return false;
+        const filteredItems = cat.items.filter(item => {
+            const tags = item.tags || [];
+            if (filters.veg && !tags.includes("veg")) return false;
+            if (filters.gf && !tags.includes("gf")) return false;
+            return true;
+        });
+        return filteredItems.length > 0;
+    });
 
     return (
         <div className="font-['Plus_Jakarta_Sans'] bg-[#EFECE6] text-[#2C2B29] min-h-screen flex items-center justify-center p-0 sm:p-6 md:p-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#FAF6EF] via-[#EFECE6] to-[#E3DCD2] relative overflow-x-hidden antialiased">
@@ -133,7 +142,6 @@ const LighthouseTemplate = ({ restaurantName, currency, categories }) => {
                             });
 
                             if (filteredItems.length === 0) return null;
-                            hasMatchesOverall = true;
 
                             return (
                                 <div key={idx} id={`section-header-${idx.toString()}`} className="space-y-4 animate-fade-in">

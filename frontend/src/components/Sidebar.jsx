@@ -1,171 +1,112 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { NavLink } from 'react-router-dom';
 import {
-    Plus,
+    PlusCircle,
     BarChart2,
-    LayoutGrid,
-    User,
-    CreditCard,
-    Mail,
-    HelpCircle,
+    LayoutDashboard,
     QrCode,
-    Shield
+    CreditCard,
+    Bell,
+    Settings,
+    Shield,
+    Folder
 } from 'lucide-react';
 import UpgradeModal from './UpgradeModal';
 import qrvibeLogoPrimary from '../assets/qrvibe-logo-primary.svg';
 
-const Sidebar = ({ isOpen, overlay = false }) => {
+const Sidebar = ({ isOpen, overlay = false, onClose }) => {
     const primaryNav = [
-        { id: 'create', label: 'Create QR', icon: <Plus size={20} />, path: '/create' },
-        { id: 'analytics', label: 'Analytics', icon: <BarChart2 size={20} />, path: '/analytics' },
-        { id: 'qrcodes', label: 'My QR Codes', icon: <LayoutGrid size={20} />, path: '/qrcodes' },
-        { id: 'account', label: 'My Account', icon: <User size={20} />, path: '/account' },
-        { id: 'billing', label: 'Billing', icon: <CreditCard size={20} />, path: '/billing' },
-        { id: 'privacy', label: 'Privacy & Data', icon: <Shield size={20} />, path: '/privacy-data' },
-    ];
-
-    const secondaryNav = [
-        { id: 'contact', label: 'Contact', icon: <Mail size={20} />, path: '/contact' },
-        { id: 'faqs', label: 'FAQs', icon: <HelpCircle size={20} />, path: '/faqs' },
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+        { id: 'qrcodes', label: 'My QR Codes', icon: QrCode, path: '/qrcodes' },
+        { id: 'folders', label: 'Folders', icon: Folder, path: '/folders' },
+        { id: 'create', label: 'Create QR', icon: PlusCircle, path: '/create', gated: true },
+        { id: 'analytics', label: 'Analytics', icon: BarChart2, path: '/analytics' },
+        { id: 'alerts', label: 'Alerts', icon: Bell, path: '/alerts' },
+        { id: 'billing', label: 'Billing', icon: CreditCard, path: '/billing' },
+        { id: 'privacy', label: 'Privacy & Data', icon: Shield, path: '/privacy-data' },
+        { id: 'settings', label: 'Settings', icon: Settings, path: '/account' },
     ];
 
     const { user } = useSelector((state) => state.auth);
     const subscription = user?.subscription;
-    const isTrialing = subscription?.status === 'trialing';
 
-    const [daysLeft, setDaysLeft] = useState(0);
     const [showLimitModal, setShowLimitModal] = useState(false);
 
-    useEffect(() => {
-        if (!subscription?.trialEndsAt) return;
-        const interval = setInterval(() => {
-            const endsAt = new Date(subscription.trialEndsAt);
-            const now = new Date();
-            const diff = Math.max(0, endsAt - now);
-            const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-            setDaysLeft(days);
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [subscription?.trialEndsAt]);
+    // Plan info for bottom card
+    const planName = subscription?.plan === 'business' ? 'Business Plan'
+        : subscription?.plan === 'pro' ? 'Pro Plan'
+        : subscription?.plan === 'basic' ? 'Basic Plan'
+        : 'Starter Plan';
+    const dynamicLimit = subscription?.dynamicQrLimit || 5;
+    const used = user?.activeQrCount ?? 0;
+    const progressPercent = dynamicLimit > 0 ? Math.min(100, (used / dynamicLimit) * 100) : 0;
 
     return (
         <>
         <aside className={`
             fixed top-0 left-0 z-50
-            ${overlay ? '' : 'lg:sticky'}
-            h-screen w-72 bg-white border-r border-slate-200
+            h-screen w-64 bg-[#F8F8F8] border-r border-slate-200
             transition-transform duration-300 ease-in-out
             ${isOpen ? 'translate-x-0' : `-translate-x-full ${overlay ? '' : 'lg:translate-x-0'}`}
-            flex flex-col shadow-2xl lg:shadow-none
+            flex flex-col
         `}>
-            {/* Logo Section */}
-            <div className="p-6 flex items-center mb-2">
-                <img src={qrvibeLogoPrimary} alt="QRVibe Logo" className="h-10 w-auto object-contain" />
+            {/* Logo */}
+            <div className="h-16 flex items-center px-5 border-b border-slate-100">
+                <img src={qrvibeLogoPrimary} alt="QRVibe" className="w-auto object-contain" />
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-4 space-y-2 overflow-y-auto w-full">
-                {primaryNav.map((item) => (
-                    <NavLink
-                        key={item.id}
-                        to={item.path}
-                        onClick={(e) => {
-                            if (item.id === 'create') {
-                                if (subscription?.plan === 'free' && user?.activeQrCount >= subscription?.dynamicQrLimit) {
-                                    e.preventDefault();
-                                    setShowLimitModal(true);
+            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                {primaryNav.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                        <NavLink
+                            key={item.id}
+                            to={item.path}
+                            onClick={(e) => {
+                                if (item.gated) {
+                                    if (subscription?.plan === 'free' && user?.activeQrCount >= subscription?.dynamicQrLimit) {
+                                        e.preventDefault();
+                                        setShowLimitModal(true);
+                                        return;
+                                    }
                                 }
-                            }
-                        }}
-                        className={({ isActive }) => `
-                            w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors
-                            ${isActive
-                                ? 'bg-indigo-50 text-indigo-700 font-bold text-sm'
-                                : 'text-slate-500 hover:bg-slate-50 font-semibold text-sm'}
-                        `}
-                    >
-                        {item.icon}
-                        <span>{item.label}</span>
-                    </NavLink>
-                ))}
-                {/* For now disabled secondary nav i'll implement it later */}
-                {/* <div className="pt-8 pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Support</div>
-                {secondaryNav.map((item) => (
-                    <NavLink
-                        key={item.id}
-                        to={item.path}
-                        className={({ isActive }) => `
-                            w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors
-                            ${isActive
-                                ? 'bg-indigo-50 text-indigo-700 font-bold text-sm'
-                                : 'text-slate-500 hover:bg-slate-50 font-semibold text-sm'}
-                        `}
-                    >
-                        {item.icon}
-                        <span>{item.label}</span>
-                    </NavLink>
-                ))} */}
+                                onClose?.();
+                            }}
+                            className={({ isActive }) => `
+                                flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors
+                                ${isActive
+                                    ? 'bg-indigo-600 text-white shadow-sm'
+                                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
+                            `}
+                        >
+                            <Icon size={18} />
+                            <span>{item.label}</span>
+                        </NavLink>
+                    );
+                })}
             </nav>
 
-            {/* Subscription Card */}
-            <div className="px-4 py-8 mt-auto w-full">
-                <div className="group relative flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-200 transition-all duration-300 hover:border-indigo-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
-                    
-                    {/* Subtle background glow that appears on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-indigo-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                    {/* Icon/Avatar for the Tier */}
-                    <div className={`relative flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl text-white shadow-lg ${
-                        subscription?.status === 'active' ? 'bg-emerald-600 shadow-emerald-200' 
-                        : subscription?.status === 'canceled' || subscription?.status === 'expired' ? 'bg-slate-400 shadow-slate-200' 
-                        : 'bg-indigo-600 shadow-indigo-200'
-                    }`}>
-                        <span className="text-xs font-black">
-                            {subscription?.plan === 'business' ? 'AG' : subscription?.plan === 'pro' ? 'PV' : 'FR'}
-                        </span>
+            {/* Plan Card */}
+            <div className="px-4 py-4 border-t border-slate-100">
+                <NavLink to="/billing" className="block" onClick={() => onClose?.()}>
+                    <p className="text-sm font-bold text-slate-800">{planName}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{used}/{dynamicLimit} QR codes used</p>
+                    <div className="mt-2.5 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-indigo-600 rounded-full transition-all duration-500"
+                            style={{ width: `${progressPercent}%` }}
+                        />
                     </div>
-
-                    <div className="relative flex flex-col min-w-0 flex-1">
-                        <span className={`text-[10px] font-bold uppercase tracking-[0.1em] leading-none mb-1 truncate ${
-                            subscription?.status === 'active' ? 'text-emerald-500'
-                            : subscription?.status === 'canceled' ? 'text-amber-500'
-                            : subscription?.status === 'expired' ? 'text-red-500'
-                            : isTrialing ? 'text-indigo-500'
-                            : 'text-slate-400'
-                        }`}>
-                            {subscription?.status === 'active' ? 'Active Plan'
-                            : subscription?.status === 'canceled' ? 'Canceling'
-                            : subscription?.status === 'expired' ? 'Plan Expired'
-                            : isTrialing ? 'Trial Active'
-                            : 'Free Tier'}
-                        </span>
-                        <h4 className="text-[13px] font-bold text-slate-800 truncate">
-                            {subscription?.plan === 'pro' ? 'Pro Vibe' : subscription?.plan === 'business' ? 'Agency' : 'Free Starter'}
-                        </h4>
-                        {isTrialing && (
-                            <p className="text-[10px] font-semibold text-amber-500 mt-0.5 truncate">{daysLeft} days left</p>
-                        )}
-                        {subscription?.status === 'canceled' && (
-                            <p className="text-[10px] font-semibold text-amber-500 mt-0.5 truncate">Until billing period ends</p>
-                        )}
-                    </div>
-
-                    {/* Action Button — show upgrade for non-active, manage for active */}
-                    <NavLink 
-                        to="/billing" 
-                        className="relative flex-shrink-0 ml-auto flex items-center justify-center w-8 h-8 rounded-full bg-slate-50 text-slate-400 hover:bg-indigo-600 hover:text-white hover:shadow-md transition-all duration-300"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/01/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                    </NavLink>
-                </div>
+                </NavLink>
             </div>
         </aside>
 
-        <UpgradeModal 
-            isOpen={showLimitModal} 
-            onClose={() => setShowLimitModal(false)} 
-            type="limit" 
+        <UpgradeModal
+            isOpen={showLimitModal}
+            onClose={() => setShowLimitModal(false)}
+            type="limit"
         />
         </>
     );

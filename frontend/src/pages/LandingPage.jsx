@@ -542,57 +542,76 @@ const LandingPage = () => {
                         </div>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-8 items-stretch lg:px-4 max-w-5xl mx-auto">
-                        {/* Starter / Free */}
-                        <div className="bg-white p-10 rounded-[40px] border border-slate-200 hover:border-slate-300 transition-all text-left flex flex-col">
-                            <h4 className="font-bold text-xl mb-2 text-slate-900">Starter</h4>
-                            <div className="text-5xl font-extrabold mb-2 text-slate-900">₹0</div>
-                            <p className="text-sm text-slate-500 mb-8 pb-8 border-b border-slate-100">Try dynamic QR codes free, forever.</p>
-                            <ul className="space-y-4 mb-10 text-slate-600 text-sm font-medium flex-1">
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>3 Dynamic QR Codes</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>100 scans/month</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>Basic analytics</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>Standard PNG download</span></li>
+                    <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6 items-stretch lg:px-4 max-w-7xl mx-auto">
+                        {/* Free */}
+                        <div className="bg-white p-8 rounded-[32px] border border-slate-200 hover:border-slate-300 transition-all text-left flex flex-col">
+                            <h4 className="font-bold text-xl mb-2 text-slate-900">Free</h4>
+                            <div className="text-4xl font-extrabold mb-2 text-slate-900">₹0</div>
+                            <p className="text-sm text-slate-500 mb-6 pb-6 border-b border-slate-100">For individuals getting started.</p>
+                            <ul className="space-y-4 mb-8 text-slate-600 text-sm font-medium flex-1">
+                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>1 Dynamic QR Code</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>100 scans lifetime</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>Basic Redirect</span></li>
                             </ul>
-                            <Link to="/register" className="block text-center w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-2xl font-bold transition-all mt-auto">Start Free</Link>
-                            <p className="text-center text-xs text-slate-500 mt-3 font-medium">No credit card required</p>
+                            <Link to="/register?startFree=true" className="block text-center w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-xl font-bold transition-all mt-auto">Start Free</Link>
                         </div>
 
-                        {/* Business Pro (Highlighted) */}
-                        <div className="bg-indigo-600 text-white p-12 rounded-[40px] shadow-2xl shadow-indigo-200 md:scale-105 relative border border-indigo-500 text-left z-10 transform transition-transform md:hover:-translate-y-1 flex flex-col">
-                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-400 to-emerald-500 text-white text-xs font-black uppercase tracking-widest px-6 py-2 rounded-full shadow-lg">Most Popular</div>
-                            <h4 className="font-bold text-xl mb-2 text-indigo-100">Business Pro</h4>
-                            <div className="text-5xl font-black mb-2 flex flex-wrap items-end">
-                                {billingCycle === 'annual' ? '₹699' : '₹899'} 
-                                <span className="text-lg font-bold text-indigo-300 mb-1 ml-1">/mo</span>
+                        {/* Local */}
+                        <div className="bg-white p-8 rounded-[32px] border border-slate-200 hover:border-slate-300 transition-all text-left flex flex-col">
+                            <h4 className="font-bold text-xl mb-2 text-slate-900">Local</h4>
+                            <div className="text-4xl font-black mb-2 flex flex-wrap items-end text-slate-900">
+                                {billingCycle === 'annual' ? '₹99' : '₹149'} 
+                                <span className="text-sm font-bold text-slate-500 mb-1 ml-1">/mo</span>
                             </div>
-                            <p className="text-sm text-indigo-200 mb-8 pb-8 border-b border-indigo-500/50">
-                                {billingCycle === 'annual' ? 'Billed ₹8,388/year + GST' : 'Billed monthly + GST'}
+                            <p className="text-sm text-slate-500 mb-6 pb-6 border-b border-slate-100">
+                                {billingCycle === 'annual' ? 'Billed ₹1,188/year' : 'Billed monthly'}
                             </p>
-                            <ul className="space-y-4 mb-10 font-bold text-sm text-indigo-50 flex-1">
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>Unlimited QR Codes</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>Advanced analytics & tracking</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>Brand design studio & logos</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>SVG vector exports</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>Priority support (Hindi & English)</span></li>
+                            <ul className="space-y-4 mb-8 text-slate-600 text-sm font-medium flex-1">
+                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>1 Dynamic QR Code</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>Unlimited scans</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>Full Analytics</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>Email Health Alerts</span></li>
                             </ul>
-                            <Link to="/register" className="block text-center w-full py-4 bg-white text-indigo-600 rounded-2xl font-black shadow-xl hover:bg-indigo-50 transition-all text-lg tracking-wide mt-auto">Start 14-Day Free Trial</Link>
-                            <p className="text-center text-sm text-indigo-200 mt-3 font-black">No credit card required</p>
+                            <Link to="/register" className="block text-center w-full py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold transition-all mt-auto border border-indigo-200">Start 30-Day Trial</Link>
                         </div>
 
-                        {/* Enterprise */}
-                        <div className="bg-white p-10 rounded-[40px] border border-slate-200 hover:border-slate-300 transition-all text-left flex flex-col">
-                            <h4 className="font-bold text-xl mb-2 text-slate-900">Enterprise</h4>
-                            <div className="text-5xl font-extrabold mb-2 text-slate-900">Custom</div>
-                            <p className="text-sm text-slate-500 mb-8 pb-8 border-b border-slate-100">For large teams & multi-location businesses.</p>
-                            <ul className="space-y-4 mb-10 text-slate-600 text-sm font-medium flex-1">
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" /> <span>Everything in Business Pro</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" /> <span>Unlimited team seats</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" /> <span>Advanced API Integration</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" /> <span>Dedicated account manager</span></li>
-                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" /> <span>Priority Setup & Training</span></li>
+                        {/* Starter */}
+                        <div className="bg-white p-8 rounded-[32px] border border-slate-200 hover:border-slate-300 transition-all text-left flex flex-col">
+                            <h4 className="font-bold text-xl mb-2 text-slate-900">Starter</h4>
+                            <div className="text-4xl font-black mb-2 flex flex-wrap items-end text-slate-900">
+                                {billingCycle === 'annual' ? '₹299' : '₹399'} 
+                                <span className="text-sm font-bold text-slate-500 mb-1 ml-1">/mo</span>
+                            </div>
+                            <p className="text-sm text-slate-500 mb-6 pb-6 border-b border-slate-100">
+                                {billingCycle === 'annual' ? 'Billed ₹3,588/year' : 'Billed monthly'}
+                            </p>
+                            <ul className="space-y-4 mb-8 text-slate-600 text-sm font-medium flex-1">
+                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>10 Dynamic QR Codes</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>25,000 scans/month</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>10 WhatsApp Alerts/mo</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> <span>Custom Branding</span></li>
                             </ul>
-                            <button className="w-full py-4 border-2 border-slate-200 hover:border-slate-300 text-slate-900 rounded-2xl font-bold transition-all bg-white mt-auto">Contact Sales</button>
+                            <Link to="/register" className="block text-center w-full py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold transition-all mt-auto border border-indigo-200">Start 30-Day Trial</Link>
+                        </div>
+
+                        {/* Growth (Highlighted) */}
+                        <div className="bg-indigo-600 text-white p-8 rounded-[32px] shadow-2xl shadow-indigo-200 relative border border-indigo-500 text-left z-10 flex flex-col lg:scale-105">
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-400 to-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg">Most Popular</div>
+                            <h4 className="font-bold text-xl mb-2 text-indigo-100">Growth</h4>
+                            <div className="text-4xl font-black mb-2 flex flex-wrap items-end">
+                                {billingCycle === 'annual' ? '₹599' : '₹799'} 
+                                <span className="text-sm font-bold text-indigo-300 mb-1 ml-1">/mo</span>
+                            </div>
+                            <p className="text-sm text-indigo-200 mb-6 pb-6 border-b border-indigo-500/50">
+                                {billingCycle === 'annual' ? 'Billed ₹7,188/year' : 'Billed monthly'}
+                            </p>
+                            <ul className="space-y-4 mb-8 font-bold text-sm text-indigo-50 flex-1">
+                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>50 Dynamic QR Codes</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>Unlimited scans</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>Unlimited WhatsApp Alerts</span></li>
+                                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> <span>API Access</span></li>
+                            </ul>
+                            <Link to="/register" className="block text-center w-full py-3 bg-white text-indigo-600 rounded-xl font-black shadow-xl hover:bg-indigo-50 transition-all mt-auto">Start 30-Day Trial</Link>
                         </div>
                     </div>
 
@@ -604,29 +623,28 @@ const LandingPage = () => {
                                 <thead>
                                     <tr className="border-b-2 border-slate-200">
                                         <th className="py-4 pr-4 font-bold text-slate-900">Feature</th>
+                                        <th className="py-4 px-4 font-bold text-slate-900 text-center">Free</th>
+                                        <th className="py-4 px-4 font-bold text-slate-900 text-center">Local</th>
                                         <th className="py-4 px-4 font-bold text-slate-900 text-center">Starter</th>
-                                        <th className="py-4 px-4 font-bold text-indigo-600 text-center">Business Pro</th>
-                                        <th className="py-4 pl-4 font-bold text-slate-900 text-center">Enterprise</th>
+                                        <th className="py-4 pl-4 font-bold text-indigo-600 text-center">Growth</th>
                                     </tr>
                                 </thead>
                                 <tbody className="text-slate-600">
                                     {[
-                                        ['Dynamic QR Codes', '3', 'Unlimited', 'Unlimited'],
-                                        ['Scans/month', '100', 'Unlimited', 'Unlimited'],
-                                        ['Analytics', 'Basic', 'Advanced Tracking', 'Advanced Tracking'],
-                                        ['Custom Branding', '—', '✓', '✓'],
-                                        ['SVG Exports', '—', '✓', '✓'],
-                                        ['Team Members', '1', '3', 'Unlimited'],
-                                        ['API Access', '—', '—', '✓'],
-                                        ['Priority Setup', '—', '—', '✓'],
-                                        ['Dedicated Manager', '—', '—', '✓'],
-                                        ['Support', 'Email', 'Priority (Hindi/EN)', 'Dedicated Support'],
-                                    ].map(([feature, starter, pro, enterprise], i) => (
+                                        ['Dynamic QR Codes', '1', '1', '10', '50'],
+                                        ['Scans', '100 lifetime', 'Unlimited', '25,000/mo', 'Unlimited'],
+                                        ['Analytics', '—', '✓', '✓', '✓'],
+                                        ['Email Health Alerts', '—', '✓', '✓', '✓'],
+                                        ['WhatsApp Alerts', '—', '—', '10/mo', 'Unlimited'],
+                                        ['Custom Branding', '—', '—', '✓', '✓'],
+                                        ['API Access', '—', '—', '—', '✓'],
+                                    ].map(([feature, free, local, starter, growth], i) => (
                                         <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                                             <td className="py-3.5 pr-4 font-medium text-slate-800">{feature}</td>
+                                            <td className="py-3.5 px-4 text-center">{free === '✓' ? <Check className="w-5 h-5 text-emerald-500 mx-auto" /> : free === '—' ? <X className="w-4 h-4 text-slate-300 mx-auto" /> : free}</td>
+                                            <td className="py-3.5 px-4 text-center">{local === '✓' ? <Check className="w-5 h-5 text-emerald-500 mx-auto" /> : local === '—' ? <X className="w-4 h-4 text-slate-300 mx-auto" /> : local}</td>
                                             <td className="py-3.5 px-4 text-center">{starter === '✓' ? <Check className="w-5 h-5 text-emerald-500 mx-auto" /> : starter === '—' ? <X className="w-4 h-4 text-slate-300 mx-auto" /> : starter}</td>
-                                            <td className="py-3.5 px-4 text-center font-semibold text-indigo-600 bg-indigo-50/50">{pro === '✓' ? <Check className="w-5 h-5 text-emerald-500 mx-auto" /> : pro === '—' ? <X className="w-4 h-4 text-slate-300 mx-auto" /> : pro}</td>
-                                            <td className="py-3.5 pl-4 text-center">{enterprise === '✓' ? <Check className="w-5 h-5 text-emerald-500 mx-auto" /> : enterprise === '—' ? <X className="w-4 h-4 text-slate-300 mx-auto" /> : enterprise}</td>
+                                            <td className="py-3.5 pl-4 text-center font-semibold text-indigo-600 bg-indigo-50/50">{growth === '✓' ? <Check className="w-5 h-5 text-emerald-500 mx-auto" /> : growth === '—' ? <X className="w-4 h-4 text-slate-300 mx-auto" /> : growth}</td>
                                         </tr>
                                     ))}
                                 </tbody>

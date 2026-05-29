@@ -1,14 +1,13 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loadUser } from './redux/authSlice';
 import { Loader2 } from 'lucide-react';
 
-import Sidebar from './components/Sidebar.jsx';
-import Dashboard from './components/Dashboard.jsx';
-import DashboardHome from './components/DashboardHome.jsx';
+import QRCodesList from './components/QRCodesList.jsx';
+import DashboardOverview from './components/DashboardOverview.jsx';
 import PrivateRoute from './components/PrivateRoute.jsx';
-import DashboardShell from './components/layout/DashboardShell.jsx';
+import DashboardLayout from './components/layout/DashboardLayout.jsx';
 
 const LoginPage = React.lazy(() => import('./pages/LoginPage.jsx'));
 const RegisterPage = React.lazy(() => import('./pages/RegisterPage.jsx'));
@@ -24,35 +23,18 @@ const VCardViewPage = React.lazy(() => import('./pages/VCardViewPage.jsx'));
 const SocialViewPage = React.lazy(() => import('./pages/SocialViewPage.jsx'));
 const MediaViewPage = React.lazy(() => import('./pages/MediaViewPage.jsx'));
 const MenuViewPage = React.lazy(() => import('./pages/MenuViewPage.jsx'));
+const ThemeTest = React.lazy(() => import('./pages/ThemeTest.jsx'));
+const FoldersPage = React.lazy(() => import('./pages/FoldersPage.jsx'));
 
 import TrialWarningBanner from './components/TrialWarningBanner.jsx';
 import TrialExpiredModal from './components/TrialExpiredModal.jsx';
 
 const MainDashboardLayout = () => (
-  <DashboardShell>
+  <DashboardLayout>
     <TrialWarningBanner />
     <TrialExpiredModal />
     <Outlet />
-  </DashboardShell>
-);
-
-const CreateWizardLayout = ({ isSidebarOpen, onToggle }) => (
-  <div className="flex min-h-screen w-full bg-background">
-    <Sidebar isOpen={isSidebarOpen} overlay={true} />
-    <main className="flex min-h-screen flex-1 flex-col overflow-auto w-full">
-      <TrialWarningBanner />
-      <TrialExpiredModal />
-      <div className="flex-1">
-        <CreateQRPage isOpen={isSidebarOpen} onToggle={onToggle} />
-      </div>
-    </main>
-    {isSidebarOpen && (
-      <div
-        className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-30"
-        onClick={onToggle}
-      />
-    )}
-  </div>
+  </DashboardLayout>
 );
 
 const App = () => {
@@ -89,17 +71,15 @@ const App = () => {
           <Route path="/social/:shortId" element={<SocialViewPage />} />
           <Route path="/media/:shortId" element={<MediaViewPage />} />
           <Route path="/menu/:shortId" element={<MenuViewPage />} />
+          <Route path="/theme-test" element={<ThemeTest />} />
 
           <Route element={<PrivateRoute />}>
-            <Route
-              path="/create"
-              element={<CreateWizardLayout isSidebarOpen={isSidebarOpen} onToggle={toggleSidebar} />}
-            />
-
             <Route element={<MainDashboardLayout />}>
-              <Route path="/dashboard" element={<DashboardHome />} />
-              <Route path="/qrcodes" element={<Dashboard />} />
+              <Route path="/create" element={<CreateQRPage />} />
+              <Route path="/dashboard" element={<DashboardOverview />} />
+              <Route path="/qrcodes" element={<QRCodesList />} />
               <Route path="/qrcodes/:id" element={<QRDetailPage />} />
+              <Route path="/folders" element={<FoldersPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/billing" element={<BillingPage />} />
               <Route path="/account" element={<AccountPage />} />

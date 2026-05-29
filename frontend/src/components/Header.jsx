@@ -6,7 +6,7 @@ const Header = ({ onToggle, isOpen }) => {
     return (
         <header className='fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 z-50 lg:hidden'>
             <div className="flex items-center">
-                <img src={qrvibeLogoPrimary} alt="QRVibe Logo" className="h-8 w-auto object-contain" />
+                <img src={qrvibeLogoPrimary} alt="QRVibe Logo" className="h-10 w-auto object-contain" />
             </div>
 
             <button
