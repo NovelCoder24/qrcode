@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import PhoneMockup from '../../components/Create/PhoneMockup';
 import TypeSelection from './steps/TypeSelection';
 import ContentForm from './steps/ContentForm';
 import DesignStudio from './steps/DesignStudio';
-import { ChevronRight, HelpCircle, Menu, X, QrCode, Loader2 } from 'lucide-react';
+import SafetyCheck from './steps/SafetyCheck';
+import DownloadStep from './steps/DownloadStep';
+import { ChevronRight, Check, Loader2 } from 'lucide-react';
 import api from '../../api/axios';
-import qrvibeLogoPrimary from '../../assets/qrvibe-logo-primary.svg';
 
-const CreateQRPage = ({ isOpen, onToggle }) => {
+const CreateQRPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
     const currentStep = parseInt(searchParams.get('step') || '1', 10);
@@ -29,6 +29,7 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
     const [isCreating, setIsCreating] = useState(false);
     const [error, setError] = useState(null);
     const [editLoading, setEditLoading] = useState(false);
+    const [createdQrData, setCreatedQrData] = useState(null);
 
     // Load existing QR data in edit mode
     useEffect(() => {
@@ -38,7 +39,7 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
                 try {
                     const { data } = await api.get(`/qrcodes/${editId}`);
                     setQrType(data.qr_type || 'URL');
-                    // Preserve all metadata (like menu categories, vcard info, etc)
+                    // Preserve all metadata
                     setQrData({ 
                         url: data.target_url, 
                         ...data.metadata 
@@ -70,7 +71,7 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
     };
 
     const nextStep = () => {
-        if (currentStep < 3) {
+        if (currentStep < 4) {
             const params = { step: currentStep + 1 };
             if (editId) params.edit = editId;
             setSearchParams(params);
@@ -113,13 +114,11 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
                     break;
 
                 case 'VCARD':
-                    // For vCard, we'll store data in metadata and use a placeholder URL
                     if (!qrData?.firstName && !qrData?.lastName && !qrData?.phone && !qrData?.email) {
                         setError('Please fill in at least name, phone, or email.');
                         setIsCreating(false);
                         return;
                     }
-                    // Store vCard data in metadata
                     metadata = { ...metadata, ...qrData };
                     target_url = `vcard://${qrData?.firstName || 'contact'}`;
                     break;
@@ -130,7 +129,6 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
                         setIsCreating(false);
                         return;
                     }
-                    // Generate WhatsApp URL
                     const phone = qrData.phoneNumber.replace(/\D/g, '');
                     const message = encodeURIComponent(qrData?.prefillMessage || '');
                     target_url = `https://wa.me/${phone}${message ? `?text=${message}` : ''}`;
@@ -138,7 +136,6 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
                     break;
 
                 case 'SOCIAL':
-                    // Check if at least one social link is provided
                     const socialLinks = qrData?.socialLinks || [];
                     const hasValidLink = socialLinks.some(link => link.url && link.url.trim());
                     if (!hasValidLink) {
@@ -146,7 +143,6 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
                         setIsCreating(false);
                         return;
                     }
-                    // Store all social data in metadata, use first available as target_url
                     metadata = { ...metadata, ...qrData };
                     target_url = socialLinks.find(link => link.url)?.url || '';
                     break;
@@ -201,6 +197,8 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
                 title: metadata.title,
                 qr_type: qrType,
                 metadata,
+                folder_id: qrData.folder_id || null,
+                utm: qrData.utm || { source: '', medium: '', campaign: '', term: '', content: '' },
                 customization: {
                     fgColor: qrDesign.fgColor,
                     fgColor2: qrDesign.fgColor2 || null,
@@ -215,13 +213,13 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
             };
 
             if (isEditMode) {
-                // Update existing QR code
-                await api.put(`/qrcodes/${editId}`, payload);
-                navigate(`/qrcodes/${editId}`);
+                const res = await api.put(`/qrcodes/${editId}`, payload);
+                setCreatedQrData(res.data);
+                setSearchParams({ step: 5, edit: editId });
             } else {
-                // Create new QR code
-                await api.post('/qrcodes/create', payload);
-                navigate('/qrcodes');
+                const res = await api.post('/qrcodes/create', payload);
+                setCreatedQrData(res.data);
+                setSearchParams({ step: 5 });
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to save QR code. Please try again.');
@@ -232,89 +230,103 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
 
     if (editLoading) {
         return (
-            <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center">
+            <div className="w-full flex-1 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-slate-900" />
             </div>
         );
     }
 
+    const steps = [
+        { num: 1, label: 'Choose Type' },
+        { num: 2, label: 'Destination' },
+        { num: 3, label: 'Design' },
+        { num: 4, label: 'Safety Check' },
+        { num: 5, label: 'Download' }
+    ];
+
     return (
-        <div className="min-h-screen w-full bg-slate-50 flex flex-col">
-
-            {/* Wizard Header */}
-            <div className="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-                    {/* Logo Area (Left) */}
-                    <div className="flex items-center">
-                        <img src={qrvibeLogoPrimary} alt="QRVibe Logo" className="h-10 w-auto object-contain" />
-                    </div>
-
-                    {/* Progress Steps (Center) */}
-                    <div className="hidden md:flex items-center gap-4 text-sm font-medium">
-                        <div className={`flex items-center gap-2 ${currentStep >= 1 ? 'text-slate-900' : 'text-gray-400'}`}>
-                            <span className={`w-6 h-6 rounded-md flex items-center justify-center text-xs ${currentStep >= 1 ? 'bg-slate-900 text-white' : 'bg-gray-100'}`}>1</span>
-                            <span>Type of QR code</span>
+        <div className="flex-1 flex flex-col max-w-5xl mx-auto w-full">
+            {/* Page Header & Progress */}
+            <div className="mb-8">
+                <h1 className="text-2xl font-bold text-slate-900 mb-6">
+                    {isEditMode ? 'Edit QR Code' : 'Create QR Code'}
+                </h1>
+                
+                {/* Horizontal Progress Bar */}
+                <div className="flex items-center w-full overflow-x-auto pb-2 scrollbar-hide">
+                    {steps.map((step, index) => (
+                        <div key={step.num} className="flex items-center min-w-max">
+                            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-colors
+                                ${currentStep > step.num ? 'bg-green-500 text-white' : 
+                                  currentStep === step.num ? 'bg-slate-900 text-white' : 
+                                  'bg-slate-100 text-slate-400'}`}>
+                                {currentStep > step.num ? <Check size={16} /> : step.num}
+                            </div>
+                            <span className={`ml-3 text-sm font-medium transition-colors
+                                ${currentStep >= step.num ? 'text-slate-900' : 'text-slate-400'}`}>
+                                {step.label}
+                            </span>
+                            {index < steps.length - 1 && (
+                                <div className="w-12 sm:w-20 h-px bg-slate-200 mx-4" />
+                            )}
                         </div>
-                        <ChevronRight size={16} className="text-gray-300" />
-                        <div className={`flex items-center gap-2 ${currentStep >= 2 ? 'text-slate-900' : 'text-gray-400'}`}>
-                            <span className={`w-6 h-6 rounded-md flex items-center justify-center text-xs ${currentStep >= 2 ? 'bg-slate-900 text-white' : 'bg-gray-100'}`}>2</span>
-                            <span>Content</span>
-                        </div>
-                        <ChevronRight size={16} className="text-gray-300" />
-                        <div className={`flex items-center gap-2 ${currentStep >= 3 ? 'text-slate-900' : 'text-gray-400'}`}>
-                            <span className={`w-6 h-6 rounded-md flex items-center justify-center text-xs ${currentStep >= 3 ? 'bg-slate-900 text-white' : 'bg-gray-100'}`}>3</span>
-                            <span>QR design</span>
-                        </div>
-                    </div>
-
-                    {/* Actions (Right) */}
-                    <div className="flex items-center gap-4">
-                        <button className="p-2 text-gray-400 hover:text-slate-600 rounded-md hover:bg-gray-100">
-                            <HelpCircle size={20} />
-                        </button>
-                        <button
-                            onClick={onToggle}
-                            className="p-2 text-slate-700 bg-slate-100 rounded-md hover:bg-slate-200">
-                            {isOpen ? <X size={20} /> : <Menu size={20} />}
-                        </button>
-                    </div>
+                    ))}
                 </div>
             </div>
 
             {/* Main Content Area */}
-            <main className="flex-1 max-w-7xl mx-auto w-full px-6 pt-12 pb-24 grid lg:grid-cols-12 gap-12">
+            <main className="flex-1 flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
+                {currentStep === 1 && (
+                    <TypeSelection selectedType={qrType} onSelect={handleTypeSelect} onProceed={nextStep} />
+                )}
 
-                {/* Left Side: Steps Content */}
-                <div className="lg:col-span-8 flex flex-col">
-                    {currentStep === 1 && (
-                        <TypeSelection selectedType={qrType} onSelect={handleTypeSelect} onProceed={nextStep} />
-                    )}
+                {currentStep === 2 && (
+                    <ContentForm
+                        type={qrType}
+                        data={qrData}
+                        onChange={setQrData}
+                    />
+                )}
 
-                    {/* Step 2: Content Input */}
-                    {currentStep === 2 && (
-                        <ContentForm
-                            type={qrType}
-                            data={qrData}
-                            onChange={setQrData}
-                        />
-                    )}
-                    {currentStep === 3 && (
-                        <DesignStudio design={qrDesign} onChange={setQrDesign} />
-                    )}
+                {currentStep === 3 && (
+                    <DesignStudio 
+                        type={qrType}
+                        data={qrData}
+                        design={qrDesign} 
+                        onChange={setQrDesign} 
+                    />
+                )}
 
-                    {/* Error Message */}
-                    {error && (
-                        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium">
-                            {error}
-                        </div>
-                    )}
+                {currentStep === 4 && (
+                    <SafetyCheck 
+                        type={qrType}
+                        data={qrData}
+                        design={qrDesign}
+                    />
+                )}
 
-                    {/* Navigation Buttons */}
-                    <div className="mt-16 flex justify-between items-center">
+                {currentStep === 5 && (
+                    <DownloadStep 
+                        qrData={createdQrData}
+                        qrType={qrType}
+                        design={qrDesign}
+                    />
+                )}
+
+                {/* Error Message */}
+                {error && (
+                    <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium">
+                        {error}
+                    </div>
+                )}
+
+                {/* Navigation Buttons */}
+                {currentStep < 5 && (
+                    <div className="mt-10 pt-6 border-t border-slate-100 flex justify-between items-center">
                         {currentStep > 1 ? (
                             <button
                                 onClick={prevStep}
-                                className="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-md font-semibold hover:bg-slate-50 transition-colors"
+                                className="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-medium hover:bg-slate-50 transition-colors"
                             >
                                 Back
                             </button>
@@ -322,44 +334,32 @@ const CreateQRPage = ({ isOpen, onToggle }) => {
                             <div></div>
                         )}
 
-                        {currentStep < 3 ? (
+                        {currentStep < 4 ? (
                             <button
                                 onClick={nextStep}
                                 disabled={!qrType}
-                                className="bg-slate-950 text-white px-12 py-4 rounded-md font-bold shadow-sm hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                className="bg-slate-900 text-white px-8 py-2.5 rounded-xl font-medium shadow-sm hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                Next Step
+                                Continue
                             </button>
                         ) : (
                             <button
                                 onClick={handleCreateQR}
                                 disabled={isCreating}
-                                className="bg-slate-950 text-white px-12 py-4 rounded-md font-bold shadow-sm hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                                className="bg-slate-900 text-white px-8 py-2.5 rounded-xl font-medium shadow-sm hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                             >
                                 {isCreating ? (
                                     <>
-                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        <Loader2 className="w-4 h-4 animate-spin" />
                                         {isEditMode ? 'Saving...' : 'Creating...'}
                                     </>
                                 ) : (
-                                    isEditMode ? 'Save Changes' : 'Create QR Code'
+                                    isEditMode ? 'Save & Continue' : 'Create & Continue'
                                 )}
                             </button>
                         )}
                     </div>
-                </div>
-
-                {/* Right Side: Phone Preview (Sticky) */}
-                <div className="hidden lg:col-span-4 lg:flex flex-col items-center">
-                    <div className="sticky top-24 w-full flex justify-center">
-                        <PhoneMockup
-                            type={qrType}
-                            data={qrData}
-                            design={qrDesign}
-                            step={currentStep}
-                        />
-                    </div>
-                </div>
+                )}
             </main>
         </div>
     );

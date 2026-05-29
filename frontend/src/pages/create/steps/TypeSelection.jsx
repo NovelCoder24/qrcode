@@ -76,11 +76,15 @@ const TypeSelection = ({ selectedType, onSelect, onProceed }) => {
     };
 
     return (
-        <div className="w-full">
-            <h1 className="text-3xl font-extrabold text-slate-900 mb-12 text-center lg:text-left">
-                1. Select a type of QR code
-            </h1>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div className="w-full flex flex-col items-center">
+            <div className="text-center mb-10">
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                    Choose QR Code Type
+                </h2>
+                <p className="text-slate-500 text-sm">Select the type of content you want your QR code to link to.</p>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full">
                 {types.map((type) => {
                     const isActive = selectedType === type.id;
                     return (
@@ -93,20 +97,20 @@ const TypeSelection = ({ selectedType, onSelect, onProceed }) => {
                                 if (e.key === 'Enter') handleInteraction(type.id, 'enter');
                             }}
                             className={`
-                                bg-white p-6 rounded-3xl border text-center cursor-pointer transition-all hover:shadow-lg flex flex-col items-center focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
-                                ${isActive ? 'border-indigo-600 ring-1 ring-indigo-600 shadow-md' : 'border-slate-100'}
+                                group bg-white p-6 rounded-2xl border cursor-pointer transition-all duration-200 hover:shadow-md flex flex-col items-center justify-center focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2
+                                ${isActive ? 'border-slate-900 ring-1 ring-slate-900 shadow-sm bg-slate-50/50' : 'border-slate-200 hover:border-slate-300'}
                             `}
                         >
                             <div className={`
-                                w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors
-                                ${isActive ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}
+                                w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-colors duration-200
+                                ${isActive ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200 group-hover:text-slate-900'}
                             `}>
                                 {type.icon}
                             </div>
-                            <h3 className={`font-bold text-sm mb-1 ${isActive ? 'text-indigo-600' : 'text-slate-900'}`}>
+                            <h3 className={`font-semibold text-sm mb-1 transition-colors duration-200 ${isActive ? 'text-slate-900' : 'text-slate-700 group-hover:text-slate-900'}`}>
                                 {type.label}
                             </h3>
-                            <p className="text-[10px] text-slate-400 font-medium">
+                            <p className="text-xs text-slate-500 font-medium text-center line-clamp-1">
                                 {type.desc}
                             </p>
                         </div>
