@@ -94,9 +94,9 @@ export const updateQR = async (req, res) => {
             return res.status(401).json({ message: "Not authorized to update this QR" });
         }
 
-        // Prevent edits if the QR is locked due to downgrade
+        // Prevent edits if the QR is locked due to downgrade or plan limits
         if (qr.accessMode === 'static_locked') {
-            return res.status(403).json({ message: "This QR code is locked. Please upgrade your plan to unlock editing features." });
+            return res.status(403).json({ message: "QR code is locked. Please upgrade to edit." });
         }
 
         // Update fields

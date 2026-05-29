@@ -64,6 +64,19 @@ const qrCodeSchema = new mongoose.Schema({
   metadata: {
     type: Object,
     default: {}
+  },
+  folder_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Folder",
+    default: null,
+    index: true
+  },
+  utm: {
+    source: { type: String, default: "" },
+    medium: { type: String, default: "" },
+    campaign: { type: String, default: "" },
+    term: { type: String, default: "" },
+    content: { type: String, default: "" }
   }
 }, { timestamps: true });
 
@@ -78,6 +91,10 @@ qrCodeSchema.pre("save", function () {
     };
   };
 });
+
+// Database Safety: Compound index for queries filtering by user and folder
+qrCodeSchema.index({ user_id: 1, folder_id: 1 });
+
 // 2. INSTANCE METHODS
 // Helper to get the full short link for the QR image
 qrCodeSchema.methods.getFullShortUrl = function () {
