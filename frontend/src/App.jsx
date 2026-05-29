@@ -70,8 +70,7 @@ const App = () => {
           <Route path="/vcard/:shortId" element={<VCardViewPage />} />
           <Route path="/social/:shortId" element={<SocialViewPage />} />
           <Route path="/media/:shortId" element={<MediaViewPage />} />
-          <Route path="/menu/:shortId" element={<MenuViewPage />} />
-          <Route path="/theme-test" element={<ThemeTest />} />
+          <Route path="/menu/:shortId" element={<MenuViewPage />} /> 
 
           <Route element={<PrivateRoute />}>
             <Route element={<MainDashboardLayout />}>
