@@ -23,7 +23,6 @@ const VCardViewPage = React.lazy(() => import('./pages/VCardViewPage.jsx'));
 const SocialViewPage = React.lazy(() => import('./pages/SocialViewPage.jsx'));
 const MediaViewPage = React.lazy(() => import('./pages/MediaViewPage.jsx'));
 const MenuViewPage = React.lazy(() => import('./pages/MenuViewPage.jsx'));
-const ThemeTest = React.lazy(() => import('./pages/ThemeTest.jsx'));
 const FoldersPage = React.lazy(() => import('./pages/FoldersPage.jsx'));
 
 import TrialWarningBanner from './components/TrialWarningBanner.jsx';
