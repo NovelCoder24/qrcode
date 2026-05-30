@@ -51,6 +51,7 @@ const initialState = {
     user: null,
     isAuthenticated: false,
     loading: false,
+    isCheckingSession: false,
     error: null
 };
 
@@ -123,15 +124,15 @@ const authSlice = createSlice({
             })
             // LoadUser Handlers
             .addCase(loadUser.pending, (state) => {
-                state.loading = true;
+                state.isCheckingSession = true;
             })
             .addCase(loadUser.fulfilled, (state, action) => {
-                state.loading = false;
+                state.isCheckingSession = false;
                 state.isAuthenticated = true;
                 state.user = action.payload;
             })
             .addCase(loadUser.rejected, (state) => {
-                state.loading = false;
+                state.isCheckingSession = false;
                 state.isAuthenticated = false;
                 state.user = null;
             })
