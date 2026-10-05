@@ -1,5 +1,9 @@
 // backend/services/geolocation.js
 import geoip from "geoip-lite";
+import axios from "axios";
+import { LRUCache } from "lru-cache";
+
+const geoCache = new LRUCache({ max: 5000, ttl: 1000 * 60 * 60 * 24 });
 
 // 1. IP Normalization & Validation
 function normalizeIp(ip) {
@@ -141,10 +145,37 @@ export function getLocationOffline(ip) {
   }
 }
 
-// 4. Async Geo Lookup: keep async interface, but use stateless local lookup only.
+// 4. Async Geo Lookup: API with caching and offline fallback
 export async function getLocationAsync(ip) {
-  // This avoids redirect analytics depending on third-party network calls.
-  return getLocationOffline(ip);
+  if (!ip || isPrivateIp(ip)) {
+    return getLocationOffline(ip);
+  }
+
+  if (geoCache.has(ip)) {
+    return geoCache.get(ip);
+  }
+
+  try {
+    const { data } = await axios.get(`https://freeipapi.com/api/json/${ip}`);
+    
+    // Validate response
+    if (data && data.countryName) {
+      const loc = {
+        country: data.countryName || "Unknown",
+        country_code: data.countryCode || "Unknown",
+        city: data.cityName || "Unknown",
+        region: data.regionName || "Unknown",
+        timezone: data.timeZone || "UTC",
+        ll: (data.latitude && data.longitude) ? [data.latitude, data.longitude] : []
+      };
+      geoCache.set(ip, loc);
+      return loc;
+    }
+    return getLocationOffline(ip);
+  } catch (error) {
+    console.error("[Geolocation] API lookup failed, falling back to offline:", error.message);
+    return getLocationOffline(ip);
+  }
 }
 
 // 5. Hybrid Geolocation: Read from CDN Headers
