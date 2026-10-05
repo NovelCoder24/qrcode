@@ -3,7 +3,7 @@ import { Scan } from "../models/Scan.js";
 import { DailyScanStats } from "../models/DailyScanStats.js";
 import { UAParser } from "ua-parser-js";
 import crypto from "crypto";
-import { getClientIp, getLocationAsync } from "../services/Geolocation.js";
+import { getClientIp, getLocationAsync, getLocationFromHeaders } from "../services/Geolocation.js";
 import { env } from "../config/env.js";
 
 // ── Bot signatures to filter out from analytics ──
@@ -175,8 +175,11 @@ export const redirectQR = async (req, res) => {
                     }
                 }
 
-                // Geo lookup: freeipapi.com first → geoip-lite fallback (async, non-blocking)
-                const locationData = await getLocationAsync(ip);
+                // Geo lookup: Edge headers first, fallback to cached API
+                let locationData = getLocationFromHeaders(req);
+                if (!locationData) {
+                    locationData = await getLocationAsync(ip);
+                }
                 // strict lock DailyScanStats to YYYY-MM-DD
                 const dateStr = new Date().toISOString().split('T')[0];
                 const startOfDay = new Date(dateStr);
