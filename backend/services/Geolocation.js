@@ -146,3 +146,22 @@ export async function getLocationAsync(ip) {
   // This avoids redirect analytics depending on third-party network calls.
   return getLocationOffline(ip);
 }
+
+// 5. Hybrid Geolocation: Read from CDN Headers
+export function getLocationFromHeaders(req) {
+    const country = req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'];
+    const city = req.headers['cf-ipcity'] || req.headers['x-vercel-ip-city'];
+
+    if (!country && !city) {
+        return null;
+    }
+
+    return {
+        country: country || "Unknown",
+        country_code: country || "Unknown",
+        city: city || "Unknown",
+        region: "Unknown",
+        timezone: "UTC",
+        ll: []
+    };
+}
