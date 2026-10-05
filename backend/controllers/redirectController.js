@@ -175,10 +175,19 @@ export const redirectQR = async (req, res) => {
                     }
                 }
 
-                // Geo lookup: Edge headers first, fallback to cached API
+                // Geo lookup: Edge headers first if full city & country available, otherwise fallback to cached API
                 let locationData = getLocationFromHeaders(req);
-                if (!locationData) {
-                    locationData = await getLocationAsync(ip);
+                if (!locationData || locationData.city === 'Unknown') {
+                    const apiLocation = await getLocationAsync(ip);
+                    if (locationData && locationData.country_code !== 'Unknown' && (!apiLocation || apiLocation.city === 'Unknown')) {
+                        locationData = {
+                            ...apiLocation,
+                            country: locationData.country || apiLocation?.country || "Unknown",
+                            country_code: locationData.country_code || apiLocation?.country_code || "Unknown"
+                        };
+                    } else {
+                        locationData = apiLocation || locationData;
+                    }
                 }
                 // strict lock DailyScanStats to YYYY-MM-DD
                 const dateStr = new Date().toISOString().split('T')[0];

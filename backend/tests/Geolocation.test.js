@@ -17,6 +17,13 @@ describe('getLocationFromHeaders', () => {
         assert.strictEqual(result.city, 'Toronto');
     });
 
+    test('extracts country when city is missing from headers', () => {
+        const req = { headers: { 'cf-ipcountry': 'IN' } };
+        const result = getLocationFromHeaders(req);
+        assert.strictEqual(result.country_code, 'IN');
+        assert.strictEqual(result.city, 'Unknown');
+    });
+
     test('returns null if no headers present', () => {
         const req = { headers: {} };
         const result = getLocationFromHeaders(req);
@@ -36,5 +43,7 @@ describe('getLocationAsync', () => {
         const loc = await getLocationAsync('8.8.8.8');
         assert.ok(loc.country_code);
         assert.ok(loc.city);
+        assert.notStrictEqual(loc.timezone, undefined);
     });
 });
+

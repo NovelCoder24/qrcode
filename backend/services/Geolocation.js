@@ -156,43 +156,69 @@ export async function getLocationAsync(ip) {
   }
 
   try {
-    const { data } = await axios.get(`https://freeipapi.com/api/json/${ip}`);
-    
-    // Validate response
-    if (data && data.countryName) {
+    const { data } = await axios.get(`https://freeipapi.com/api/json/${encodeURIComponent(ip)}`, {
+      timeout: 3000,
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) QRVibe-Analytics/1.0'
+      }
+    });
+
+    // Validate response from FreeIPAPI
+    if (data && (data.countryName || data.countryCode)) {
+      const cityName = (data.cityName && data.cityName !== "-") ? data.cityName : "Unknown";
+      const regionName = (data.regionName && data.regionName !== "-") ? data.regionName : "Unknown";
+      const timeZone = (Array.isArray(data.timeZones) && data.timeZones.length > 0)
+        ? data.timeZones[0]
+        : (data.timeZone || "UTC");
+      const coords = (typeof data.latitude === 'number' && typeof data.longitude === 'number')
+        ? [data.latitude, data.longitude]
+        : [];
+
       const loc = {
-        country: data.countryName || "Unknown",
+        country: data.countryName || data.countryCode || "Unknown",
         country_code: data.countryCode || "Unknown",
-        city: data.cityName || "Unknown",
-        region: data.regionName || "Unknown",
-        timezone: data.timeZone || "UTC",
-        ll: (data.latitude && data.longitude) ? [data.latitude, data.longitude] : []
+        city: cityName,
+        region: regionName,
+        timezone: timeZone,
+        ll: coords
       };
+
       geoCache.set(ip, loc);
       return loc;
     }
+
     return getLocationOffline(ip);
   } catch (error) {
-    console.error("[Geolocation] API lookup failed, falling back to offline:", error.message);
+    console.warn(`[Geolocation] FreeIPAPI lookup failed for ${ip} (${error.message}), falling back to offline.`);
     return getLocationOffline(ip);
   }
 }
 
 // 5. Hybrid Geolocation: Read from CDN Headers
 export function getLocationFromHeaders(req) {
+    if (!req || !req.headers) return null;
+
     const country = req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'];
     const city = req.headers['cf-ipcity'] || req.headers['x-vercel-ip-city'];
+    const region = req.headers['cf-region'] || req.headers['x-vercel-ip-country-region'];
+    const timezone = req.headers['cf-timezone'] || req.headers['x-vercel-ip-timezone'];
+    const lat = req.headers['cf-iplatitude'] || req.headers['x-vercel-ip-latitude'];
+    const lon = req.headers['cf-iplongitude'] || req.headers['x-vercel-ip-longitude'];
 
     if (!country && !city) {
         return null;
     }
 
+    const latitude = lat ? parseFloat(lat) : null;
+    const longitude = lon ? parseFloat(lon) : null;
+
     return {
         country: country || "Unknown",
         country_code: country || "Unknown",
         city: city || "Unknown",
-        region: "Unknown",
-        timezone: "UTC",
-        ll: []
+        region: region || "Unknown",
+        timezone: timezone || "UTC",
+        ll: (latitude !== null && longitude !== null && !isNaN(latitude) && !isNaN(longitude)) ? [latitude, longitude] : []
     };
 }
