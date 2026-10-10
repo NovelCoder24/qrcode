@@ -12,7 +12,7 @@ const MenuViewPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const apiBase = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+    const apiBase = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_BASE_URL || import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
     useEffect(() => {
         const fetchData = async () => {
@@ -64,9 +64,9 @@ const MenuViewPage = () => {
     }
 
     const meta = qrData.metadata || {};
-    const restaurantName = meta.restaurantName || 'Our Menu';
+    const restaurantName = meta.restaurantName || qrData.title || 'Our Menu';
     const currency = meta.currency || '$';
-    const categories = meta.categories || [];
+    const categories = Array.isArray(meta.categories) ? meta.categories : [];
     const template = meta.menuTemplate || 'modern'; // immersive, lighthouse, modern, playful
     
     // Fallback styling color from QR design if they picked one

@@ -18,8 +18,18 @@ const scanSchema = new mongoose.Schema({
         country_code: String,
         city: String,
         region: String,
+        district: String,
+        pincode: String,
         timezone: String,
+        source: { type: String, default: "ip" }, // "ip", "placement", or "gps"
+        accuracy: Number,
         ll: [Number]
+    },
+    ipCity: String,
+    ipDiscrepancy: Boolean,
+    telemetryToken: {
+        type: String,
+        index: { sparse: true }
     },
     device: {
         os: String,

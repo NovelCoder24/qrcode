@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { setActiveQrCount } from '@/redux/authSlice';
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -27,7 +28,9 @@ import { Progress } from '@/components/UI/progress';
 import { Skeleton } from '@/components/UI/skeleton';
 
 function formatNumber(value) {
-  return new Intl.NumberFormat('en-IN').format(value || 0);
+  if (value === Infinity) return '∞';
+  const num = Number(value);
+  return new Intl.NumberFormat('en-IN').format(Number.isFinite(num) ? num : 0);
 }
 
 function formatRelativeDate(value) {
@@ -64,46 +67,13 @@ const getMockCity = (qrId) => {
 };
 
 const UI_PLAN_LIMITS = {
-  free:    { name: 'Free',    maxQrs: 1,  maxScans: 100,      maxSeats: 1 },
-  local:   { name: 'Local',   maxQrs: 1,  maxScans: Infinity, maxSeats: 1 },
-  starter: { name: 'Starter', maxQrs: 10, maxScans: 25000,    maxSeats: 1 },
-  growth:  { name: 'Growth',  maxQrs: 50, maxScans: Infinity, maxSeats: 1 },
+  free:     { name: 'Free',     maxQrs: 1,   maxScans: 100,      maxSeats: 1 },
+  local:    { name: 'Local',    maxQrs: 1,   maxScans: Infinity, maxSeats: 1 },
+  starter:  { name: 'Starter',  maxQrs: 10,  maxScans: 25000,    maxSeats: 1 },
+  growth:   { name: 'Growth',   maxQrs: 50,  maxScans: Infinity, maxSeats: 1 },
+  pro:      { name: 'Pro',      maxQrs: 50,  maxScans: Infinity, maxSeats: 1 },
+  business: { name: 'Business', maxQrs: 100, maxScans: Infinity, maxSeats: 5 },
 };
-
-function StatCard({ label, value, icon: Icon, trend, info, tone = 'default' }) {
-  const toneClass = {
-    default: 'text-slate-800',
-    success: 'text-emerald-600',
-    warning: 'text-amber-600',
-    destructive: 'text-red-500',
-  }[tone];
-
-  return (
-    <Card className="shadow-none border-slate-200">
-      <CardContent className="p-5 flex flex-col justify-between h-32">
-        <div className="flex items-center justify-between w-full">
-          <div className="text-slate-400">
-            <Icon className="h-5 w-5" />
-          </div>
-          {trend && (
-            <span className="flex items-center gap-0.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-              <span>{trend}</span>
-            </span>
-          )}
-          {info && (
-            <span className="text-slate-400 hover:text-slate-600 cursor-pointer">
-              {info}
-            </span>
-          )}
-        </div>
-        <div className="mt-3">
-          <p className={cn('text-3xl font-extrabold tracking-tight', toneClass)}>{value}</p>
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mt-1">{label}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 function SafetyRow({ label, description, status, actionText, actionPath }) {
   const config = {
@@ -142,8 +112,8 @@ function LoadingDashboard() {
         </div>
         <Skeleton className="h-10 w-28" />
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        {[1, 2, 3, 4, 5].map((item) => <Skeleton key={item} className="h-32" />)}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3].map((item) => <Skeleton key={item} className="h-44 rounded-xl" />)}
       </div>
       <div className="grid gap-6 xl:grid-cols-3">
         <Skeleton className="h-80 xl:col-span-2" />
@@ -154,6 +124,7 @@ function LoadingDashboard() {
 }
 
 export default function DashboardOverview() {
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const [qrCodes, setQrCodes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -197,6 +168,12 @@ export default function DashboardOverview() {
     return { totalCodes, totalScans, dynamicActive, staticLocked, brokenLinks, paused, withUtm, safetyScore };
   }, [qrCodes]);
 
+  useEffect(() => {
+    if (!loading && user?.activeQrCount !== stats.dynamicActive) {
+      dispatch(setActiveQrCount(stats.dynamicActive));
+    }
+  }, [loading, stats.dynamicActive, user?.activeQrCount, dispatch]);
+
   const topQrs = useMemo(
     () => [...qrCodes].sort((a, b) => (b.stats?.total_scans || 0) - (a.stats?.total_scans || 0)).slice(0, 5),
     [qrCodes]
@@ -211,9 +188,33 @@ export default function DashboardOverview() {
   );
 
   const brokenQrs = qrCodes.filter((qr) => qr.health_status === 'broken');
-  const dynamicLimit = user?.subscription?.dynamicQrLimit || 5;
-  const activeQrCount = user?.activeQrCount ?? stats.dynamicActive;
-  const planUsage = dynamicLimit > 0 ? Math.min(100, (activeQrCount / dynamicLimit) * 100) : 0;
+  const brokenCount = stats.brokenLinks || 0;
+  const staticLockedCount = stats.staticLocked || 0;
+  const totalIssues = brokenCount + staticLockedCount;
+
+  // Subscription and Limit Resolution logic
+  const rawPlan = (user?.subscription?.plan || 'free').toLowerCase();
+  const isTrial = user?.subscription?.status === 'trialing';
+  const isExpired = user?.subscription?.status === 'expired' || 
+    (isTrial && user?.subscription?.trialEndsAt && new Date(user.subscription.trialEndsAt) < new Date());
+
+  const effectivePlan = isExpired ? 'free' : rawPlan;
+  const planInfo = UI_PLAN_LIMITS[effectivePlan] || UI_PLAN_LIMITS.starter;
+
+  const planName = isTrial && !isExpired
+    ? `${planInfo.name} (Trial)`
+    : `${planInfo.name} Plan`;
+
+  // Capacity limit: prioritize plan configuration so users on Growth/Starter/etc. get true limits
+  const dynamicLimit = user?.subscription?.dynamicQrLimit && !isExpired && user.subscription.dynamicQrLimit >= planInfo.maxQrs
+    ? user.subscription.dynamicQrLimit
+    : planInfo.maxQrs;
+
+  const activeQrCount = stats.dynamicActive;
+  const planUsage = dynamicLimit > 0 && dynamicLimit !== Infinity
+    ? Math.min(100, Math.round((activeQrCount / dynamicLimit) * 100))
+    : 0;
+  const isNearLimit = dynamicLimit !== Infinity && planUsage >= 80;
 
   if (loading) return <LoadingDashboard />;
 
@@ -246,13 +247,196 @@ export default function DashboardOverview() {
         </Card>
       )}
 
-      {/* Stats Grid */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <StatCard label="Total QR Codes" value={stats.totalCodes} icon={QrCode} />
-        <StatCard label="Healthy" value={stats.dynamicActive} icon={CheckCircle2} trend="↗ 2%" tone="success" />
-        <StatCard label="Static Locked" value={stats.staticLocked} icon={Lock} info={<Info className="h-4 w-4" />} />
-        <StatCard label="Total Scans" value={formatNumber(stats.totalScans)} icon={Smartphone} trend="↗ 12.5%" />
-        <StatCard label="Broken" value={stats.brokenLinks} icon={AlertTriangle} tone={stats.brokenLinks > 0 ? 'destructive' : 'default'} />
+      {/* Conditional Global Alert: Only renders if Static Locked > 0 */}
+      {staticLockedCount > 0 && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-amber-300 bg-amber-50/95 p-4 sm:px-5 sm:py-4 shadow-sm text-amber-950">
+          <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-800">
+              <Lock className="h-5 w-5" />
+            </div>
+            <div className="text-sm">
+              <p className="font-bold text-amber-950 flex items-center gap-1.5">
+                <span>⚠️</span>
+                <span>You have {staticLockedCount} Static Locked QR code{staticLockedCount > 1 ? 's' : ''}.</span>
+              </p>
+              <p className="text-xs text-amber-800/90 mt-0.5 leading-relaxed">
+                They are still scanning successfully, but analytics and editing are paused because you exceeded your plan limits.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
+            <Button size="sm" asChild className="bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-sm">
+              <Link to="/billing">Upgrade to Unlock</Link>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Three Core Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* 1. Total Scans (The Vanity Metric) */}
+        <Card className="relative overflow-hidden border-indigo-200/80 bg-gradient-to-br from-indigo-50/70 via-white to-white shadow-sm transition-all hover:shadow-md">
+          <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-indigo-500/10 blur-xl pointer-events-none" />
+          <CardContent className="p-5 sm:p-6 flex flex-col justify-between h-full min-h-[180px]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-200">
+                  <Smartphone className="h-5 w-5" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Scans</span>
+                  <p className="text-[11px] font-medium text-slate-400">All-time Engagements</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="my-3">
+              <p className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900">
+                {formatNumber(stats.totalScans)}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+              <span className="text-xs text-slate-500 font-medium">Live scan redirects</span>
+              <Link to="/analytics" className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
+                <span>View Analytics</span>
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 2. Active QR Codes vs Limit (The Business Metric) */}
+        <Card className="relative overflow-hidden border-slate-200 shadow-sm transition-all hover:shadow-md bg-white">
+          <CardContent className="p-5 sm:p-6 flex flex-col justify-between h-full min-h-[180px]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                  <QrCode className="h-5 w-5" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Active vs Limit</span>
+                  <p className="text-[11px] font-medium text-slate-400">{planName}</p>
+                </div>
+              </div>
+              {isNearLimit ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-[11px] font-bold text-amber-700">
+                  {planUsage >= 100 ? 'Limit Reached' : 'Near Limit'}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-600">
+                  {dynamicLimit === Infinity ? 'Unlimited' : `${Math.max(0, dynamicLimit - activeQrCount)} left`}
+                </span>
+              )}
+            </div>
+
+            <div className="my-2.5">
+              <p className="text-3xl font-extrabold tracking-tight text-slate-900">
+                {activeQrCount} <span className="text-xl font-semibold text-slate-400">/ {dynamicLimit === Infinity ? '∞' : dynamicLimit} Used</span>
+              </p>
+              <div className="mt-2.5">
+                <Progress 
+                  value={planUsage} 
+                  className={cn(
+                    "h-2 bg-slate-100",
+                    planUsage >= 100 ? "[&>div]:bg-red-500" : planUsage >= 80 ? "[&>div]:bg-amber-500" : "[&>div]:bg-indigo-600"
+                  )} 
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+              <span className="text-xs text-slate-500 font-medium">
+                {planUsage >= 100 ? "Limit reached — upgrade" : `${planUsage}% of capacity utilized`}
+              </span>
+              <Link to="/billing" className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
+                <span>{isNearLimit ? 'Upgrade' : 'Manage'}</span>
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 3. Action Items / Needs Attention (The Utility Metric) */}
+        <Link 
+          to={totalIssues > 0 ? "/qrcodes?status=issues" : "/qrcodes"}
+          className="block group h-full"
+        >
+          <Card className={cn(
+            "relative overflow-hidden shadow-sm transition-all hover:shadow-md h-full cursor-pointer",
+            totalIssues === 0 
+              ? "border-emerald-200/80 bg-gradient-to-br from-emerald-50/40 via-white to-white hover:border-emerald-300"
+              : "border-red-300 bg-gradient-to-br from-red-50/60 via-white to-white hover:border-red-400 ring-1 ring-red-200"
+          )}>
+            <div className={cn(
+              "absolute -right-6 -top-6 h-28 w-28 rounded-full blur-xl pointer-events-none",
+              totalIssues === 0 ? "bg-emerald-500/10" : "bg-red-500/15"
+            )} />
+
+            <CardContent className="p-5 sm:p-6 flex flex-col justify-between h-full min-h-[180px]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className={cn(
+                    "flex h-10 w-10 items-center justify-center rounded-xl",
+                    totalIssues === 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"
+                  )}>
+                    {totalIssues === 0 ? <CheckCircle2 className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Action Items</span>
+                    <p className="text-[11px] font-medium text-slate-400">Needs Attention</p>
+                  </div>
+                </div>
+
+                {totalIssues === 0 ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100/80 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                    Operational
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 border border-red-200 px-2.5 py-0.5 text-[11px] font-bold text-red-700 animate-pulse">
+                    <span className="h-1.5 w-1.5 rounded-full bg-red-600" />
+                    Action Required
+                  </span>
+                )}
+              </div>
+
+              <div className="my-2.5">
+                <p className={cn(
+                  "text-3xl font-extrabold tracking-tight",
+                  totalIssues === 0 ? "text-emerald-600" : "text-red-600"
+                )}>
+                  {totalIssues === 0 ? "0 Issues" : `${totalIssues} Issue${totalIssues > 1 ? 's' : ''} Detected`}
+                </p>
+                <p className="text-xs text-slate-500 mt-1 line-clamp-1 font-medium">
+                  {totalIssues === 0
+                    ? "All links and redirects operating smoothly"
+                    : [
+                        brokenCount > 0 ? `${brokenCount} broken link${brokenCount > 1 ? 's' : ''}` : null,
+                        staticLockedCount > 0 ? `${staticLockedCount} locked by limit` : null
+                      ].filter(Boolean).join(' • ')
+                  }
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                <span className={cn(
+                  "text-xs font-semibold",
+                  totalIssues === 0 ? "text-slate-500" : "text-red-600"
+                )}>
+                  {totalIssues === 0 ? "All links healthy" : "Drop to exact links"}
+                </span>
+                <span className={cn(
+                  "inline-flex items-center gap-1 text-xs font-bold transition-transform group-hover:translate-x-0.5",
+                  totalIssues === 0 ? "text-slate-600" : "text-red-600"
+                )}>
+                  <span>{totalIssues === 0 ? "View links" : "Fix now"}</span>
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">
@@ -325,15 +509,6 @@ export default function DashboardOverview() {
               ))}
             </CardContent>
           </Card>
-
-          {/* Static Locked Banner info */}
-          <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/50 p-4 text-xs text-slate-500">
-            <Lock className="h-4.5 w-4.5 mt-0.5 text-slate-400 shrink-0" />
-            <div>
-              <span className="font-bold text-slate-800 mr-1.5">What is Static Locked?</span>
-              <span>Static QR codes still scan and redirect, but editing and analytics are paused. Upgrade to Dynamic to unlock full features.</span>
-            </div>
-          </div>
         </div>
 
         <div className="space-y-6">
@@ -413,17 +588,17 @@ export default function DashboardOverview() {
 
           {/* Plan Subscription Usage */}
           {(() => {
-            const currentPlan = user?.subscription?.plan || 'free';
+            const currentPlan = (user?.subscription?.plan || 'free').toLowerCase();
             const planInfo = UI_PLAN_LIMITS[currentPlan] || UI_PLAN_LIMITS.free;
             
             const maxQrs = planInfo.maxQrs;
             const maxScans = planInfo.maxScans;
             const maxSeats = planInfo.maxSeats;
             
-            const qrPercentage = maxQrs > 0 ? (activeQrCount / maxQrs) * 100 : 0;
-            const scansPercentage = maxScans > 0 ? (stats.totalScans / maxScans) * 100 : 0;
+            const qrPercentage = maxQrs > 0 && maxQrs !== Infinity ? (activeQrCount / maxQrs) * 100 : 0;
+            const scansPercentage = maxScans > 0 && maxScans !== Infinity ? (stats.totalScans / maxScans) * 100 : 0;
             const seatsUsed = maxSeats > 1 ? 2 : 1;
-            const seatsPercentage = (seatsUsed / maxSeats) * 100;
+            const seatsPercentage = maxSeats > 0 ? (seatsUsed / maxSeats) * 100 : 0;
             
             return (
               <Card className="shadow-none border-slate-200">

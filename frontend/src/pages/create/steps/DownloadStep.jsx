@@ -15,7 +15,9 @@ const DownloadStep = ({ qrData, qrType, design }) => {
         );
     }
 
-    const shortUrl = `${window.location.origin}/q/${qrData.short_id || qrData._id || 'demo'}`;
+    const baseUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_BASE_URL || import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+    const shortId = qrData.short_id || qrData._id || 'demo';
+    const shortUrl = `${baseUrl}/r/${shortId}`;
 
     const handleCopy = () => {
         navigator.clipboard.writeText(shortUrl);
@@ -47,7 +49,7 @@ const DownloadStep = ({ qrData, qrType, design }) => {
                     <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
                         <StyledQRCode
                             ref={qrRef}
-                            data={qrData.target_url || 'https://qrvibe.com'}
+                            data={shortUrl}
                             size={240}
                             logo={design?.logoUrl}
                             primaryColor={design?.fgColor}

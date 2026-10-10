@@ -8,9 +8,8 @@ import {
     PartyPopper, Link as LinkIcon, LogOut, CreditCard, Settings, BarChart3, ChevronRight, Eye,
     Lock, AlertTriangle, CheckCircle2, XCircle, Plus, Info
 } from 'lucide-react';
-import { useDispatch } from 'react-redux';
-import { logout } from '../redux/authSlice';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { logout, setActiveQrCount } from '../redux/authSlice';
 import StyledQRCode from './StyledQRCode';
 import UpgradeModal from './UpgradeModal';
 import api from '../api/axios';
@@ -21,7 +20,43 @@ function formatNumber(value) {
 }
 
 function getQrTitle(qr) {
-    return qr?.metadata?.title || qr?.title || 'Untitled QR';
+    return qr?.metadata?.title || qr?.metadata?.restaurantName || qr?.title || 'Untitled QR';
+}
+
+const HOSTED_TYPE_ROUTES = {
+    MENU: '/menu',
+    VCARD: '/vcard',
+    PDF: '/pdf',
+    SOCIAL: '/social',
+    MEDIA: '/media',
+};
+
+function getDestinationUrl(qr) {
+    if (!qr) return '#';
+    const type = (qr.qr_type || 'URL').toUpperCase();
+    if (HOSTED_TYPE_ROUTES[type] && qr.short_id) {
+        return `${window.location.origin}${HOSTED_TYPE_ROUTES[type]}/${qr.short_id}`;
+    }
+    const raw = qr.target_url || '';
+    if (raw.startsWith('menu://') && qr.short_id) {
+        return `${window.location.origin}/menu/${qr.short_id}`;
+    }
+    if (raw.startsWith('vcard://') && qr.short_id) {
+        return `${window.location.origin}/vcard/${qr.short_id}`;
+    }
+    if (raw && !/^https?:\/\//i.test(raw)) {
+        return `https://${raw}`;
+    }
+    return raw || window.location.origin;
+}
+
+function getDestinationDisplay(qr) {
+    if (!qr) return '—';
+    const type = (qr.qr_type || 'URL').toUpperCase();
+    if (HOSTED_TYPE_ROUTES[type] && qr.short_id) {
+        return `${window.location.origin}${HOSTED_TYPE_ROUTES[type]}/${qr.short_id}`;
+    }
+    return qr.target_url || '—';
 }
 
 const LoadingSkeleton = () => (
@@ -185,7 +220,7 @@ const QRCodesList = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [selectedQRs, setSelectedQRs] = useState(new Set());
     const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'all');
     const [typeFilter, setTypeFilter] = useState('all');
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
@@ -208,6 +243,24 @@ const QRCodesList = () => {
         fetchQRCodes();
     }, []);
 
+    useEffect(() => {
+        if (!loading) {
+            const activeCount = qrCodes.filter(
+                (qr) => qr.isActive && qr.accessMode !== 'static_locked' && qr.accessMode !== 'disabled'
+            ).length;
+            if (user?.activeQrCount !== activeCount) {
+                dispatch(setActiveQrCount(activeCount));
+            }
+        }
+    }, [qrCodes, loading, user?.activeQrCount, dispatch]);
+
+    useEffect(() => {
+        const urlStatus = searchParams.get('status');
+        if (urlStatus && ['healthy', 'paused', 'broken', 'locked', 'issues', 'all'].includes(urlStatus)) {
+            setStatusFilter(urlStatus);
+        }
+    }, [searchParams]);
+
     // Filter QR codes based on search query, type, and status
     const filteredQRCodes = qrCodes.filter(qr => {
         const query = searchQuery.toLowerCase().trim();
@@ -227,7 +280,8 @@ const QRCodesList = () => {
             (statusFilter === 'healthy' && status === 'healthy') ||
             (statusFilter === 'paused' && status === 'paused') ||
             (statusFilter === 'broken' && status === 'broken') ||
-            (statusFilter === 'locked' && status === 'locked');
+            (statusFilter === 'locked' && status === 'locked') ||
+            (statusFilter === 'issues' && (status === 'broken' || status === 'locked'));
             
         const folderId = searchParams.get('folder');
         const matchesFolder = !folderId || qr.folder_id === folderId;
@@ -620,7 +674,7 @@ const QRCodesList = () => {
                                                     {qr.qr_type || 'URL'}
                                                 </span>
                                                 <span>|</span>
-                                                <span className="truncate max-w-[120px]">{qr.target_url?.replace('https://', '')}</span>
+                                                <span className="truncate max-w-[120px]">{getDestinationDisplay(qr).replace(/^https?:\/\//, '')}</span>
                                             </div>
 
                                             <div className="flex items-center justify-between">
@@ -639,7 +693,7 @@ const QRCodesList = () => {
                                                     <button onClick={(e) => { e.stopPropagation(); setDownloadModal(qr); }} className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-950 rounded-md transition-colors border border-slate-200">
                                                         <Download size={18} />
                                                     </button>
-                                                    <button onClick={(e) => { e.stopPropagation(); window.open(qr.target_url, '_blank'); }} className="p-2 bg-slate-950 hover:bg-slate-800 text-white rounded-md transition-colors border border-slate-950">
+                                                    <button onClick={(e) => { e.stopPropagation(); window.open(getDestinationUrl(qr), '_blank'); }} className="p-2 bg-slate-950 hover:bg-slate-800 text-white rounded-md transition-colors border border-slate-950">
                                                         <ExternalLink size={18} />
                                                     </button>
                                                 </div>
@@ -745,10 +799,18 @@ const QRCodesList = () => {
                     <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
                         <select 
                             value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setStatusFilter(val);
+                                const nextParams = new URLSearchParams(searchParams);
+                                if (val === 'all') nextParams.delete('status');
+                                else nextParams.set('status', val);
+                                setSearchParams(nextParams);
+                            }}
                             className="bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none cursor-pointer focus:border-slate-400"
                         >
                             <option value="all">All Status</option>
+                            <option value="issues">⚠️ Needs Attention</option>
                             <option value="healthy">Healthy</option>
                             <option value="paused">Paused</option>
                             <option value="broken">Broken</option>
@@ -762,6 +824,7 @@ const QRCodesList = () => {
                         >
                             <option value="all">All Types</option>
                             <option value="URL">Website</option>
+                            <option value="MENU">Menu</option>
                             <option value="PDF">PDF</option>
                             <option value="VCARD">vCard</option>
                             <option value="WHATSAPP">WhatsApp</option>
@@ -861,8 +924,8 @@ const QRCodesList = () => {
                                             {/* Destination */}
                                             <td className="py-4 px-3">
                                                 <div className="flex items-center gap-1.5 min-w-0">
-                                                    <span className="truncate text-slate-400 font-medium max-w-[220px]">{qr.target_url}</span>
-                                                    <a href={qr.target_url} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-slate-700 flex-shrink-0">
+                                                    <span className="truncate text-slate-400 font-medium max-w-[220px]">{getDestinationDisplay(qr)}</span>
+                                                    <a href={getDestinationUrl(qr)} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-slate-700 flex-shrink-0">
                                                         <ExternalLink className="w-3.5 h-3.5" />
                                                     </a>
                                                 </div>
@@ -1050,8 +1113,8 @@ const QRCodesList = () => {
                                     {qr.qr_type || 'URL'}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <h3 className="font-bold text-slate-900 truncate">{qr.metadata?.title || 'Untitled'}</h3>
-                                    <p className="text-xs text-slate-500 truncate">{qr.target_url}</p>
+                                    <h3 className="font-bold text-slate-900 truncate">{getQrTitle(qr)}</h3>
+                                    <p className="text-xs text-slate-500 truncate">{getDestinationDisplay(qr)}</p>
                                 </div>
                             </div>
 

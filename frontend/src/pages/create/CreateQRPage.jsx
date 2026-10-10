@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { loadUser } from '../../redux/authSlice';
 import TypeSelection from './steps/TypeSelection';
 import ContentForm from './steps/ContentForm';
 import DesignStudio from './steps/DesignStudio';
@@ -9,6 +11,7 @@ import { ChevronRight, Check, Loader2 } from 'lucide-react';
 import api from '../../api/axios';
 
 const CreateQRPage = () => {
+    const dispatch = useDispatch();
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
     const currentStep = parseInt(searchParams.get('step') || '1', 10);
@@ -41,8 +44,10 @@ const CreateQRPage = () => {
                     setQrType(data.qr_type || 'URL');
                     // Preserve all metadata
                     setQrData({ 
+                        ...(data.metadata || {}),
                         url: data.target_url, 
-                        ...data.metadata 
+                        gpsLocationEnabled: !!data.gpsLocationEnabled,
+                        placement: data.placement || { city: '', region: '', country: 'India', country_code: 'IN', label: '' },
                     });
                     setQrDesign({
                         fgColor: data.customization?.fgColor || '#000000',
@@ -182,7 +187,17 @@ const CreateQRPage = () => {
                         setIsCreating(false);
                         return;
                     }
-                    metadata = { ...metadata, ...qrData };
+                    metadata = {
+                        ...metadata,
+                        ...qrData,
+                        title: qrData?.title || qrData?.restaurantName || 'Menu QR Code',
+                        restaurantName: qrData?.restaurantName || 'Our Menu',
+                        currency: qrData?.currency || '$',
+                        menuTemplate: qrData?.menuTemplate || 'modern',
+                        categories: Array.isArray(qrData?.categories) && qrData.categories.length > 0
+                            ? qrData.categories
+                            : [{ id: 'default-cat', name: 'Starters', items: [{ id: 'default-item', name: 'Garlic Bread', description: 'Toasted with herb butter', price: '4.99' }] }]
+                    };
                     target_url = `menu://${Date.now()}`;
                     break;
 
@@ -197,6 +212,8 @@ const CreateQRPage = () => {
                 title: metadata.title,
                 qr_type: qrType,
                 metadata,
+                gpsLocationEnabled: !!qrData.gpsLocationEnabled,
+                placement: qrData.placement || { city: '', region: '', country: 'India', country_code: 'IN', label: '' },
                 folder_id: qrData.folder_id || null,
                 utm: qrData.utm || { source: '', medium: '', campaign: '', term: '', content: '' },
                 customization: {
@@ -219,6 +236,7 @@ const CreateQRPage = () => {
             } else {
                 const res = await api.post('/qrcodes/create', payload);
                 setCreatedQrData(res.data);
+                dispatch(loadUser());
                 setSearchParams({ step: 5 });
             }
         } catch (err) {
@@ -302,6 +320,7 @@ const CreateQRPage = () => {
                         type={qrType}
                         data={qrData}
                         design={qrDesign}
+                        onChange={setQrData}
                     />
                 )}
 

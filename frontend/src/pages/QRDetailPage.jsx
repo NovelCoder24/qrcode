@@ -70,8 +70,20 @@ const QRDetailPage = () => {
     }
 
     const design = qr?.customization || {};
-    const baseUrl = import.meta.env.VITE_BASE_URL || import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+    const baseUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_BASE_URL || import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
     const shortUrl = `${baseUrl}/r/${qr?.short_id}`;
+
+    const hostedRoutes = { MENU: '/menu', VCARD: '/vcard', PDF: '/pdf', SOCIAL: '/social', MEDIA: '/media' };
+    const qrTypeUpper = (qr?.qr_type || 'URL').toUpperCase();
+    const destinationUrl = (hostedRoutes[qrTypeUpper] && qr?.short_id)
+        ? `${window.location.origin}${hostedRoutes[qrTypeUpper]}/${qr.short_id}`
+        : qr?.target_url?.startsWith('menu://') && qr?.short_id
+            ? `${window.location.origin}/menu/${qr.short_id}`
+            : qr?.target_url?.startsWith('vcard://') && qr?.short_id
+                ? `${window.location.origin}/vcard/${qr.short_id}`
+                : (qr?.target_url && !/^https?:\/\//i.test(qr.target_url))
+                    ? `https://${qr.target_url}`
+                    : (qr?.target_url || shortUrl);
 
     return (
         <div className="p-6 md:p-10 bg-slate-50 min-h-full">
@@ -106,7 +118,7 @@ const QRDetailPage = () => {
                         </div>
 
                         <h2 className="text-xl font-extrabold text-slate-900 mb-1 text-center">
-                            {qr?.metadata?.title || 'Untitled QR'}
+                            {qr?.metadata?.title || qr?.metadata?.restaurantName || 'Untitled QR'}
                         </h2>
                         <span className="text-xs font-mono text-slate-400 mb-6">ID: {qr?.short_id}</span>
 
@@ -131,7 +143,7 @@ const QRDetailPage = () => {
                                 Edit Design
                             </button>
                             <a
-                                href={qr?.target_url}
+                                href={destinationUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors text-sm"
@@ -152,9 +164,9 @@ const QRDetailPage = () => {
                             Target URL
                         </h3>
                         <div className="flex items-center gap-3 bg-slate-50 rounded-xl p-3">
-                            <p className="flex-1 text-sm text-slate-600 font-mono truncate">{qr?.target_url}</p>
+                            <p className="flex-1 text-sm text-slate-600 font-mono truncate">{destinationUrl}</p>
                             <button
-                                onClick={() => handleCopy(qr?.target_url)}
+                                onClick={() => handleCopy(destinationUrl)}
                                 className="p-2 hover:bg-white rounded-lg transition-colors flex-shrink-0"
                                 title="Copy URL"
                             >

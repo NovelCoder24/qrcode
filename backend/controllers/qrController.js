@@ -7,7 +7,7 @@ import { nanoid } from "nanoid";
 // @access  Private
 export const createQR = async (req, res) => {
     try {
-        const { target_url, title, qr_type, customization, metadata } = req.body;
+        const { target_url, title, qr_type, customization, metadata, gpsLocationEnabled, placement, folder_id, utm } = req.body;
 
         if (!target_url) {
             return res.status(400).json({ message: "Target URL is required" });
@@ -29,6 +29,10 @@ export const createQR = async (req, res) => {
             target_url,
             qr_type: qr_type || "URL",
             customization,
+            gpsLocationEnabled: !!gpsLocationEnabled,
+            placement: placement || {},
+            folder_id: folder_id || null,
+            utm: utm || {},
             metadata: {
                 ...metadata,
                 title: metadata?.title || title || "Untitled QR",

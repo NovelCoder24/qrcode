@@ -15,6 +15,15 @@ import {
 import UpgradeModal from './UpgradeModal';
 import qrvibeLogoPrimary from '../assets/qrvibe-logo-primary.svg';
 
+const UI_PLAN_LIMITS = {
+    free:     { name: 'Free',     maxQrs: 1 },
+    local:    { name: 'Local',    maxQrs: 1 },
+    starter:  { name: 'Starter',  maxQrs: 10 },
+    growth:   { name: 'Growth',   maxQrs: 50 },
+    pro:      { name: 'Pro',      maxQrs: 50 },
+    business: { name: 'Business', maxQrs: 100 },
+};
+
 const Sidebar = ({ isOpen, overlay = false, onClose }) => {
     const primaryNav = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
@@ -33,14 +42,30 @@ const Sidebar = ({ isOpen, overlay = false, onClose }) => {
 
     const [showLimitModal, setShowLimitModal] = useState(false);
 
-    // Plan info for bottom card
-    const planName = subscription?.plan === 'business' ? 'Business Plan'
-        : subscription?.plan === 'pro' ? 'Pro Plan'
-        : subscription?.plan === 'basic' ? 'Basic Plan'
-        : 'Starter Plan';
-    const dynamicLimit = subscription?.dynamicQrLimit || 5;
+    // Synchronized Plan & Limit Resolution (matches DashboardOverview & backend planConfig)
+    const rawPlan = (subscription?.plan || 'free').toLowerCase();
+    const isTrial = subscription?.status === 'trialing';
+    const isExpired =
+        subscription?.status === 'expired' ||
+        (isTrial && subscription?.trialEndsAt && new Date(subscription.trialEndsAt) < new Date());
+
+    const effectivePlan = isExpired ? 'free' : rawPlan;
+    const planInfo = UI_PLAN_LIMITS[effectivePlan] || UI_PLAN_LIMITS.free;
+
+    const planName = isTrial && !isExpired
+        ? `${planInfo.name} (Trial)`
+        : `${planInfo.name} Plan`;
+
+    const dynamicLimit =
+        subscription?.dynamicQrLimit && !isExpired && subscription.dynamicQrLimit >= planInfo.maxQrs
+            ? subscription.dynamicQrLimit
+            : planInfo.maxQrs;
+
     const used = user?.activeQrCount ?? 0;
-    const progressPercent = dynamicLimit > 0 ? Math.min(100, (used / dynamicLimit) * 100) : 0;
+    const progressPercent =
+        dynamicLimit > 0 && dynamicLimit !== Infinity
+            ? Math.min(100, Math.round((used / dynamicLimit) * 100))
+            : 0;
 
     return (
         <>
@@ -66,7 +91,7 @@ const Sidebar = ({ isOpen, overlay = false, onClose }) => {
                             to={item.path}
                             onClick={(e) => {
                                 if (item.gated) {
-                                    if (subscription?.plan === 'free' && user?.activeQrCount >= subscription?.dynamicQrLimit) {
+                                    if (effectivePlan === 'free' && used >= dynamicLimit) {
                                         e.preventDefault();
                                         setShowLimitModal(true);
                                         return;
@@ -92,10 +117,18 @@ const Sidebar = ({ isOpen, overlay = false, onClose }) => {
             <div className="px-4 py-4 border-t border-slate-100">
                 <NavLink to="/billing" className="block" onClick={() => onClose?.()}>
                     <p className="text-sm font-bold text-slate-800">{planName}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{used}/{dynamicLimit} QR codes used</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                        {used}/{dynamicLimit === Infinity ? '∞' : dynamicLimit} QR codes used
+                    </p>
                     <div className="mt-2.5 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-indigo-600 rounded-full transition-all duration-500"
+                            className={`h-full rounded-full transition-all duration-500 ${
+                                progressPercent >= 100
+                                    ? 'bg-red-500'
+                                    : progressPercent >= 80
+                                    ? 'bg-amber-500'
+                                    : 'bg-indigo-600'
+                            }`}
                             style={{ width: `${progressPercent}%` }}
                         />
                     </div>

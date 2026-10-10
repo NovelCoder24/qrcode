@@ -1,10 +1,13 @@
 import express from 'express';
-import { redirectQR, getPublicQR } from '../controllers/redirectController.js';
+import { redirectQR, getPublicQR, recordGpsTelemetry } from '../controllers/redirectController.js';
 
 const router = express.Router();
 
 // Public endpoint to get QR data by shortId (for landing pages)
 router.get('/info/:shortId', getPublicQR);
+
+// Telemetry endpoint for high-precision GPS reporting
+router.post('/:shortId/telemetry', recordGpsTelemetry);
 
 // The catch-all route for short IDs
 // GET /r/x7d9Ak

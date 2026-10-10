@@ -2,6 +2,7 @@ import Razorpay from "razorpay";
 import crypto from "crypto";
 import { User } from "../models/User.js";
 import { RAZORPAY_PLANS } from "../config/razorpayConfig.js";
+import { getPlanLimits } from "../config/planConfig.js";
 
 // Check if we're in test/dummy mode
 const isTestMode = !process.env.RAZORPAY_KEY_ID ||
@@ -36,10 +37,13 @@ export const createSubscription = async (req, res) => {
         // TEST MODE: Return mock response
         if (isTestMode) {
             const mockSubscriptionId = `sub_test_${Date.now()}`;
+            const limits = getPlanLimits(plan);
             user.subscription.razorpaySubscriptionId = mockSubscriptionId;
             user.subscription.plan = plan;
             user.subscription.status = "active";
             user.subscription.trialEndsAt = null;
+            user.subscription.dynamicQrLimit = limits.maxQR;
+            user.subscription.analyticsEnabled = limits.analytics;
             await user.save();
 
             return res.status(200).json({
@@ -284,6 +288,7 @@ async function handleSubscriptionActivated(payload) {
     }
 
     const plan = subscription.notes?.plan || "pro";
+    const limits = getPlanLimits(plan);
 
     const updatedUser = await User.findByIdAndUpdate(
         userId,
@@ -292,6 +297,8 @@ async function handleSubscriptionActivated(payload) {
                 "subscription.plan": plan,
                 "subscription.status": "active",
                 "subscription.trialEndsAt": null,
+                "subscription.dynamicQrLimit": limits.maxQR,
+                "subscription.analyticsEnabled": limits.analytics,
                 "subscription.razorpaySubscriptionId": subscription.id
             }
         },

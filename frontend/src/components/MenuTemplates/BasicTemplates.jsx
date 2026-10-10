@@ -25,7 +25,7 @@ export const ModernTemplate = ({ restaurantName, currency, categories }) => (
 
                         {/* Responsive Items Grid */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
-                            {cat.items.map((item, iIdx) => (
+                            {(cat.items || []).map((item, iIdx) => (
                                 <div 
                                     key={iIdx} 
                                     className="bg-white rounded-2xl shadow-sm hover:shadow-md border border-slate-100/80 transition-all duration-300 flex flex-col justify-between w-full h-full overflow-hidden"
@@ -86,7 +86,7 @@ export const PlayfulTemplate = ({ restaurantName, currency, categories }) => (
 
                         {/* Responsive Items Container */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 w-full">
-                            {cat.items.map((item, iIdx) => (
+                            {(cat.items || []).map((item, iIdx) => (
                                 <div 
                                     key={iIdx} 
                                     className="bg-white rounded-[1.5rem] sm:rounded-[2rem] shadow-sm hover:shadow-md border-2 border-rose-100/60 transition-all duration-300 relative overflow-hidden text-left w-full h-full flex flex-col"

@@ -47,6 +47,18 @@ const qrCodeSchema = new mongoose.Schema({
     default: true,
     index: true
   },
+  gpsLocationEnabled: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+  placement: {
+    city: { type: String, trim: true, default: "" },
+    region: { type: String, trim: true, default: "" },
+    country: { type: String, trim: true, default: "" },
+    country_code: { type: String, trim: true, default: "" },
+    label: { type: String, trim: true, default: "" }
+  },
   health_status: {
     type: String,
     enum: ['active', 'broken', 'unchecked'],

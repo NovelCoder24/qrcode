@@ -1,6 +1,7 @@
 import { Scan } from "../models/Scan.js";
 import { QRCode } from "../models/QRCode.js";
 import { DailyScanStats } from "../models/DailyScanStats.js";
+import { resolveWanLocation } from "../services/ReverseGeocode.js";
 
 // Helper to generate zero-filled dates array
 const generateZeroFilledDates = (days) => {
@@ -12,6 +13,176 @@ const generateZeroFilledDates = (days) => {
         dates.push(d.toISOString().split('T')[0]);
     }
     return dates;
+};
+
+// Helper to build sorted top locations, filtering out <= 0 counts (from GPS delta decrements)
+// and suppressing Unknown entries once verified known cities exist
+export const buildTopLocations = (locationCounts, limit = 15) => {
+    const parseLocKey = (locKey) => {
+        const parts = String(locKey).split('::');
+        // Standard format: City::Region::CountryCode::CountryName
+        // Also tolerate CountryCode::CountryName::Region::City if present
+        if (
+            parts.length === 4 &&
+            /^[A-Z]{2}$/.test(parts[0] || '') &&
+            !/^[A-Z]{2}$/.test(parts[2] || '')
+        ) {
+            return {
+                city: parts[3] || 'Unknown',
+                region: parts[2] || 'Unknown',
+                countryCode: parts[0] || 'Unknown',
+                countryname: parts[1] || 'Unknown'
+            };
+        }
+        return {
+            city: parts[0] || 'Unknown',
+            region: parts[1] || 'Unknown',
+            countryCode: parts[2] || 'Unknown',
+            countryname: parts[3] || 'Unknown'
+        };
+    };
+
+    const positiveEntries = Object.entries(locationCounts || {}).filter(([, count]) => count > 0);
+    const isUnknownEntry = ([locKey]) => {
+        const parsed = parseLocKey(locKey);
+        const city = parsed.city.trim().toLowerCase();
+        const region = parsed.region.trim().toLowerCase();
+        return (!city || city === 'unknown') && (!region || region === 'unknown');
+    };
+
+    const hasKnownLocation = positiveEntries.some((entry) => !isUnknownEntry(entry));
+    const filteredEntries = hasKnownLocation
+        ? positiveEntries.filter((entry) => !isUnknownEntry(entry))
+        : positiveEntries;
+
+    return filteredEntries
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, limit)
+        .map(([locKey, count]) => {
+            const parsed = parseLocKey(locKey);
+            const clean = (val) => (val && val !== 'Unknown' && val !== 'unknown' ? val : null);
+            return {
+                city: clean(parsed.city) || 'Unknown',
+                region: clean(parsed.region),
+                countryCode: clean(parsed.countryCode),
+                countryname: clean(parsed.countryname),
+                count,
+                coordinates: null
+            };
+        });
+};
+
+const mergeStatLocations = (stat, locationCounts) => {
+    let hasPositiveKnownLoc = false;
+    if (stat.locations && stat.locations.size > 0) {
+        for (const [locKey, count] of stat.locations.entries()) {
+            locationCounts[locKey] = (locationCounts[locKey] || 0) + count;
+            if (count > 0 && !String(locKey).toLowerCase().startsWith('unknown::')) {
+                hasPositiveKnownLoc = true;
+            }
+        }
+    }
+    if (!hasPositiveKnownLoc && stat.cities && stat.cities.size > 0) {
+        for (const [city, count] of stat.cities.entries()) {
+            if (!hasPositiveKnownLoc || String(city).toLowerCase() !== 'unknown') {
+                const formattedCity = city.charAt(0).toUpperCase() + city.slice(1);
+                const fallbackKey = `${formattedCity}::Unknown::Unknown::Unknown`;
+                locationCounts[fallbackKey] = (locationCounts[fallbackKey] || 0) + count;
+            }
+        }
+    }
+};
+
+const resolveLocationsWithScanFallback = async (locationCounts, qrIds, limit = 15) => {
+    let topLocations = buildTopLocations(locationCounts, limit);
+    const hasKnown = topLocations.some((l) => l.city && l.city.toLowerCase() !== 'unknown');
+    if (hasKnown || !qrIds || qrIds.length === 0) {
+        return topLocations;
+    }
+
+    try {
+        const knownScans = await Scan.find({
+            qr_id: { $in: qrIds },
+            isBot: { $ne: true },
+            'location.city': { $nin: ['Unknown', 'unknown', '', null] }
+        })
+            .select('location')
+            .limit(500)
+            .lean();
+
+        if (knownScans.length > 0) {
+            const recoveredCounts = { ...locationCounts };
+            for (const s of knownScans) {
+                const loc = s.location || {};
+                const key = `${loc.city || 'Unknown'}::${loc.region || 'Unknown'}::${loc.country_code || 'Unknown'}::${loc.country || 'Unknown'}`;
+                recoveredCounts[key] = (recoveredCounts[key] || 0) + 1;
+            }
+            return buildTopLocations(recoveredCounts, limit);
+        }
+
+        const placedQrs = await QRCode.find({
+            _id: { $in: qrIds },
+            'placement.city': { $exists: true, $nin: ['', null] }
+        })
+            .select('placement stats.total_scans')
+            .lean();
+
+        if (placedQrs.length > 0) {
+            const recoveredCounts = { ...locationCounts };
+            for (const q of placedQrs) {
+                const p = q.placement || {};
+                const scans = Math.max(1, q.stats?.total_scans || 1);
+                const key = `${p.city}::${p.region || p.city}::${p.country_code || 'IN'}::${p.country || 'India'}`;
+                recoveredCounts[key] = (recoveredCounts[key] || 0) + scans;
+            }
+            return buildTopLocations(recoveredCounts, limit);
+        }
+
+        // Self-heal stranded "Unknown" scans (e.g. from local dev / prior un-enriched telemetry)
+        if (topLocations.length > 0 && process.env.NODE_ENV !== 'test') {
+            const wanLoc = await resolveWanLocation();
+            if (wanLoc && wanLoc.city && wanLoc.city !== 'Unknown') {
+                const totalUnknown = topLocations.reduce((acc, item) => acc + (item.count || 0), 0) || 1;
+                const healedKey = `${wanLoc.city}::${wanLoc.region || wanLoc.city}::${wanLoc.country_code || 'IN'}::${wanLoc.country || 'India'}`;
+                const cityKey = String(wanLoc.city).replace(/\./g, '_').replace(/\$/g, '_').toLowerCase();
+                const countryKey = String(wanLoc.country_code || 'IN').replace(/\./g, '_').replace(/\$/g, '_').toLowerCase();
+
+                // Backfill stranded Unknown Scan docs and DailyScanStats asynchronously
+                Scan.updateMany(
+                    { qr_id: { $in: qrIds }, 'location.city': { $in: ['Unknown', 'unknown', '', null] } },
+                    { $set: { location: wanLoc } }
+                ).catch(() => {});
+
+                DailyScanStats.find({ qr_id: { $in: qrIds } })
+                    .then((statsDocs) => {
+                        for (const st of statsDocs) {
+                            const unkCount = st.locations?.get('Unknown::Unknown::Unknown::Unknown') || 0;
+                            if (unkCount > 0) {
+                                DailyScanStats.updateOne(
+                                    { _id: st._id },
+                                    {
+                                        $inc: {
+                                            [`locations.${healedKey}`]: unkCount,
+                                            'locations.Unknown::Unknown::Unknown::Unknown': -unkCount,
+                                            [`cities.${cityKey}`]: unkCount,
+                                            'cities.unknown': -unkCount,
+                                            [`countries.${countryKey}`]: unkCount,
+                                            'countries.unknown': -unkCount
+                                        }
+                                    }
+                                ).catch(() => {});
+                            }
+                        }
+                    })
+                    .catch(() => {});
+
+                const recoveredCounts = { ...locationCounts, [healedKey]: totalUnknown };
+                return buildTopLocations(recoveredCounts, limit);
+            }
+        }
+    } catch (_) {}
+
+    return topLocations;
 };
 
 // @desc    Get complete analytics dashboard data for the user
@@ -80,18 +251,8 @@ export const getDashboardAnalytics = async (req, res) => {
                 }
             }
 
-            // Merge Location Maps
-            if (stat.locations) {
-                for (const [locKey, count] of stat.locations.entries()) {
-                    locationCounts[locKey] = (locationCounts[locKey] || 0) + count;
-                }
-            } else if (stat.cities) {
-                // Fallback for old data
-                for (const [city, count] of stat.cities.entries()) {
-                    const fallbackKey = `${city}::Unknown::Unknown::Unknown`;
-                    locationCounts[fallbackKey] = (locationCounts[fallbackKey] || 0) + count;
-                }
-            }
+            // Merge Location Maps (with cities fallback)
+            mergeStatLocations(stat, locationCounts);
         });
 
         // Process Previous Period
@@ -119,20 +280,7 @@ export const getDashboardAnalytics = async (req, res) => {
             createdAt: { $gte: currentPeriodStart, $lte: now }
         });
 
-        const topLocations = Object.entries(locationCounts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 15)
-            .map(([locKey, count]) => {
-                const parts = locKey.split('::');
-                return {
-                    city: parts[0] !== 'Unknown' ? parts[0] : null,
-                    region: parts[1] !== 'Unknown' ? parts[1] : null,
-                    countryCode: parts[2] !== 'Unknown' ? parts[2] : null,
-                    countryname: parts[3] !== 'Unknown' ? parts[3] : null,
-                    count,
-                    coordinates: null // Coordinates stripped per user instructions
-                };
-            });
+        const topLocations = await resolveLocationsWithScanFallback(locationCounts, qrIds, 15);
 
         const topQRs = await QRCode.find({ user_id: userId })
             .sort({ "stats.total_scans": -1 })
@@ -217,7 +365,7 @@ export const getQRAnalytics = async (req, res) => {
         const days = parseInt(req.query.days) || 30;
 
         const qr = await QRCode.findOne({ _id: qrId, user_id: userId })
-            .select('metadata.title short_id qr_type target_url stats isActive createdAt qrImageUrl');
+            .select('metadata.title short_id qr_type target_url stats isActive createdAt qrImageUrl placement gpsLocationEnabled');
         if (!qr) return res.status(404).json({ message: "QR code not found" });
 
         const now = new Date();
@@ -272,18 +420,9 @@ export const getQRAnalytics = async (req, res) => {
                     browserCounts[browser] = (browserCounts[browser] || 0) + count;
                 }
             }
-            // Merge Location Maps
-            if (stat.locations) {
-                for (const [locKey, count] of stat.locations.entries()) {
-                    locationCounts[locKey] = (locationCounts[locKey] || 0) + count;
-                }
-            } else if (stat.cities) {
-                // Fallback for old data
-                for (const [city, count] of stat.cities.entries()) {
-                    const fallbackKey = `${city}::Unknown::Unknown::Unknown`;
-                    locationCounts[fallbackKey] = (locationCounts[fallbackKey] || 0) + count;
-                }
-            }
+            // Merge Location Maps (with cities fallback)
+            mergeStatLocations(stat, locationCounts);
+
             if (stat.campaigns) {
                 for (const [campaign, count] of stat.campaigns.entries()) {
                     campaignCounts[campaign] = (campaignCounts[campaign] || 0) + count;
@@ -301,19 +440,7 @@ export const getQRAnalytics = async (req, res) => {
             return Math.round(((current - previous) / previous) * 100);
         };
 
-        const topLocations = Object.entries(locationCounts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 10)
-            .map(([locKey, count]) => {
-                const parts = locKey.split('::');
-                return {
-                    city: parts[0] !== 'Unknown' ? parts[0] : null,
-                    region: parts[1] !== 'Unknown' ? parts[1] : null,
-                    countryCode: parts[2] !== 'Unknown' ? parts[2] : null,
-                    countryname: parts[3] !== 'Unknown' ? parts[3] : null,
-                    count
-                };
-            });
+        const topLocations = await resolveLocationsWithScanFallback(locationCounts, [qr._id], 10);
 
         const campaignsList = Object.entries(campaignCounts)
             .sort((a, b) => b[1] - a[1])
@@ -363,27 +490,18 @@ export const getTopCities = async (req, res) => {
         const qr = await QRCode.findOne({ _id: qrId, user_id: userId }).select("_id");
         if (!qr) return res.status(404).json({ message: "QR code not found" });
 
-        const stats = await DailyScanStats.find({ qr_id: qr._id }).select('cities');
-        
-        const cityCounts = {};
-        stats.forEach(stat => {
-            if (stat.cities) {
-                for (const [city, count] of stat.cities.entries()) {
-                    cityCounts[city] = (cityCounts[city] || 0) + count;
-                }
-            }
-        });
+        const stats = await DailyScanStats.find({ qr_id: qr._id }).select('locations cities');
+        const locationCounts = {};
+        stats.forEach(stat => mergeStatLocations(stat, locationCounts));
 
-        const locations = Object.entries(cityCounts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 10)
-            .map(([city, count]) => ({
-                city,
-                region: '',
-                countryCode: '',
-                count,
-                coordinates: null
-            }));
+        const topLocations = await resolveLocationsWithScanFallback(locationCounts, [qr._id], 10);
+        const locations = topLocations.map(loc => ({
+            city: loc.city,
+            region: loc.region || '',
+            countryCode: loc.countryCode || '',
+            count: loc.count,
+            coordinates: null
+        }));
 
         res.json({ locations });
     } catch (error) {

@@ -11,6 +11,7 @@ import razorpayRoutes from "./routes/razorpayRoutes.js";
 import webhookRoutes from "./routes/webhookRoutes.js";
 import folderRoutes from "./routes/folderRoutes.js";
 import { env } from "./config/env.js"; 
+import { getClientIp, getLocationOffline } from "./services/Geolocation.js"; 
 
 const app = express();
 
@@ -90,6 +91,32 @@ app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 // Health check endpoint for Render/Railway
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Debug IP endpoint to inspect Render / Cloudflare headers and visitor IP resolution
+app.get('/debug-ip', (req, res) => {
+    // In production, restrict debug-ip to requests with valid debug key
+    if (env.NODE_ENV === 'production' && req.headers['x-debug-key'] !== env.JWT_SECRET && req.query.key !== env.JWT_SECRET) {
+        return res.status(404).json({ message: "Not found" });
+    }
+
+    const detectedIp = getClientIp(req);
+    const isLocalDevOverride = process.env.NODE_ENV !== 'production' &&
+        !req.headers['true-client-ip'] &&
+        !req.headers['cf-connecting-ip'] &&
+        (!req.headers['x-forwarded-for'] || req.headers['x-forwarded-for'].includes('127.0.0.1'));
+
+    res.json({
+        trueClientIp: req.headers['true-client-ip'] || null,
+        cfIp: req.headers['cf-connecting-ip'] || null,
+        xff: req.headers['x-forwarded-for'] || null,
+        xRealIp: req.headers['x-real-ip'] || null,
+        reqIp: req.ip || null,
+        detectedIp,
+        isLocalDevOverride,
+        geo: getLocationOffline(detectedIp),
+        tip: "In local development, visits from localhost (127.0.0.1) use your real WAN public IP or test IP. You can also test any IP using /debug-ip?ip=<test_ip>."
+    });
 });
 
 // Auth routes get the strictest limiter

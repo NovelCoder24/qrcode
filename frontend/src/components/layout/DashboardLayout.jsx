@@ -6,7 +6,6 @@ import {
   CreditCard,
   LogOut,
   Menu,
-  PlusCircle,
   User,
 } from 'lucide-react';
 import { logout } from '@/redux/authSlice';
@@ -44,7 +43,7 @@ function getInitials(user) {
     .join('') || 'QR';
 }
 
-function Topbar({ onCreateBlocked, onToggleSidebar }) {
+function Topbar({ onToggleSidebar }) {
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -54,14 +53,6 @@ function Topbar({ onCreateBlocked, onToggleSidebar }) {
     const item = pageLabels.find((entry) => location.pathname === entry.path || location.pathname.startsWith(`${entry.path}/`));
     return item?.label || 'Dashboard';
   }, [location.pathname]);
-
-  const handleCreate = (event) => {
-    const subscription = user?.subscription;
-    if (subscription?.plan === 'free' && user?.activeQrCount >= subscription?.dynamicQrLimit) {
-      event.preventDefault();
-      onCreateBlocked?.();
-    }
-  };
 
   const handleLogout = async () => {
     await dispatch(logout());
@@ -74,19 +65,12 @@ function Topbar({ onCreateBlocked, onToggleSidebar }) {
         <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation" onClick={onToggleSidebar}>
           <Menu className="h-5 w-5" />
         </Button>
-        <div className="hidden min-w-0 sm:block">
-          <p className="text-xs font-medium text-muted-foreground">QRVibe Workspace</p>
-          <h1 className="truncate text-sm font-semibold text-foreground">{pageLabel}</h1>
+        <div className="min-w-0">
+          <h1 className="truncate text-base font-semibold text-foreground">{pageLabel}</h1>
         </div>
       </div>
 
       <div className="flex items-center gap-2">
-        <Button asChild size="sm" onClick={handleCreate}>
-          <Link to="/create">
-            <PlusCircle className="h-4 w-4" />
-            <span className="hidden sm:inline">Create QR</span>
-          </Link>
-        </Button>
         <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
           <Bell className="h-5 w-5" />
           <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-destructive" />
@@ -142,7 +126,6 @@ export default function DashboardLayout({ children }) {
       />
       <div className="min-h-screen lg:pl-64">
         <Topbar
-          onCreateBlocked={() => setUpgradeModalOpen(true)}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         />
         <main className="min-h-[calc(100vh-4rem)] p-4 sm:p-5 lg:p-6">

@@ -32,7 +32,13 @@ const MenuForm = ({ data, onChange }) => {
     }, []);
 
     const updateData = (updates) => {
-        onChange({ ...d, ...updates });
+        onChange({
+            ...d,
+            menuTemplate,
+            currency,
+            categories,
+            ...updates
+        });
     };
 
     const addCategory = () => {

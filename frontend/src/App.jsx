@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
+import { Routes, Route, Outlet, useLocation, useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loadUser } from './redux/authSlice';
 import { Loader2 } from 'lucide-react';
@@ -27,6 +27,25 @@ const FoldersPage = React.lazy(() => import('./pages/FoldersPage.jsx'));
 
 import TrialWarningBanner from './components/TrialWarningBanner.jsx';
 import TrialExpiredModal from './components/TrialExpiredModal.jsx';
+
+const ShortLinkRedirect = () => {
+  const { shortId } = useParams();
+  useEffect(() => {
+    const baseUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_BASE_URL || import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+    if (shortId) {
+      window.location.replace(`${baseUrl}/r/${shortId}`);
+    }
+  }, [shortId]);
+
+  return (
+    <div className="flex min-h-screen w-full items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-3">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-sm font-semibold text-muted-foreground">Redirecting...</p>
+      </div>
+    </div>
+  );
+};
 
 const MainDashboardLayout = () => (
   <DashboardLayout>
@@ -65,6 +84,8 @@ const App = () => {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/q/:shortId" element={<ShortLinkRedirect />} />
+          <Route path="/r/:shortId" element={<ShortLinkRedirect />} />
           <Route path="/pdf/:shortId" element={<PDFViewPage />} />
           <Route path="/vcard/:shortId" element={<VCardViewPage />} />
           <Route path="/social/:shortId" element={<SocialViewPage />} />

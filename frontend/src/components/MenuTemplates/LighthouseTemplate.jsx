@@ -45,7 +45,7 @@ const LighthouseTemplate = ({ restaurantName, currency, categories }) => {
 
     const hasMatchesOverall = categories.some((cat, idx) => {
         if (activeCategory !== "all" && activeCategory !== idx.toString()) return false;
-        const filteredItems = cat.items.filter(item => {
+        const filteredItems = (cat.items || []).filter(item => {
             const tags = item.tags || [];
             if (filters.veg && !tags.includes("veg")) return false;
             if (filters.gf && !tags.includes("gf")) return false;
@@ -134,7 +134,7 @@ const LighthouseTemplate = ({ restaurantName, currency, categories }) => {
                         {categories.map((cat, idx) => {
                             if (activeCategory !== "all" && activeCategory !== idx.toString()) return null;
 
-                            const filteredItems = cat.items.filter(item => {
+                            const filteredItems = (cat.items || []).filter(item => {
                                 const tags = item.tags || [];
                                 if (filters.veg && !tags.includes("veg")) return false;
                                 if (filters.gf && !tags.includes("gf")) return false;

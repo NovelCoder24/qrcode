@@ -74,7 +74,7 @@ const ImmersiveTemplate = ({ restaurantName, currency, categories }) => {
     const activeCategory = categories.find(c => c.name === currentCategoryName) || categories[0];
     
     // Filter items
-    const filteredItems = activeCategory?.items.filter(item => {
+    const filteredItems = (activeCategory?.items || []).filter(item => {
         // Tag checking omitted since builder currently doesn't add tags, 
         // but we'll leave the filter logic in case tags are added later.
         const tags = item.tags || [];
@@ -82,10 +82,10 @@ const ImmersiveTemplate = ({ restaurantName, currency, categories }) => {
         if (filters.gf && !tags.includes("gf")) return false;
         
         const q = filters.search.toLowerCase();
-        if (q && !item.name.toLowerCase().includes(q) && !(item.description || "").toLowerCase().includes(q)) return false;
+        if (q && !(item.name || "").toLowerCase().includes(q) && !(item.description || "").toLowerCase().includes(q)) return false;
         
         return true;
-    }) || [];
+    });
 
     return (
         <div className="font-['Plus_Jakarta_Sans'] bg-[#0b090a] text-[#f5f3f4] min-h-screen flex items-center justify-center p-0 sm:p-4 md:p-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1d1516] via-[#0d0a0b] to-[#070506]">

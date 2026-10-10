@@ -2,15 +2,15 @@ import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
-const PrivateRoute = () => { 
+const PrivateRoute = () => {
     const { isAuthenticated, isCheckingSession } = useSelector((state) => state.auth);
 
-    // 2. While checking validation, show a spinner (Skeleton later)
-    if (isCheckingSession) {
+    // Only block rendering with the loading state during initial session verification
+    // when not yet authenticated. Never unmount active child routes during a background refresh.
+    if (isCheckingSession && !isAuthenticated) {
         return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
     }
 
-    // 3. If valid, render child routes (Outlet). If not, redirect to login.
     return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
 };
 

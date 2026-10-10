@@ -11,6 +11,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { ZipArchive } from "archiver";
 import { parse as json2csv } from "json2csv";
+import { getPlanLimits } from "../config/planConfig.js";
 
 // Helper: Cookie options for refresh token
 const REFRESH_COOKIE_OPTIONS = {
@@ -21,10 +22,30 @@ const REFRESH_COOKIE_OPTIONS = {
     path: "/",
 };
 
+// Helper: Synchronize user's subscription limits to ensure accurate tier capacity
+const ensurePlanLimitsSync = async (user) => {
+    if (!user || !user.subscription) return;
+    const planLimits = getPlanLimits(user.subscription.plan || 'free');
+    if (!user.subscription.dynamicQrLimit || user.subscription.dynamicQrLimit < planLimits.maxQR) {
+        user.subscription.dynamicQrLimit = planLimits.maxQR;
+        await User.updateOne({ _id: user._id }, { $set: { "subscription.dynamicQrLimit": planLimits.maxQR } });
+    }
+};
+
+// Helper: Count active dynamic QR codes consistently across all endpoints
+const getActiveQrCount = async (userId) => {
+    return QRCode.countDocuments({
+        user_id: userId,
+        isActive: { $ne: false },
+        accessMode: { $nin: ['static_locked', 'disabled'] }
+    });
+};
+
 // Helper: Send token pair (access in body, refresh as cookie)
-const sendTokens = (res, user, statusCode = 200) => {
+const sendTokens = async (res, user, statusCode = 200) => {
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
+    const activeQrCount = await getActiveQrCount(user._id);
 
     res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
 
@@ -38,6 +59,7 @@ const sendTokens = (res, user, statusCode = 200) => {
         whatsappNumber: user.whatsappNumber,
         whatsappOptIn: user.whatsappOptIn,
         hasCreatedFirstQR: user.hasCreatedFirstQR,
+        activeQrCount,
     });
 };
 
@@ -87,7 +109,7 @@ export const registerUser = async (req, res) => {
         const user = await User.create(userData);
 
         if (user) {
-            sendTokens(res, user, 201);
+            await sendTokens(res, user, 201);
         } else {
             res.status(400).json({ message: "Invalid user data" });
         }
@@ -105,7 +127,8 @@ export const loginUser = async (req, res) => {
         const user = await User.findOne({ email });
 
         if (user && (await user.comparePassword(password))) {
-            sendTokens(res, user);
+            await ensurePlanLimitsSync(user);
+            await sendTokens(res, user);
         } else {
             res.status(401).json({ message: "Invalid email or password" });
         }
@@ -149,7 +172,8 @@ export const googleAuth = async (req, res) => {
 
         if (user) {
             console.log('[GoogleAuth] Existing user found, logging in');
-            sendTokens(res, user);
+            await ensurePlanLimitsSync(user);
+            await sendTokens(res, user);
         } else {
             console.log('[GoogleAuth] Creating new user');
             // Google signups default to Growth trial (schema defaults)
@@ -166,7 +190,7 @@ export const googleAuth = async (req, res) => {
                 };
             }
             user = await User.create(userData);
-            sendTokens(res, user, 201);
+            await sendTokens(res, user, 201);
         }
     } catch (error) {
         console.error('[GoogleAuth] Error:', {
@@ -199,8 +223,9 @@ export const refreshToken = async (req, res) => {
             return res.status(401).json({ message: "User not found" });
         }
 
+        await ensurePlanLimitsSync(user);
         // Issue a new token pair (rotate refresh token for extra security)
-        sendTokens(res, user);
+        await sendTokens(res, user);
     } catch (error) {
         // Clear the bad cookie
         res.clearCookie("refreshToken", REFRESH_COOKIE_OPTIONS);
@@ -224,7 +249,8 @@ export const getMe = async (req, res) => {
         const user = await User.findById(req.user._id);
 
         if (user) {
-            const activeQrCount = await QRCode.countDocuments({ user_id: user._id, accessMode: 'dynamic_active' });
+            const activeQrCount = await getActiveQrCount(user._id);
+            await ensurePlanLimitsSync(user);
 
             res.json({
                 _id: user._id,

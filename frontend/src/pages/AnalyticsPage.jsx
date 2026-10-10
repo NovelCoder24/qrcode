@@ -255,51 +255,63 @@ function TopCitiesTable({ data, totalScans }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data?.length > 0 ? data.slice(0, 6).map((city, index) => {
-              const cityName = city.city && city.city !== 'Unknown' ? city.city : city.region || 'Unknown';
-              const regionText = city.region && city.region !== 'Unknown' && city.region !== cityName ? city.region : '';
-              const countryText = city.countryCode && city.countryCode !== 'Unknown' ? city.countryCode : '';
-              
-              let subText = '';
-              if (regionText && countryText) subText = `${regionText}, ${countryText}`;
-              else if (regionText) subText = regionText;
-              else if (countryText) subText = countryText;
+            {(() => {
+              const validCities = (data || []).filter((city) => city && city.count > 0);
+              return validCities.length > 0 ? validCities.slice(0, 6).map((city, index) => {
+                const cityName =
+                  city.city && city.city !== 'Unknown'
+                    ? city.city
+                    : city.region && city.region !== 'Unknown'
+                      ? city.region
+                      : city.countryname && city.countryname !== 'Unknown'
+                        ? city.countryname
+                        : city.countryCode && city.countryCode !== 'Unknown'
+                          ? city.countryCode
+                          : 'Unknown';
+                const regionText = city.region && city.region !== 'Unknown' && city.region !== cityName ? city.region : '';
+                const countryText = city.countryCode && city.countryCode !== 'Unknown' && city.countryCode !== cityName ? city.countryCode : '';
+                
+                let subText = '';
+                if (regionText && countryText) subText = `${regionText}, ${countryText}`;
+                else if (regionText) subText = regionText;
+                else if (countryText) subText = countryText;
 
-              const percentage = Math.round((city.count / (totalScans || 1)) * 100)
-              return (
-                <TableRow key={index}>
-                  <TableCell className="pl-6 py-2">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-medium">
-                        {index + 1}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <div className="flex flex-col">
-                          <span className="font-medium truncate max-w-[150px] leading-tight">{cityName}</span>
-                          {subText && <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">{subText}</span>}
+                const percentage = Math.round((city.count / (totalScans || 1)) * 100)
+                return (
+                  <TableRow key={index}>
+                    <TableCell className="pl-6 py-2">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-medium">
+                          {index + 1}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <div className="flex flex-col">
+                            <span className="font-medium truncate max-w-[150px] leading-tight">{cityName}</span>
+                            {subText && <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">{subText}</span>}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {formatNumber(city.count)}
-                  </TableCell>
-                  <TableCell className="text-right pr-6 w-40">
-                    <div className="flex items-center justify-end gap-2">
-                      <Progress value={percentage} className="w-16 h-1.5" />
-                      <span className="w-10 text-muted-foreground text-xs">{percentage}%</span>
-                    </div>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      {formatNumber(city.count)}
+                    </TableCell>
+                    <TableCell className="text-right pr-6 w-40">
+                      <div className="flex items-center justify-end gap-2">
+                        <Progress value={percentage} className="w-16 h-1.5" />
+                        <span className="w-10 text-muted-foreground text-xs">{percentage}%</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              }) : (
+                <TableRow>
+                  <TableCell colSpan={3} className="h-24 text-center">
+                    <p className="text-muted-foreground">No location data available.</p>
                   </TableCell>
                 </TableRow>
-              )
-            }) : (
-              <TableRow>
-                <TableCell colSpan={3} className="h-24 text-center">
-                  <p className="text-muted-foreground">No location data available.</p>
-                </TableCell>
-              </TableRow>
-            )}
+              );
+            })()}
           </TableBody>
         </Table>
       </CardContent>
@@ -448,9 +460,30 @@ export default function AnalyticsPage() {
 
   const { totals, scansOverTime, deviceStats, locations } = dataContext;
 
-  const topCity = locations?.length > 0 ? {
-    name: locations[0].city && locations[0].city !== 'Unknown' ? locations[0].city : locations[0].region || 'Unknown',
-    share: Math.round((locations[0].count / (totals?.scans || 1)) * 100)
+  const bestLocationEntry =
+    (locations || []).find(
+      (loc) =>
+        loc &&
+        loc.count > 0 &&
+        ((loc.city && loc.city !== 'Unknown') ||
+          (loc.region && loc.region !== 'Unknown') ||
+          (loc.countryname && loc.countryname !== 'Unknown'))
+    ) ||
+    (locations || []).find((loc) => loc && loc.count > 0) ||
+    null;
+
+  const topCity = bestLocationEntry ? {
+    name:
+      bestLocationEntry.city && bestLocationEntry.city !== 'Unknown'
+        ? bestLocationEntry.city
+        : bestLocationEntry.region && bestLocationEntry.region !== 'Unknown'
+          ? bestLocationEntry.region
+          : bestLocationEntry.countryname && bestLocationEntry.countryname !== 'Unknown'
+            ? bestLocationEntry.countryname
+            : bestLocationEntry.countryCode && bestLocationEntry.countryCode !== 'Unknown'
+              ? bestLocationEntry.countryCode
+              : 'Unknown',
+    share: Math.round((bestLocationEntry.count / (totals?.scans || 1)) * 100)
   } : { name: '--', share: 0 };
 
   const topDevice = deviceStats?.types?.length > 0 ? {
