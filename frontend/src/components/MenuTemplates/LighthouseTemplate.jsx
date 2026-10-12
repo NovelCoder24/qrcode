@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, ChefHat, Cake, GlassWater, LayoutGrid, Inbox } from 'lucide-react';
+import DishCartControl from './DishCartControl';
 
-const LighthouseTemplate = ({ restaurantName, currency, categories }) => {
+const LighthouseTemplate = ({ restaurantName, currency, categories, cartProps }) => {
     const [activeCategory, setActiveCategory] = useState("all");
     const [filters, setFilters] = useState({ veg: false, gf: false });
     const scrollContainerRef = useRef(null);
@@ -94,7 +95,7 @@ const LighthouseTemplate = ({ restaurantName, currency, categories }) => {
             <div className="w-full max-w-[430px] h-[100dvh] sm:h-[880px] sm:rounded-[48px] overflow-hidden flex flex-col glass-panel-light shadow-[0_24px_70px_rgba(139,119,91,0.2)] border-0 sm:border-[8px] border-[#E5DEC3] relative z-10">
                 <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none z-50"></div>
 
-                <div ref={scrollContainerRef} className="flex-1 overflow-y-auto relative flex flex-col pb-16 bg-[#FAF8F5]" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto relative flex flex-col ${cartProps?.hasCartItems ? 'pb-32' : 'pb-16'} bg-[#FAF8F5]`} style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     
                     <div ref={topHeaderRef} className="relative pt-12 pb-6 px-6 text-center border-b border-[#EDE8DF] transition-opacity duration-75">
                         
@@ -142,6 +143,7 @@ const LighthouseTemplate = ({ restaurantName, currency, categories }) => {
                             });
 
                             if (filteredItems.length === 0) return null;
+                            const catId = cat.id ?? idx;
 
                             return (
                                 <div key={idx} id={`section-header-${idx.toString()}`} className="space-y-4 animate-fade-in">
@@ -151,45 +153,58 @@ const LighthouseTemplate = ({ restaurantName, currency, categories }) => {
                                         <span className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-[#EDE8DF]"></span>
                                     </div>
                                     <div className="space-y-4">
-                                        {filteredItems.map((item, iIdx) => (
-                                            <div 
-                                                key={iIdx} 
-                                                className="group bg-[#FAF8F5] border border-[#EDE8DF] p-4 rounded-2xl flex flex-col sm:flex-row gap-4 hover:border-[#C5A880]/40 hover:bg-[#FDFCFB] transition-all duration-300 shadow-[0_4px_16px_rgba(139,119,91,0.03)]"
-                                                style={{ animation: `fadeInUp 0.4s ease-out ${iIdx * 0.05}s both` }}
-                                            >
-                                                {item.img && (
-                                                    <div className="relative w-full sm:w-24 h-44 sm:h-24 rounded-xl overflow-hidden bg-[#F3EFE9] flex-shrink-0 border border-[#EDE8DF]">
-                                                        <img 
-                                                            src={item.img} 
-                                                            className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" 
-                                                            alt={item.name} 
-                                                        />
-                                                    </div>
-                                                )}
-
-                                                <div className="flex-1 min-w-0 flex flex-col justify-between space-y-2">
-                                                    <div>
-                                                        <div className="flex items-start justify-between gap-3 mb-1.5">
-                                                            <div className="flex items-center space-x-2 truncate">
-                                                                {(item.tags || []).map((t, tIdx) => {
-                                                                    if (t === 'veg') return <span key={tIdx} className="w-2.5 h-2.5 rounded-full bg-emerald-600 border border-white shadow-sm inline-block" title="Vegetarian"></span>;
-                                                                    if (t === 'gf') return <span key={tIdx} className="w-2.5 h-2.5 rounded-full bg-amber-500 border border-white shadow-sm inline-block" title="Gluten-Free"></span>;
-                                                                    return null;
-                                                                })}
-                                                                <h3 className="text-base font-bold text-[#2C2B29] group-hover:text-[#B29162] transition-all duration-300 truncate">{item.name}</h3>
-                                                            </div>
+                                        {filteredItems.map((item, iIdx) => {
+                                            const qty = cartProps?.enabled ? cartProps.getItemQty(catId, item, iIdx) : 0;
+                                            return (
+                                                <div 
+                                                    key={iIdx} 
+                                                    className="group bg-[#FAF8F5] border border-[#EDE8DF] p-4 rounded-2xl flex flex-col sm:flex-row gap-4 hover:border-[#C5A880]/40 hover:bg-[#FDFCFB] transition-all duration-300 shadow-[0_4px_16px_rgba(139,119,91,0.03)]"
+                                                    style={{ animation: `fadeInUp 0.4s ease-out ${iIdx * 0.05}s both` }}
+                                                >
+                                                    {item.img && (
+                                                        <div className="relative w-full sm:w-24 h-44 sm:h-24 rounded-xl overflow-hidden bg-[#F3EFE9] flex-shrink-0 border border-[#EDE8DF]">
+                                                            <img 
+                                                                src={item.img} 
+                                                                className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" 
+                                                                alt={item.name} 
+                                                            />
                                                         </div>
-                                                        <p className="text-xs text-[#615E58] leading-relaxed font-normal">{item.description}</p>
-                                                    </div>
+                                                    )}
 
-                                                    <div className="flex items-center justify-end pt-2 border-t border-[#EDE8DF]/60 mt-auto">
-                                                        <span className="text-lg font-extrabold text-[#E6C697] bg-[#1E1B18] px-5 py-1.5 rounded-xl border border-[#3A3530] shadow-md tracking-wider font-['Cinzel'] flex-shrink-0">
-                                                            {currency}{item.price}
-                                                        </span>
+                                                    <div className="flex-1 min-w-0 flex flex-col justify-between space-y-2">
+                                                        <div>
+                                                            <div className="flex items-start justify-between gap-3 mb-1.5">
+                                                                <div className="flex items-center space-x-2 truncate">
+                                                                    {(item.tags || []).map((t, tIdx) => {
+                                                                        if (t === 'veg') return <span key={tIdx} className="w-2.5 h-2.5 rounded-full bg-emerald-600 border border-white shadow-sm inline-block" title="Vegetarian"></span>;
+                                                                        if (t === 'gf') return <span key={tIdx} className="w-2.5 h-2.5 rounded-full bg-amber-500 border border-white shadow-sm inline-block" title="Gluten-Free"></span>;
+                                                                        return null;
+                                                                    })}
+                                                                    <h3 className="text-base font-bold text-[#2C2B29] group-hover:text-[#B29162] transition-all duration-300 truncate">{item.name}</h3>
+                                                                </div>
+                                                            </div>
+                                                            <p className="text-xs text-[#615E58] leading-relaxed font-normal">{item.description}</p>
+                                                        </div>
+
+                                                        <div className="flex items-center justify-between gap-3 pt-2 border-t border-[#EDE8DF]/60 mt-auto">
+                                                            <span className="text-base font-extrabold text-[#E6C697] bg-[#1E1B18] px-4 py-1 rounded-xl border border-[#3A3530] shadow-md tracking-wider font-['Cinzel'] flex-shrink-0 tabular-nums">
+                                                                {currency}{item.price}
+                                                            </span>
+                                                            {cartProps?.enabled && (
+                                                                <DishCartControl
+                                                                    qty={qty}
+                                                                    dishName={item.name}
+                                                                    variant="lighthouse"
+                                                                    onAdd={() => cartProps.onChangeItemQty(catId, cat.name, item, iIdx, 1)}
+                                                                    onIncrement={() => cartProps.onChangeItemQty(catId, cat.name, item, iIdx, 1)}
+                                                                    onDecrement={() => cartProps.onChangeItemQty(catId, cat.name, item, iIdx, -1)}
+                                                                />
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             );

@@ -17,8 +17,17 @@ const notificationSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['alert', 'billing', 'system'],
+        enum: ['alert', 'recovery', 'billing', 'system'],
         default: 'alert'
+    },
+    qr_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "QRCode",
+        default: null
+    },
+    actionUrl: {
+        type: String,
+        default: null
     },
     isRead: {
         type: Boolean,

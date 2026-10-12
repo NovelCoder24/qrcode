@@ -13,16 +13,16 @@ export const PLAN_LIMITS = {
     analytics: false,
     whatsappAlerts: false,
     whatsappAlertsCap: 0,
-    emailAlerts: false,
+    emailAlerts: true,        // Email health alerts enabled across all tiers including Free
     allowedTypes: ['URL'],
-    features: []
+    features: ['email_alerts']
   },
   local: {
     maxQR: 1,
     maxScans: Infinity,
     scanWindow: null,
     analytics: true,
-    whatsappAlerts: false,    // Email alerts only
+    whatsappAlerts: false,    // Email & In-Dashboard alerts only
     whatsappAlertsCap: 0,
     emailAlerts: true,
     allowedTypes: ['URL', 'PDF', 'VCARD'],
@@ -33,31 +33,31 @@ export const PLAN_LIMITS = {
     maxScans: 25000,          // Monthly fair-use soft limit (CRON-enforced, not redirect-blocking)
     scanWindow: 'monthly',
     analytics: true,
-    whatsappAlerts: true,
-    whatsappAlertsCap: 10,    // 10 WhatsApp alerts per month
+    whatsappAlerts: false,
+    whatsappAlertsCap: 0,
     emailAlerts: true,
     allowedTypes: ['URL', 'PDF', 'VCARD', 'WHATSAPP', 'SOCIAL', 'MEDIA', 'MENU'],
-    features: ['analytics', 'email_alerts', 'whatsapp_alerts', 'patterns', 'logos']
+    features: ['analytics', 'email_alerts', 'patterns', 'logos']
   },
   growth: {
     maxQR: 50,
     maxScans: Infinity,
     scanWindow: null,
     analytics: true,
-    whatsappAlerts: true,
-    whatsappAlertsCap: Infinity,
+    whatsappAlerts: false,
+    whatsappAlertsCap: 0,
     emailAlerts: true,
     allowedTypes: ['URL', 'PDF', 'VCARD', 'WHATSAPP', 'SOCIAL', 'MEDIA', 'MENU'],
-    features: ['analytics', 'email_alerts', 'whatsapp_alerts', 'patterns', 'logos',
+    features: ['analytics', 'email_alerts', 'patterns', 'logos',
                'svg_export', 'bulk_create', 'api', 'priority_support']
   },
 };
 
 // ── Trial Overrides ─────────────────────────────────────
-// 30-day Growth trial with capped WhatsApp (transparent to user)
+// 30-day Growth trial
 export const TRIAL_LIMITS = {
   ...PLAN_LIMITS.growth,
-  whatsappAlertsCap: 5,       // 5 WhatsApp alerts during trial
+  whatsappAlertsCap: 0,
 };
 
 // ── Safe Accessor ───────────────────────────────────────

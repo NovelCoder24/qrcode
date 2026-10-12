@@ -128,6 +128,8 @@ export default function DashboardOverview() {
   const { user } = useSelector((state) => state.auth);
   const [qrCodes, setQrCodes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [checkingLinks, setCheckingLinks] = useState(false);
+  const [checkFeedback, setCheckFeedback] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -146,6 +148,28 @@ export default function DashboardOverview() {
 
     loadDashboard();
   }, []);
+
+  const handleCheckLinks = async () => {
+    try {
+      setCheckingLinks(true);
+      setCheckFeedback(null);
+      setError(null);
+      const { data } = await api.post('/qrcodes/check-health');
+      if (Array.isArray(data?.qrs)) {
+        setQrCodes(data.qrs);
+      }
+      setCheckFeedback(
+        data?.brokenCount > 0
+          ? `Checked ${data.checkedCount} links: ${data.brokenCount} broken link(s) detected.`
+          : `Checked ${data?.checkedCount || 0} links: All destinations are healthy!`
+      );
+      window.dispatchEvent(new Event('qrvibe:notifications-updated'));
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to run link health check');
+    } finally {
+      setCheckingLinks(false);
+    }
+  };
 
   const stats = useMemo(() => {
     const totalCodes = qrCodes.length;
@@ -226,8 +250,15 @@ export default function DashboardOverview() {
           <p className="mt-1 text-sm text-slate-500">Monitor your QR codes and keep them safe for printing.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" asChild className="font-bold border-slate-200 text-slate-600 hover:text-slate-900">
-            <Link to="/qrcodes"><RefreshCw className="h-4 w-4 mr-1.5" />Check Links</Link>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCheckLinks}
+            disabled={checkingLinks}
+            className="font-bold border-slate-200 text-slate-600 hover:text-slate-900"
+          >
+            <RefreshCw className={cn("h-4 w-4 mr-1.5", checkingLinks && "animate-spin")} />
+            {checkingLinks ? 'Checking...' : 'Check Links'}
           </Button>
           <Button variant="outline" size="sm" asChild className="font-bold border-slate-200 text-slate-600 hover:text-slate-900">
             <Link to="/analytics"><Download className="h-4 w-4" />Export Report</Link>
@@ -237,6 +268,20 @@ export default function DashboardOverview() {
           </Button>
         </div>
       </div>
+
+      {checkFeedback && (
+        <Card className="border-emerald-200 bg-emerald-50/70 shadow-none">
+          <CardContent className="flex items-center justify-between gap-3 p-3.5 text-xs font-semibold text-emerald-800">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+              <span>{checkFeedback}</span>
+            </div>
+            <button type="button" onClick={() => setCheckFeedback(null)} className="text-emerald-700 hover:underline">
+              Dismiss
+            </button>
+          </CardContent>
+        </Card>
+      )}
 
       {error && (
         <Card className="border-destructive/30 bg-destructive/5 shadow-none">

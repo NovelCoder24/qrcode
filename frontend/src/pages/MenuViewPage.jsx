@@ -1,16 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Loader2, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 import { ModernTemplate, PlayfulTemplate } from '../components/MenuTemplates/BasicTemplates';
 import ImmersiveTemplate from '../components/MenuTemplates/ImmersiveTemplate';
 import LighthouseTemplate from '../components/MenuTemplates/LighthouseTemplate';
+import WhatsAppCartBar from '../components/MenuTemplates/WhatsAppCartBar';
+import {
+    normalizeWhatsAppPhone,
+    getDishCartKey,
+    updateCartItemQty,
+    getCartSummary,
+} from '../utils/whatsappCart';
 
 const MenuViewPage = () => {
     const { shortId } = useParams();
+    const [searchParams] = useSearchParams();
     const [qrData, setQrData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [cart, setCart] = useState({});
 
     const apiBase = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_BASE_URL || import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
@@ -27,6 +36,47 @@ const MenuViewPage = () => {
         };
         fetchData();
     }, [shortId, apiBase]);
+
+    const cartSummary = useMemo(() => getCartSummary(cart), [cart]);
+
+    const getItemQty = useCallback(
+        (categoryId, item, itemIdx = 0) => {
+            const key = getDishCartKey(categoryId, item, itemIdx);
+            return cart[key]?.qty || 0;
+        },
+        [cart]
+    );
+
+    const onChangeItemQty = useCallback(
+        (categoryId, categoryName, item, itemIdx, delta) => {
+            const key = getDishCartKey(categoryId, item, itemIdx);
+            setCart((prev) =>
+                updateCartItemQty(
+                    prev,
+                    key,
+                    {
+                        name: item?.name,
+                        price: item?.price,
+                        categoryName,
+                    },
+                    delta
+                )
+            );
+        },
+        []
+    );
+
+    const handleIncrementByKey = useCallback((dishKey, itemEntry) => {
+        setCart((prev) => updateCartItemQty(prev, dishKey, itemEntry, 1));
+    }, []);
+
+    const handleDecrementByKey = useCallback((dishKey, itemEntry) => {
+        setCart((prev) => updateCartItemQty(prev, dishKey, itemEntry, -1));
+    }, []);
+
+    const handleClearCart = useCallback(() => {
+        setCart({});
+    }, []);
 
     if (loading) {
         return (
@@ -65,24 +115,81 @@ const MenuViewPage = () => {
 
     const meta = qrData.metadata || {};
     const restaurantName = meta.restaurantName || qrData.title || 'Our Menu';
-    const currency = meta.currency || '$';
+    const currency = meta.currency || '₹';
     const categories = Array.isArray(meta.categories) ? meta.categories : [];
     const template = meta.menuTemplate || 'modern'; // immersive, lighthouse, modern, playful
-    
-    // Fallback styling color from QR design if they picked one
-    const brandColor = qrData.customization?.fgColor || '#4F46E5';
+    const whatsappNumber = meta.whatsappNumber || '';
+    const orderingEnabled = Boolean(
+        meta.whatsappOrderingEnabled !== false && normalizeWhatsAppPhone(whatsappNumber)
+    );
+    const initialTableNumber =
+        searchParams.get('table') || meta.defaultTableNumber || '';
 
-    if (template === 'immersive') {
-        return <ImmersiveTemplate restaurantName={restaurantName} currency={currency} categories={categories} />;
-    }
-    if (template === 'lighthouse') {
-        return <LighthouseTemplate restaurantName={restaurantName} currency={currency} categories={categories} />;
-    }
-    if (template === 'playful') {
-        return <PlayfulTemplate restaurantName={restaurantName} currency={currency} categories={categories} />;
-    }
+    const cartProps = {
+        enabled: orderingEnabled,
+        getItemQty,
+        onChangeItemQty,
+        hasCartItems: cartSummary.totalCount > 0,
+    };
 
-    return <ModernTemplate restaurantName={restaurantName} currency={currency} categories={categories} />;
+    const renderTemplate = () => {
+        if (template === 'immersive') {
+            return (
+                <ImmersiveTemplate
+                    restaurantName={restaurantName}
+                    currency={currency}
+                    categories={categories}
+                    cartProps={cartProps}
+                />
+            );
+        }
+        if (template === 'lighthouse') {
+            return (
+                <LighthouseTemplate
+                    restaurantName={restaurantName}
+                    currency={currency}
+                    categories={categories}
+                    cartProps={cartProps}
+                />
+            );
+        }
+        if (template === 'playful') {
+            return (
+                <PlayfulTemplate
+                    restaurantName={restaurantName}
+                    currency={currency}
+                    categories={categories}
+                    cartProps={cartProps}
+                />
+            );
+        }
+        return (
+            <ModernTemplate
+                restaurantName={restaurantName}
+                currency={currency}
+                categories={categories}
+                cartProps={cartProps}
+            />
+        );
+    };
+
+    return (
+        <>
+            {renderTemplate()}
+            {orderingEnabled && (
+                <WhatsAppCartBar
+                    cartSummary={cartSummary}
+                    currencySymbol={currency}
+                    restaurantName={restaurantName}
+                    whatsappNumber={whatsappNumber}
+                    initialTableNumber={initialTableNumber}
+                    onIncrementKey={handleIncrementByKey}
+                    onDecrementKey={handleDecrementByKey}
+                    onClearCart={handleClearCart}
+                />
+            )}
+        </>
+    );
 };
 
 export default MenuViewPage;

@@ -10,6 +10,7 @@ import uploadFileRoutes from "./routes/uploadFile.js";
 import razorpayRoutes from "./routes/razorpayRoutes.js";
 import webhookRoutes from "./routes/webhookRoutes.js";
 import folderRoutes from "./routes/folderRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 import { env } from "./config/env.js"; 
 import { getClientIp, getLocationOffline } from "./services/Geolocation.js"; 
 
@@ -133,6 +134,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/razorpay', razorpayRoutes);
 app.use('/api/upload', uploadFileRoutes);
 app.use('/api/folders', folderRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Public Redirect Route — scan limiter
 // This must come LAST or have a specific prefix like /r

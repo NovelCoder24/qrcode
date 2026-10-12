@@ -126,8 +126,11 @@ export default function PrivacyDataPage() {
 
     // Privacy toggles (Real Logic)
     const [whatsappOptIn, setWhatsappOptIn] = useState(false);
+    const [emailAlertsOptIn, setEmailAlertsOptIn] = useState(true);
+    const [analyticsOptIn, setAnalyticsOptIn] = useState(true);
     const [savingPrivacy, setSavingPrivacy] = useState(false);
     const [privacyError, setPrivacyError] = useState(null);
+    const [consentHistory, setConsentHistory] = useState([]);
 
     // WhatsApp number collection modal
     const [showNumberModal, setShowNumberModal] = useState(false);
@@ -143,16 +146,26 @@ export default function PrivacyDataPage() {
     const [exportLoading, setExportLoading] = useState(false);
 
     // Dummy settings
-    const [analytics, setAnalytics] = useState(mockConsentSettings.analyticsConsent)
-    const [email, setEmail] = useState(mockConsentSettings.emailAlerts)
     const [billing, setBilling] = useState(mockConsentSettings.billingCommunication)
     const [marketing, setMarketing] = useState(mockConsentSettings.marketingEmails)
 
-    useEffect(() => {
-        if (user && user.whatsappOptIn !== undefined) {
-            setWhatsappOptIn(user.whatsappOptIn);
+    const fetchConsentHistory = React.useCallback(async () => {
+        try {
+            const { data } = await api.get('/users/consent-history');
+            setConsentHistory(Array.isArray(data) ? data : []);
+        } catch {
+            // Keep empty if unavailable
         }
-    }, [user]);
+    }, []);
+
+    useEffect(() => {
+        if (user) {
+            setWhatsappOptIn(!!user.whatsappOptIn);
+            setEmailAlertsOptIn(user.emailAlertsOptIn ?? true);
+            setAnalyticsOptIn(user.analyticsOptIn ?? true);
+        }
+        fetchConsentHistory();
+    }, [user, fetchConsentHistory]);
 
     const handleToggleWhatsapp = async () => {
         setPrivacyError(null);
@@ -165,6 +178,18 @@ export default function PrivacyDataPage() {
         }
 
         await submitPrivacyToggle({ whatsappOptIn: newState });
+    };
+
+    const handleToggleEmailAlerts = async () => {
+        const nextVal = !emailAlertsOptIn;
+        setEmailAlertsOptIn(nextVal);
+        await submitPrivacyToggle({ emailAlertsOptIn: nextVal });
+    };
+
+    const handleToggleAnalytics = async () => {
+        const nextVal = !analyticsOptIn;
+        setAnalyticsOptIn(nextVal);
+        await submitPrivacyToggle({ analyticsOptIn: nextVal });
     };
 
     const handleNumberModalSubmit = async () => {
@@ -181,12 +206,17 @@ export default function PrivacyDataPage() {
         setPrivacyError(null);
         try {
             const response = await api.put('/users/privacy', payload);
-            setWhatsappOptIn(response.data.whatsappOptIn);
+            if (response.data.whatsappOptIn !== undefined) setWhatsappOptIn(response.data.whatsappOptIn);
+            if (response.data.emailAlertsOptIn !== undefined) setEmailAlertsOptIn(response.data.emailAlertsOptIn);
+            if (response.data.analyticsOptIn !== undefined) setAnalyticsOptIn(response.data.analyticsOptIn);
             await dispatch(loadUser());
+            await fetchConsentHistory();
         } catch (error) {
             console.error("Failed to update privacy settings", error);
             setPrivacyError(error.response?.data?.message || "Failed to update settings.");
             setWhatsappOptIn(user?.whatsappOptIn ?? false);
+            setEmailAlertsOptIn(user?.emailAlertsOptIn ?? true);
+            setAnalyticsOptIn(user?.analyticsOptIn ?? true);
         } finally {
             setSavingPrivacy(false);
         }
@@ -237,6 +267,13 @@ export default function PrivacyDataPage() {
         } finally {
             setErasureLoading(false);
         }
+    };
+
+    const formatConsentTypeLabel = (type) => {
+        if (type === 'email_alerts') return 'Email Health Alerts';
+        if (type === 'analytics') return 'Scan Analytics';
+        if (type === 'whatsapp') return 'Weekly WhatsApp Reports';
+        return type;
     };
 
     return (
@@ -310,7 +347,22 @@ export default function PrivacyDataPage() {
                                             </p>
                                         </div>
                                     </div>
-                                    <Switch checked={analytics} onCheckedChange={setAnalytics} />
+                                    <Switch checked={analyticsOptIn} onCheckedChange={handleToggleAnalytics} disabled={savingPrivacy} />
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-accent/10">
+                                            <FileText className="h-5 w-5 text-accent" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium">Email Health Alerts (All Plans)</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                Receive broken link alerts and notifications via email and in-dashboard
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <Switch checked={emailAlertsOptIn} onCheckedChange={handleToggleEmailAlerts} disabled={savingPrivacy} />
                                 </div>
 
                                 <div className="flex items-center justify-between">
@@ -319,9 +371,9 @@ export default function PrivacyDataPage() {
                                             <Bell className="h-5 w-5 text-emerald-600" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium">WhatsApp Alerts</p>
+                                            <p className="text-sm font-medium">Weekly WhatsApp Reports</p>
                                             <p className="text-xs text-muted-foreground">
-                                                Receive alerts about broken links and important updates
+                                                Receive weekly scan performance digests on WhatsApp
                                             </p>
                                             {user?.whatsappNumber && (
                                                 <p className="text-xs text-slate-700 font-semibold mt-1">
@@ -332,21 +384,6 @@ export default function PrivacyDataPage() {
                                         </div>
                                     </div>
                                     <Switch checked={whatsappOptIn} onCheckedChange={handleToggleWhatsapp} disabled={savingPrivacy} />
-                                </div>
-
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-accent/10">
-                                            <FileText className="h-5 w-5 text-accent" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-medium">Email Alerts</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                Receive service alerts and notifications via email
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <Switch checked={email} onCheckedChange={setEmail} />
                                 </div>
 
                                 <div className="flex items-center justify-between">
@@ -386,7 +423,7 @@ export default function PrivacyDataPage() {
                         <CardHeader className="pb-3">
                             <CardTitle className="text-base font-semibold">Consent History</CardTitle>
                             <CardDescription>
-                                Record of your consent changes.
+                                Immutable DPDP ledger of your consent changes.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="p-0">
@@ -396,32 +433,38 @@ export default function PrivacyDataPage() {
                                         <TableHead className="pl-6">Setting</TableHead>
                                         <TableHead>Action</TableHead>
                                         <TableHead>Date</TableHead>
-                                        <TableHead className="pr-6">IP Address</TableHead>
+                                        <TableHead className="pr-6">IP Hash (SHA-256)</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {mockConsentHistory.map((entry) => (
-                                        <TableRow key={entry.id}>
+                                    {consentHistory.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="py-6 text-center text-xs text-muted-foreground">
+                                                No consent changes recorded yet.
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : consentHistory.map((entry) => (
+                                        <TableRow key={entry._id}>
                                             <TableCell className="pl-6 font-medium text-slate-900">
-                                                {entry.type === 'analytics' ? 'Scan Analytics' : 'WhatsApp Alerts'}
+                                                {formatConsentTypeLabel(entry.consentType)}
                                             </TableCell>
                                             <TableCell>
                                                 <Badge 
                                                     variant="outline" 
                                                     className={cn(
-                                                        entry.action === "enabled" 
+                                                        entry.granted 
                                                             ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
                                                             : "bg-muted text-muted-foreground border-border"
                                                     )}
                                                 >
-                                                    {entry.action === "enabled" ? "Enabled" : "Disabled"}
+                                                    {entry.granted ? "Enabled" : "Disabled"}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-muted-foreground">
-                                                {formatDate(entry.timestamp)}
+                                                {formatDate(entry.createdAt)}
                                             </TableCell>
                                             <TableCell className="pr-6 font-mono text-xs text-muted-foreground">
-                                                {entry.ipAddress}
+                                                {entry.ipHash ? `${entry.ipHash.slice(0, 12)}...` : '—'}
                                             </TableCell>
                                         </TableRow>
                                     ))}

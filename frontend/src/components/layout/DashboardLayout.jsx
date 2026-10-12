@@ -1,14 +1,21 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
+  AlertTriangle,
   Bell,
+  CheckCheck,
+  CheckCircle2,
   CreditCard,
+  Info,
   LogOut,
   Menu,
+  Trash2,
   User,
 } from 'lucide-react';
 import { logout } from '@/redux/authSlice';
+import api from '@/api/axios';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/UI/button';
 import { Avatar, AvatarFallback } from '@/components/UI/avatar';
 import {
@@ -43,11 +50,86 @@ function getInitials(user) {
     .join('') || 'QR';
 }
 
+function formatNotifTime(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 function Topbar({ onToggleSidebar }) {
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const { data } = await api.get('/notifications');
+      setNotifications(Array.isArray(data?.notifications) ? data.notifications : []);
+      setUnreadCount(Number(data?.unreadCount) || 0);
+    } catch {
+      // Silent fail on background poll
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+    const handleRefresh = () => fetchNotifications();
+    window.addEventListener('qrvibe:notifications-updated', handleRefresh);
+    return () => window.removeEventListener('qrvibe:notifications-updated', handleRefresh);
+  }, [fetchNotifications, location.pathname]);
+
+  const handleMarkAllRead = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await api.put('/notifications/read-all');
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch {
+      // Ignore error
+    }
+  };
+
+  const handleClickNotification = async (notif) => {
+    if (!notif.isRead) {
+      try {
+        const { data } = await api.put(`/notifications/${notif._id}/read`);
+        setNotifications((prev) =>
+          prev.map((n) => (n._id === notif._id ? { ...n, isRead: true } : n))
+        );
+        setUnreadCount(Number(data?.unreadCount) || 0);
+      } catch {
+        // Ignore error
+      }
+    }
+    if (notif.actionUrl) {
+      navigate(notif.actionUrl);
+    } else if (notif.qr_id) {
+      navigate(`/qrcodes/${notif.qr_id}`);
+    }
+  };
+
+  const handleDismissNotification = async (e, id) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const { data } = await api.delete(`/notifications/${id}`);
+      setNotifications((prev) => prev.filter((n) => n._id !== id));
+      setUnreadCount(Number(data?.unreadCount) || 0);
+    } catch {
+      // Ignore error
+    }
+  };
 
   const pageLabel = useMemo(() => {
     const item = pageLabels.find((entry) => location.pathname === entry.path || location.pathname.startsWith(`${entry.path}/`));
@@ -71,10 +153,104 @@ function Topbar({ onToggleSidebar }) {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-destructive" />
-        </Button>
+        <DropdownMenu onOpenChange={(open) => { if (open) fetchNotifications(); }}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80 sm:w-96 p-0">
+            <div className="flex items-center justify-between border-b px-4 py-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-slate-900">Alerts & Notifications</span>
+                {unreadCount > 0 && (
+                  <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700">
+                    {unreadCount} new
+                  </span>
+                )}
+              </div>
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleMarkAllRead}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+                >
+                  <CheckCheck className="h-3.5 w-3.5" />
+                  Mark all read
+                </button>
+              )}
+            </div>
+
+            <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+              {notifications.length === 0 ? (
+                <div className="px-4 py-8 text-center">
+                  <Bell className="mx-auto h-6 w-6 text-slate-300" />
+                  <p className="mt-2 text-xs font-semibold text-slate-500">No alerts right now</p>
+                  <p className="mt-0.5 text-[11px] text-slate-400">Broken link and recovery alerts will appear here.</p>
+                </div>
+              ) : (
+                notifications.map((notif) => {
+                  const Icon =
+                    notif.type === 'alert'
+                      ? AlertTriangle
+                      : notif.type === 'recovery'
+                        ? CheckCircle2
+                        : Info;
+                  const iconColor =
+                    notif.type === 'alert'
+                      ? 'text-red-600 bg-red-50'
+                      : notif.type === 'recovery'
+                        ? 'text-emerald-600 bg-emerald-50'
+                        : 'text-indigo-600 bg-indigo-50';
+
+                  return (
+                    <div
+                      key={notif._id}
+                      onClick={() => handleClickNotification(notif)}
+                      className={cn(
+                        'flex items-start justify-between gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-slate-50',
+                        !notif.isRead && 'bg-indigo-50/40'
+                      )}
+                    >
+                      <div className="flex items-start gap-2.5 min-w-0">
+                        <div className={cn('mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg', iconColor)}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className={cn('truncate text-xs text-slate-900', !notif.isRead ? 'font-bold' : 'font-semibold')}>
+                              {notif.title}
+                            </p>
+                            {!notif.isRead && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-600" />}
+                          </div>
+                          <p className="mt-0.5 line-clamp-2 text-[11px] text-slate-600 leading-relaxed">
+                            {notif.message}
+                          </p>
+                          <p className="mt-1 text-[10px] font-medium text-slate-400">
+                            {formatNotifTime(notif.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDismissNotification(e, notif._id)}
+                        className="mt-0.5 rounded p-1 text-slate-400 hover:bg-slate-200/60 hover:text-slate-600"
+                        aria-label="Dismiss notification"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-9 w-9 rounded-full p-0" aria-label="User menu">

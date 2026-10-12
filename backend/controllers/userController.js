@@ -58,6 +58,8 @@ const sendTokens = async (res, user, statusCode = 200) => {
         billing: user.billing,
         whatsappNumber: user.whatsappNumber,
         whatsappOptIn: user.whatsappOptIn,
+        emailAlertsOptIn: user.emailAlertsOptIn ?? true,
+        analyticsOptIn: user.analyticsOptIn ?? true,
         hasCreatedFirstQR: user.hasCreatedFirstQR,
         activeQrCount,
     });
@@ -260,6 +262,8 @@ export const getMe = async (req, res) => {
                 billing: user.billing,
                 whatsappNumber: user.whatsappNumber,
                 whatsappOptIn: user.whatsappOptIn,
+                emailAlertsOptIn: user.emailAlertsOptIn ?? true,
+                analyticsOptIn: user.analyticsOptIn ?? true,
                 hasCreatedFirstQR: user.hasCreatedFirstQR,
                 activeQrCount,
             });
@@ -279,7 +283,12 @@ export const updateProfile = async (req, res) => {
         const user = await User.findById(req.user._id);
 
         if (user) {
-            user.whatsappNumber = req.body.whatsappNumber !== undefined ? req.body.whatsappNumber : user.whatsappNumber;
+            if (req.body.name !== undefined && req.body.name.trim()) {
+                user.name = req.body.name.trim();
+            }
+            if (req.body.whatsappNumber !== undefined) {
+                user.whatsappNumber = req.body.whatsappNumber;
+            }
             
             const updatedUser = await user.save();
             res.json({
@@ -323,40 +332,85 @@ export const dismissTrialWarning = async (req, res) => {
 // @access  Private
 export const updatePrivacySettings = async (req, res) => {
     try {
-        const { whatsappOptIn, whatsappNumber } = req.body;
+        const { whatsappOptIn, whatsappNumber, emailAlertsOptIn, analyticsOptIn } = req.body;
         const user = await User.findById(req.user._id);
 
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        // If a new whatsappNumber is provided, save it first
         if (whatsappNumber !== undefined) {
             user.whatsappNumber = whatsappNumber;
         }
 
-        if (typeof whatsappOptIn === 'boolean' && user.whatsappOptIn !== whatsappOptIn) {
-            // VALIDATION: Cannot enable alerts without a number on file
-            if (whatsappOptIn === true && !user.whatsappNumber) {
-                return res.status(400).json({ message: "A valid WhatsApp number is required to enable alerts." });
-            }
+        const ipHash = crypto.createHash('sha256').update(req.ip || '0.0.0.0').digest('hex');
+        const userAgent = req.headers['user-agent'] || 'Unknown';
+        const consentEntries = [];
 
+        if (typeof whatsappOptIn === 'boolean' && user.whatsappOptIn !== whatsappOptIn) {
+            if (whatsappOptIn === true && !user.whatsappNumber) {
+                return res.status(400).json({ message: "A valid WhatsApp number is required to enable WhatsApp reports." });
+            }
             user.whatsappOptIn = whatsappOptIn;
-            
-            // Create a NEW ledger entry for DPDP compliance (no upsert)
-            const ipHash = crypto.createHash('sha256').update(req.ip || '0.0.0.0').digest('hex');
-            await ConsentRecord.create({
+            consentEntries.push({
                 user_id: user._id,
                 consentType: 'whatsapp',
                 granted: whatsappOptIn,
                 ipHash,
-                userAgent: req.headers['user-agent']
+                userAgent
             });
         }
 
+        if (typeof emailAlertsOptIn === 'boolean' && (user.emailAlertsOptIn ?? true) !== emailAlertsOptIn) {
+            user.emailAlertsOptIn = emailAlertsOptIn;
+            consentEntries.push({
+                user_id: user._id,
+                consentType: 'email_alerts',
+                granted: emailAlertsOptIn,
+                ipHash,
+                userAgent
+            });
+        }
+
+        if (typeof analyticsOptIn === 'boolean' && (user.analyticsOptIn ?? true) !== analyticsOptIn) {
+            user.analyticsOptIn = analyticsOptIn;
+            consentEntries.push({
+                user_id: user._id,
+                consentType: 'analytics',
+                granted: analyticsOptIn,
+                ipHash,
+                userAgent
+            });
+        }
+
+        if (consentEntries.length > 0) {
+            await ConsentRecord.insertMany(consentEntries);
+        }
+
         const updatedUser = await user.save();
-        res.json({ whatsappOptIn: updatedUser.whatsappOptIn, whatsappNumber: updatedUser.whatsappNumber });
+        res.json({
+            whatsappOptIn: updatedUser.whatsappOptIn,
+            whatsappNumber: updatedUser.whatsappNumber,
+            emailAlertsOptIn: updatedUser.emailAlertsOptIn ?? true,
+            analyticsOptIn: updatedUser.analyticsOptIn ?? true
+        });
     } catch (error) {
         console.error("Update Privacy Error:", error);
         res.status(500).json({ message: "Server Error" });
+    }
+};
+
+// @desc    Get user's DPDP Consent History Ledger
+// @route   GET /api/users/consent-history
+// @access  Private
+export const getConsentHistory = async (req, res) => {
+    try {
+        const records = await ConsentRecord.find({ user_id: req.user._id })
+            .sort({ createdAt: -1 })
+            .limit(50)
+            .lean();
+        res.json(records);
+    } catch (error) {
+        console.error("Get Consent History Error:", error);
+        res.status(500).json({ message: "Failed to load consent history" });
     }
 };
 

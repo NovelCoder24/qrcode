@@ -8,17 +8,17 @@ const alertEventSchema = new mongoose.Schema({
     },
     alertType: {
         type: String,
-        enum: ['broken_link', 'health_warning'],
+        enum: ['broken_link', 'link_recovered', 'health_warning', 'weekly_report'],
         required: true
     },
     channel: {
         type: String,
-        enum: ['email', 'whatsapp'],
+        enum: ['email', 'dashboard', 'whatsapp'],
         required: true
     },
     status: {
         type: String,
-        enum: ['sent', 'failed'],
+        enum: ['sent', 'failed', 'skipped', 'cap_reached'],
         required: true
     },
     errorReason: {

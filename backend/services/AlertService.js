@@ -6,14 +6,21 @@ import nodemailer from 'nodemailer';
 import axios from 'axios';
 import { env } from '../config/env.js';
 
+const smtpPort = Number(env.SMTP_PORT) || 2525;
 const transporter = nodemailer.createTransport({
     host: env.SMTP_HOST || 'sandbox.smtp.mailtrap.io',
-    port: env.SMTP_PORT || 2525,
+    port: smtpPort,
+    secure: smtpPort === 465,
     auth: {
         user: env.SMTP_USER || 'dummy',
         pass: env.SMTP_PASS || 'dummy'
     }
 });
+
+const getSenderAddress = (label, fallbackEmail) => {
+    const email = env.SMTP_USER && env.SMTP_USER.includes('@') ? env.SMTP_USER : fallbackEmail;
+    return `"${label}" <${email}>`;
+};
 
 export const sendOverageWarningEmail = async (user, scanCount) => {
     const emailMessage = `
@@ -25,15 +32,27 @@ export const sendOverageWarningEmail = async (user, scanCount) => {
     
     We have NOT blocked your QR codes — they are still redirecting normally so your business is not interrupted. However, consistent overages will require an upgrade.
     
-    Please log in to your dashboard to view your analytics and upgrade to the Growth Plan for unlimited scans.
+    Please log in to your dashboard (${env.FRONTEND_URL}/billing) to view your analytics and upgrade to the Growth Plan for unlimited scans.
     
     Thank you,
     The QRVibe Team
     `;
 
     try {
+        await Notification.create({
+            user_id: user._id,
+            title: 'Starter Plan Scan Limit Reached',
+            message: `Your QR codes reached ${scanCount.toLocaleString()} scans this month. Upgrade to Growth for unlimited scans.`,
+            type: 'billing',
+            actionUrl: '/billing'
+        });
+    } catch (notifErr) {
+        console.error('[AlertService] Failed to create overage dashboard notification:', notifErr.message);
+    }
+
+    try {
         await transporter.sendMail({
-            from: '"QRVibe Billing" <billing@qrvibe.io>',
+            from: getSenderAddress('QRVibe Billing', 'billing@qrvibe.io'),
             to: user.email,
             subject: `Action Required: Starter Plan Scan Limit Exceeded`,
             text: emailMessage
@@ -45,58 +64,81 @@ export const sendOverageWarningEmail = async (user, scanCount) => {
 };
 
 export const sendHealthAlert = async (qr, user, errorReason) => {
+    if (!qr || !user) return { alerted: false, reason: 'missing_context' };
+
     const title = qr.metadata?.title || 'Untitled';
     const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
 
-    // 1. 12-Hour Cooldown Check
-    const recentAlert = await AlertEvent.findOne({
+    // 1. Smart 12-Hour Cooldown Check (only when an alert was successfully sent)
+    const recentSentAlert = await AlertEvent.findOne({
         qr_id: qr._id,
         alertType: 'broken_link',
+        status: 'sent',
         createdAt: { $gte: twelveHoursAgo }
     }).sort({ createdAt: -1 });
 
-    if (recentAlert) {
-        console.log(`[AlertService] Skipping alert for QR ${qr.short_id}: Cooldown active.`);
-        return; // Prevent flapping URL spam
+    if (recentSentAlert) {
+        console.log(`[AlertService] Skipping alert for QR ${qr.short_id}: 12h cooldown active.`);
+        return { alerted: false, reason: 'cooldown' };
     }
 
-    console.log(`[AlertService] Initiating alerts for QR ${qr.short_id} (Reason: ${errorReason})`);
+    console.log(`[AlertService] Initiating health alerts for QR ${qr.short_id} (Reason: ${errorReason})`);
 
     // ── Resolve plan limits for this user ────────────────
     const plan = user.subscription?.plan || 'free';
     const isTrial = user.subscription?.status === 'trialing';
     const limits = getPlanLimits(plan, isTrial);
+    const fixUrl = `/qrcodes/${qr._id}`;
 
-    // 2. Dashboard Notification (always sent, all plans)
+    // 2. In-Dashboard Notification (always sent across all plans, deduplicated over 12h)
+    let dashboardNotified = false;
     try {
-        await Notification.create({
+        const existingNotif = await Notification.findOne({
             user_id: user._id,
-            title: `QR Code Broken: ${title}`,
-            message: `The destination link returned: ${errorReason}. Please update it to resume scans.`,
-            type: 'alert'
+            qr_id: qr._id,
+            type: 'alert',
+            createdAt: { $gte: twelveHoursAgo }
         });
+
+        if (!existingNotif) {
+            await Notification.create({
+                user_id: user._id,
+                qr_id: qr._id,
+                title: `QR Code Broken: ${title}`,
+                message: `Destination (${qr.target_url}) returned ${errorReason}. Update it to keep scans working.`,
+                type: 'alert',
+                actionUrl: fixUrl
+            });
+        }
+        dashboardNotified = true;
     } catch (err) {
         console.error("[AlertService] Failed to create dashboard notification", err);
     }
 
-    // 3. Email Alert (local, starter, growth — not free)
-    if (limits.emailAlerts) {
-        const emailMessage = `
-    🚨 QRVibe Health Alert: Your QR Code "${title}" is experiencing issues.
-    
-    The destination link (${qr.target_url}) returned: ${errorReason}
-    
-    Please log in to your dashboard to update the destination link immediately so your QR scans continue to function perfectly.
-        `;
+    // 3. Email Health Alert (enabled across all tiers including Free, respects user opt-in)
+    const emailOptIn = user.emailAlertsOptIn !== false;
+    if (limits.emailAlerts && emailOptIn && user.email) {
+        const emailMessage = [
+            `🚨 QRVibe Health Alert: Your QR Code "${title}" has a broken destination link.`,
+            ``,
+            `• QR Code: ${title} (/r/${qr.short_id})`,
+            `• Destination URL: ${qr.target_url}`,
+            `• Error Detected: ${errorReason}`,
+            ``,
+            `Fix this QR code immediately without reprinting:`,
+            `${env.FRONTEND_URL}${fixUrl}`,
+            ``,
+            `— QRVibe Automated Link Monitor`
+        ].join('\n');
 
         try {
             await transporter.sendMail({
-                from: '"QRVibe Monitoring" <alerts@qrvibe.io>',
+                from: getSenderAddress('QRVibe Monitoring', 'alerts@qrvibe.io'),
                 to: user.email,
                 subject: `🚨 URGENT: Broken Link Detected for QR "${title}"`,
                 text: emailMessage
             });
-            
+
             await AlertEvent.create({
                 qr_id: qr._id,
                 alertType: 'broken_link',
@@ -104,8 +146,9 @@ export const sendHealthAlert = async (qr, user, errorReason) => {
                 status: 'sent',
                 errorReason
             });
+            return { alerted: true, channel: 'email' };
         } catch (error) {
-            console.error("[AlertService] Failed to send alert email", error.message);
+            console.error("[AlertService] Failed to send alert email:", error.message);
             await AlertEvent.create({
                 qr_id: qr._id,
                 alertType: 'broken_link',
@@ -113,108 +156,118 @@ export const sendHealthAlert = async (qr, user, errorReason) => {
                 status: 'failed',
                 errorReason: error.message
             });
+            return { alerted: dashboardNotified, channel: 'dashboard', emailError: error.message };
         }
+    } else if (dashboardNotified) {
+        // User opted out of email alerts; record dashboard event so 12h cooldown prevents spam
+        await AlertEvent.create({
+            qr_id: qr._id,
+            alertType: 'broken_link',
+            channel: 'dashboard',
+            status: 'sent',
+            errorReason
+        });
+        return { alerted: true, channel: 'dashboard' };
     }
 
-    // 4. Meta WhatsApp Alert (with plan-aware cap enforcement)
-    if (user.whatsappOptIn && user.whatsappNumber && env.META_WHATSAPP_TOKEN) {
+    return { alerted: false, reason: 'no_channel_dispatched' };
+};
 
-        // ── WhatsApp Cap Check ───────────────────────────
-        // Plan caps: free=0, local=0, starter=10/mo, growth=∞, trial=5
-        if (!limits.whatsappAlerts) {
-            console.log(`[AlertService] WhatsApp alerts not available on ${plan} plan. Skipping.`);
-            return;
-        }
+export const sendRecoveryAlert = async (qr, user) => {
+    if (!qr || !user) return;
+    const title = qr.metadata?.title || 'Untitled';
+    const fixUrl = `/qrcodes/${qr._id}`;
 
-        const currentUsed = user.subscription?.whatsappAlertsUsedThisMonth || 0;
-        if (currentUsed >= limits.whatsappAlertsCap) {
-            console.log(`[AlertService] WhatsApp cap reached (${currentUsed}/${limits.whatsappAlertsCap}) for user ${user.email}. Skipping.`);
-            // Log as a soft-blocked event for dashboard visibility
-            await AlertEvent.create({
-                qr_id: qr._id,
-                alertType: 'broken_link',
-                channel: 'whatsapp',
-                status: 'cap_reached',
-                errorReason: `WhatsApp alert cap reached (${currentUsed}/${limits.whatsappAlertsCap})`
-            });
-            return;
-        }
-
-        // ── Atomic Increment BEFORE sending ──────────────
-        // Prevents race condition where two alerts fire simultaneously
-        const atomicResult = await User.findOneAndUpdate(
-            { 
-                _id: user._id, 
-                "subscription.whatsappAlertsUsedThisMonth": { $lt: limits.whatsappAlertsCap } 
-            },
-            { $inc: { "subscription.whatsappAlertsUsedThisMonth": 1 } },
-            { new: true }
+    try {
+        // Mark previous unread broken-link notifications for this QR as read
+        await Notification.updateMany(
+            { user_id: user._id, qr_id: qr._id, type: 'alert', isRead: false },
+            { $set: { isRead: true } }
         );
 
-        if (!atomicResult) {
-            console.log(`[AlertService] WhatsApp cap race-condition guard triggered for user ${user.email}. Skipping.`);
-            return;
+        await Notification.create({
+            user_id: user._id,
+            qr_id: qr._id,
+            title: `QR Code Recovered: ${title}`,
+            message: `Destination (${qr.target_url}) is back online and responding normally.`,
+            type: 'recovery',
+            actionUrl: fixUrl
+        });
+
+        await AlertEvent.create({
+            qr_id: qr._id,
+            alertType: 'link_recovered',
+            channel: 'dashboard',
+            status: 'sent',
+            errorReason: 'Recovered (HTTP 2xx/3xx)'
+        });
+    } catch (error) {
+        console.error("[AlertService] Failed to record recovery alert:", error.message);
+    }
+};
+
+// ── Meta WhatsApp Cloud API Dispatch (Preserved for Weekly Reports) ──────────
+export const sendWhatsAppTemplateMessage = async (user, {
+    templateName = env.META_WHATSAPP_TEMPLATE_NAME || 'qr_weekly_report',
+    languageCode = env.META_WHATSAPP_LANGUAGE_CODE || 'en_US',
+    bodyParameters = [],
+    qrId = null,
+    alertType = 'weekly_report'
+} = {}) => {
+    if (!user?.whatsappOptIn || !user?.whatsappNumber || !env.META_WHATSAPP_TOKEN || !env.META_PHONE_NUMBER_ID) {
+        return { sent: false, reason: 'whatsapp_not_configured_or_opted_out' };
+    }
+
+    try {
+        const waPayload = {
+            messaging_product: "whatsapp",
+            to: user.whatsappNumber,
+            type: "template",
+            template: {
+                name: templateName,
+                language: { code: languageCode },
+                components: bodyParameters.length > 0 ? [
+                    {
+                        type: "body",
+                        parameters: bodyParameters.map(text => ({ type: "text", text: String(text) }))
+                    }
+                ] : []
+            }
+        };
+
+        await axios.post(
+            `https://graph.facebook.com/v18.0/${env.META_PHONE_NUMBER_ID}/messages`,
+            waPayload,
+            {
+                headers: {
+                    'Authorization': `Bearer ${env.META_WHATSAPP_TOKEN}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        if (qrId) {
+            await AlertEvent.create({
+                qr_id: qrId,
+                alertType,
+                channel: 'whatsapp',
+                status: 'sent'
+            });
         }
 
-        const templateName = env.META_WHATSAPP_TEMPLATE_NAME || 'qr_health_alert';
-        const languageCode = env.META_WHATSAPP_LANGUAGE_CODE || 'en_US';
-        
-        try {
-            const waPayload = {
-                messaging_product: "whatsapp",
-                to: user.whatsappNumber,
-                type: "template",
-                template: {
-                    name: templateName,
-                    language: { code: languageCode },
-                    components: [
-                        {
-                            type: "body",
-                            parameters: [
-                                { type: "text", text: title },
-                                { type: "text", text: errorReason }
-                            ]
-                        }
-                    ]
-                }
-            };
-
-            await axios.post(
-                `https://graph.facebook.com/v18.0/${env.META_PHONE_NUMBER_ID}/messages`,
-                waPayload,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${env.META_WHATSAPP_TOKEN}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-
-            console.log(`[AlertService] WhatsApp alert dispatched to ${user.whatsappNumber} (${atomicResult.subscription.whatsappAlertsUsedThisMonth}/${limits.whatsappAlertsCap} used)`);
-            
+        return { sent: true };
+    } catch (waError) {
+        const errMsg = JSON.stringify(waError.response?.data || waError.message);
+        console.error("[AlertService] Failed to send WhatsApp message:", errMsg);
+        if (qrId) {
             await AlertEvent.create({
-                qr_id: qr._id,
-                alertType: 'broken_link',
-                channel: 'whatsapp',
-                status: 'sent',
-                errorReason
-            });
-        } catch (waError) {
-            console.error("[AlertService] Failed to send WhatsApp alert:", waError.response?.data || waError.message);
-            
-            // Rollback the counter on failure (best-effort)
-            await User.updateOne(
-                { _id: user._id },
-                { $inc: { "subscription.whatsappAlertsUsedThisMonth": -1 } }
-            ).catch(() => {});
-
-            await AlertEvent.create({
-                qr_id: qr._id,
-                alertType: 'broken_link',
+                qr_id: qrId,
+                alertType,
                 channel: 'whatsapp',
                 status: 'failed',
-                errorReason: JSON.stringify(waError.response?.data || waError.message)
-            });
+                errorReason: errMsg
+            }).catch(() => {});
         }
+        return { sent: false, error: errMsg };
     }
 };

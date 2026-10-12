@@ -1,7 +1,7 @@
 import express from 'express';
 import { 
     registerUser, loginUser, getMe, googleAuth, refreshToken, logoutUser, updateProfile,
-    updatePrivacySettings, exportUserData, requestDataErasure, dismissTrialWarning
+    updatePrivacySettings, getConsentHistory, exportUserData, requestDataErasure, dismissTrialWarning
 } from '../controllers/userController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { validate } from '../middleware/validateMiddleware.js';
@@ -34,6 +34,9 @@ router.put('/profile', protect, updateProfile);
 
 // PUT /api/users/privacy - Toggle privacy settings & log consent
 router.put('/privacy', protect, updatePrivacySettings);
+
+// GET /api/users/consent-history - Fetch DPDP consent ledger
+router.get('/consent-history', protect, getConsentHistory);
 
 // PUT /api/users/dismiss-trial-warning - Dismiss the trial expired popup
 router.put('/dismiss-trial-warning', protect, dismissTrialWarning);

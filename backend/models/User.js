@@ -30,6 +30,14 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    emailAlertsOptIn: {
+        type: Boolean,
+        default: true
+    },
+    analyticsOptIn: {
+        type: Boolean,
+        default: true
+    },
     subscription: {
         plan: {
             type: String,

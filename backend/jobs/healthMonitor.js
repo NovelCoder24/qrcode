@@ -4,70 +4,116 @@ import { QRCode } from '../models/QRCode.js';
 import { User } from '../models/User.js';
 import { Scan } from '../models/Scan.js';
 import { withJobLock } from '../utils/jobLock.js';
-import { sendHealthAlert, sendOverageWarningEmail } from '../services/AlertService.js';
+import { sendHealthAlert, sendRecoveryAlert, sendOverageWarningEmail } from '../services/AlertService.js';
 import { getPlanLimits } from '../config/planConfig.js';
 
-export const runHealthCheck = async () => {
-    console.log(`[Health Monitor] Starting manual URL ping routine at ${new Date().toISOString()}`);
+const HEALTH_PING_HEADERS = { 'User-Agent': 'QRVibe-HealthBot/1.0' };
+const HEALTH_PING_TIMEOUT_MS = 8000;
+const CONCURRENCY_LIMIT = 10;
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export const pingUrlOnce = async (targetUrl, httpClient = axios) => {
     try {
-        // Check all QRs that redirect directly to a real external URL
-        const qrcodes = await QRCode.find({
-            isActive: true, // Only if not manually paused by user
-            qr_type: { $in: ['URL', 'Video', 'Audio', 'Image', 'Instagram', 'Facebook', 'WhatsApp'] },
-            target_url: { $exists: true, $ne: "" }
-        }).populate('user_id'); // Populate user for alert sending
-
-        for (let qr of qrcodes) {
-            let errorReason = null;
-            let success = false;
-
+        await httpClient.head(targetUrl, {
+            timeout: HEALTH_PING_TIMEOUT_MS,
+            maxRedirects: 3,
+            validateStatus: (status) => status >= 200 && status < 400,
+            headers: HEALTH_PING_HEADERS
+        });
+        return { success: true, errorReason: null };
+    } catch (headError) {
+        const status = headError.response?.status;
+        // Many servers block or reject HEAD with 403/405/501 — fallback to GET
+        if (status === 405 || status === 403 || status === 501 || !headError.response) {
             try {
-                // First try HEAD request to save bandwidth
-                await axios.head(qr.target_url, { 
-                    timeout: 8000, // strict 8s timeout
+                await httpClient.get(targetUrl, {
+                    timeout: HEALTH_PING_TIMEOUT_MS,
                     maxRedirects: 3,
-                    validateStatus: status => status >= 200 && status < 400,
-                    headers: { 'User-Agent': 'QRVibe-HealthBot/1.0' }
+                    validateStatus: (s) => s >= 200 && s < 400,
+                    headers: HEALTH_PING_HEADERS
                 });
-                success = true;
-            } catch (headError) {
-                // If HEAD fails with 405 Method Not Allowed, or generic 403, fallback to GET
-                if (headError.response?.status === 405 || headError.response?.status === 403 || headError.response?.status === 501) {
-                    try {
-                        await axios.get(qr.target_url, {
-                            timeout: 8000, // strict 8s timeout
-                            maxRedirects: 3,
-                            validateStatus: status => status >= 200 && status < 400,
-                            headers: { 'User-Agent': 'QRVibe-HealthBot/1.0' }
-                        });
-                        success = true;
-                    } catch (getError) {
-                        errorReason = getError.response ? `HTTP ${getError.response.status}` : (getError.code === 'ECONNABORTED' ? 'Timeout' : getError.message);
-                    }
-                } else {
-                    errorReason = headError.response ? `HTTP ${headError.response.status}` : (headError.code === 'ECONNABORTED' ? 'Timeout' : headError.message);
-                }
+                return { success: true, errorReason: null };
+            } catch (getError) {
+                const errorReason = getError.response
+                    ? `HTTP ${getError.response.status}`
+                    : (getError.code === 'ECONNABORTED' ? 'Timeout' : getError.message);
+                return { success: false, errorReason };
             }
+        }
+        const errorReason = headError.response
+            ? `HTTP ${headError.response.status}`
+            : (headError.code === 'ECONNABORTED' ? 'Timeout' : headError.message);
+        return { success: false, errorReason };
+    }
+};
 
-            if (success) {
-                qr.health_status = 'active';
-            } else {
-                // Log the failure reason for debugging
-                if (qr.health_status !== 'broken') {
-                    console.log(`[Health Monitor] URL failed first check: ${qr.target_url} (${errorReason}). Awaiting second consecutive failure to send alert.`);
-                }
-                // Trigger central alert service
-                // It handles 12-hour cooldown checks internally
-                await sendHealthAlert(qr, qr.user_id, errorReason);
-                qr.health_status = 'broken';
-            }
+export const checkSingleQrHealth = async (qr, options = {}) => {
+    const { retryDelayMs = 3000, httpClient = axios } = options;
 
+    if (!qr || qr.qr_type !== 'URL' || !qr.target_url || !/^https?:\/\//i.test(qr.target_url)) {
+        if (qr && qr.health_status !== 'active') {
+            qr.health_status = 'active';
             qr.last_pinged_at = new Date();
             await qr.save();
         }
-        console.log(`[Health Monitor] Cycle complete. Checked ${qrcodes.length} links.`);
+        return { status: 'active', skipped: true };
+    }
 
+    const wasBroken = qr.health_status === 'broken';
+    let result = await pingUrlOnce(qr.target_url, httpClient);
+
+    // 2-Attempt Retry Verification: avoid false alarms from transient network blips
+    if (!result.success) {
+        if (retryDelayMs > 0) {
+            await delay(retryDelayMs);
+        }
+        result = await pingUrlOnce(qr.target_url, httpClient);
+    }
+
+    const user = qr.user_id && typeof qr.user_id === 'object' && qr.user_id._id
+        ? qr.user_id
+        : await User.findById(qr.user_id);
+
+    if (result.success) {
+        qr.health_status = 'active';
+        qr.last_pinged_at = new Date();
+        await qr.save();
+
+        if (wasBroken && user) {
+            await sendRecoveryAlert(qr, user);
+        }
+        return { status: 'active', recovered: wasBroken };
+    } else {
+        qr.health_status = 'broken';
+        qr.last_pinged_at = new Date();
+        await qr.save();
+
+        if (user) {
+            await sendHealthAlert(qr, user, result.errorReason);
+        }
+        return { status: 'broken', errorReason: result.errorReason };
+    }
+};
+
+export const runHealthCheck = async (options = {}) => {
+    console.log(`[Health Monitor] Starting URL ping routine at ${new Date().toISOString()}`);
+
+    try {
+        // Check all active URL-type QR codes that redirect to an external website
+        const qrcodes = await QRCode.find({
+            isActive: true,
+            accessMode: { $ne: 'disabled' },
+            qr_type: 'URL',
+            target_url: { $exists: true, $ne: "" }
+        }).populate('user_id');
+
+        for (let i = 0; i < qrcodes.length; i += CONCURRENCY_LIMIT) {
+            const batch = qrcodes.slice(i, i + CONCURRENCY_LIMIT);
+            await Promise.allSettled(batch.map((qr) => checkSingleQrHealth(qr, options)));
+        }
+
+        console.log(`[Health Monitor] Cycle complete. Checked ${qrcodes.length} links.`);
     } catch (jobError) {
         console.error(`[Health Monitor] Fatal error running Health Check:`, jobError);
     }
@@ -189,8 +235,8 @@ export const initHealthMonitor = () => {
     // We use a 5-minute timeout for the lock as a fallback
     const FIVE_MINUTES = 5 * 60 * 1000;
 
-    // Daily: Health check + Trial expiration
-    cron.schedule('0 0 * * *', async () => {
+    // Every 6 hours: Automated link health sweep
+    cron.schedule('0 */6 * * *', async () => {
         await withJobLock('daily_health_check', FIVE_MINUTES, runHealthCheck);
     });
 

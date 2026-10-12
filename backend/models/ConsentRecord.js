@@ -8,7 +8,7 @@ const consentRecordSchema = new mongoose.Schema({
     },
     consentType: {
         type: String,
-        enum: ['analytics', 'whatsapp', 'billing'],
+        enum: ['analytics', 'email_alerts', 'whatsapp', 'billing', 'marketing'],
         required: true
     },
     granted: {

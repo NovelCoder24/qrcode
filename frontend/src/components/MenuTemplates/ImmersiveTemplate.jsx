@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChefHat, Cake, Wine, Sparkles, X, Star, Flame, Clock, Search, ChevronRight, Compass } from 'lucide-react';
+import DishCartControl from './DishCartControl';
 
-const ImmersiveTemplate = ({ restaurantName, currency, categories }) => {
+const ImmersiveTemplate = ({ restaurantName, currency, categories, cartProps }) => {
     // Determine initial category
     const initialCat = categories && categories.length > 0 ? categories[0].name : '';
     const [currentCategoryName, setCurrentCategoryName] = useState(initialCat);
@@ -95,7 +96,7 @@ const ImmersiveTemplate = ({ restaurantName, currency, categories }) => {
                 {/* Screen Reflection Accent */}
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/5 to-transparent pointer-events-none z-50"></div>
 
-                <div ref={scrollContainerRef} className="flex-1 overflow-y-auto relative flex flex-col pb-12" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto relative flex flex-col ${cartProps?.hasCartItems ? 'pb-32' : 'pb-12'}`} style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     
                     <div className="relative h-[280px] w-full flex flex-col justify-end px-6 pb-6 overflow-hidden">
                         <div className="absolute inset-0">
@@ -188,44 +189,60 @@ const ImmersiveTemplate = ({ restaurantName, currency, categories }) => {
                                 <p className="text-xs text-white/40 max-w-[200px]">Try adjusting your search query or removing dietary tags.</p>
                             </div>
                         ) : (
-                            filteredItems.map((item, idx) => (
-                                <div 
-                                    key={idx} 
-                                    onClick={() => openItemDetails(item)}
-                                    className="group relative flex items-center justify-between gap-4 p-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.03] hover:border-[#d4af37]/20 hover:bg-white/[0.04] active:scale-[0.98] transition-all duration-300 cursor-pointer animate-[fadeInUp_0.4s_ease-out_both]"
-                                    style={{ animationDelay: `${idx * 0.08}s` }}
-                                >
-                                    {item.img && (
-                                        <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-[#161314] border border-white/5">
-                                            <img 
-                                                src={item.img} 
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" 
-                                                alt={item.name} 
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                                        </div>
-                                    )}
+                            filteredItems.map((item, idx) => {
+                                const catId = activeCategory?.id ?? activeCategoryIndex;
+                                const catName = activeCategory?.name ?? '';
+                                const qty = cartProps?.enabled ? cartProps.getItemQty(catId, item, idx) : 0;
+                                return (
+                                    <div 
+                                        key={idx} 
+                                        onClick={() => openItemDetails(item)}
+                                        className="group relative flex items-center justify-between gap-4 p-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.03] hover:border-[#d4af37]/20 hover:bg-white/[0.04] active:scale-[0.98] transition-all duration-300 cursor-pointer animate-[fadeInUp_0.4s_ease-out_both]"
+                                        style={{ animationDelay: `${idx * 0.08}s` }}
+                                    >
+                                        {item.img && (
+                                            <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-[#161314] border border-white/5">
+                                                <img 
+                                                    src={item.img} 
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" 
+                                                    alt={item.name} 
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                                            </div>
+                                        )}
 
-                                    <div className="flex-1 min-w-0 space-y-1">
-                                        <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
-                                            {(item.tags || []).map((tag, tIdx) => {
-                                                if (tag === 'veg') return <span key={tIdx} className="w-2 h-2 rounded-full bg-emerald-500 inline-block" title="Vegetarian"></span>;
-                                                if (tag === 'gf') return <span key={tIdx} className="w-2 h-2 rounded-full bg-amber-500 inline-block" title="Gluten-Free"></span>;
-                                                return null;
-                                            })}
-                                            <h3 className="font-medium text-[14px] text-white group-hover:text-[#d4af37] transition-all duration-300 truncate">{item.name}</h3>
+                                        <div className="flex-1 min-w-0 space-y-1">
+                                            <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                                                {(item.tags || []).map((tag, tIdx) => {
+                                                    if (tag === 'veg') return <span key={tIdx} className="w-2 h-2 rounded-full bg-emerald-500 inline-block" title="Vegetarian"></span>;
+                                                    if (tag === 'gf') return <span key={tIdx} className="w-2 h-2 rounded-full bg-amber-500 inline-block" title="Gluten-Free"></span>;
+                                                    return null;
+                                                })}
+                                                <h3 className="font-medium text-[14px] text-white group-hover:text-[#d4af37] transition-all duration-300 truncate">{item.name}</h3>
+                                            </div>
+                                            <p className="text-[11px] text-white/50 leading-relaxed line-clamp-2 pr-2 font-light">{item.description}</p>
                                         </div>
-                                        <p className="text-[11px] text-white/50 leading-relaxed line-clamp-2 pr-2 font-light">{item.description}</p>
-                                    </div>
 
-                                    <div className="flex flex-col items-end justify-center space-y-1.5 flex-shrink-0">
-                                        <span className="text-[14px] font-semibold text-[#d4af37] font-['Playfair_Display']">{currency}{item.price}</span>
-                                        <div className="w-6 h-6 rounded-full bg-white/[0.04] group-hover:bg-[#d4af37]/10 flex items-center justify-center text-white/30 group-hover:text-[#d4af37] transition-all duration-300">
-                                            <ChevronRight className="w-3.5 h-3.5" />
+                                        <div className="flex flex-col items-end justify-center space-y-2 flex-shrink-0">
+                                            <span className="text-[14px] font-semibold text-[#d4af37] font-['Playfair_Display'] tabular-nums">{currency}{item.price}</span>
+                                            {cartProps?.enabled ? (
+                                                <DishCartControl
+                                                    qty={qty}
+                                                    dishName={item.name}
+                                                    variant="dark"
+                                                    onAdd={() => cartProps.onChangeItemQty(catId, catName, item, idx, 1)}
+                                                    onIncrement={() => cartProps.onChangeItemQty(catId, catName, item, idx, 1)}
+                                                    onDecrement={() => cartProps.onChangeItemQty(catId, catName, item, idx, -1)}
+                                                />
+                                            ) : (
+                                                <div className="w-6 h-6 rounded-full bg-white/[0.04] group-hover:bg-[#d4af37]/10 flex items-center justify-center text-white/30 group-hover:text-[#d4af37] transition-all duration-300">
+                                                    <ChevronRight className="w-3.5 h-3.5" />
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
 

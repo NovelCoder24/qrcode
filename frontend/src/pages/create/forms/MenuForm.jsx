@@ -1,15 +1,28 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, ChevronDown, ChevronUp, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, Image as ImageIcon, Loader2, MessageCircle, CheckCircle2, AlertCircle } from 'lucide-react';
 import { uploadFile } from '../../../api/axios';
+import { normalizeWhatsAppPhone } from '../../../utils/whatsappCart';
 
 const MenuForm = ({ data, onChange }) => {
     // Defaults
     const d = data || {};
     const restaurantName = d.restaurantName || '';
-    const currency = d.currency || '$';
+    const currency = d.currency || '₹';
     const menuTemplate = d.menuTemplate || 'modern'; // 'immersive', 'lighthouse', 'modern', 'playful'
+    const whatsappOrderingEnabled = d.whatsappOrderingEnabled !== undefined ? Boolean(d.whatsappOrderingEnabled) : true;
+    const whatsappNumber = d.whatsappNumber || '';
+    const defaultTableNumber = d.defaultTableNumber || '';
+    const normalizedWaPhone = normalizeWhatsAppPhone(whatsappNumber);
+
     const categories = d.categories || [
-        { id: Date.now().toString(), name: 'Starters', items: [{ id: Date.now().toString() + '1', name: 'Garlic Bread', description: 'Toasted with herb butter', price: '4.99' }] }
+        {
+            id: Date.now().toString(),
+            name: 'Bestsellers',
+            items: [
+                { id: Date.now().toString() + '1', name: 'Cold Coffee', description: 'Rich espresso blended with creamy milk & ice', price: '150' },
+                { id: Date.now().toString() + '2', name: 'Garlic Bread', description: 'Toasted sourdough with roasted garlic herb butter', price: '120' }
+            ]
+        }
     ];
 
     const templates = [
@@ -26,6 +39,9 @@ const MenuForm = ({ data, onChange }) => {
                 ...d,
                 menuTemplate,
                 currency,
+                whatsappOrderingEnabled,
+                whatsappNumber,
+                defaultTableNumber,
                 categories
             });
         }
@@ -36,6 +52,9 @@ const MenuForm = ({ data, onChange }) => {
             ...d,
             menuTemplate,
             currency,
+            whatsappOrderingEnabled,
+            whatsappNumber,
+            defaultTableNumber,
             categories,
             ...updates
         });
@@ -57,7 +76,7 @@ const MenuForm = ({ data, onChange }) => {
     const addItem = (catId) => {
         const newCats = categories.map(c => {
             if (c.id === catId) {
-                return { ...c, items: [...c.items, { id: Date.now().toString(), name: 'New Item', description: '', price: '0.00' }] };
+                return { ...c, items: [...c.items, { id: Date.now().toString(), name: 'New Item', description: '', price: '150' }] };
             }
             return c;
         });
@@ -129,11 +148,89 @@ const MenuForm = ({ data, onChange }) => {
                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all cursor-pointer appearance-none"
                             style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2364748b\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundPosition: 'right 1rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.2em 1.2em' }}
                         >
-                            <option value="$">$ (Dollar)</option>
                             <option value="₹">₹ (INR)</option>
+                            <option value="$">$ (Dollar)</option>
+                            <option value="€">€ (Euro)</option>
+                            <option value="£">£ (Pound)</option>
                         </select>
                     </div>
                 </div>
+            </div>
+
+            {/* Scan-to-WhatsApp Cart Config */}
+            <div className="bg-emerald-50/60 p-6 rounded-2xl border border-emerald-200/80 shadow-sm space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-700 shrink-0 mt-0.5">
+                            <MessageCircle className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="font-bold text-slate-800 text-base">Scan-to-WhatsApp Cart</h3>
+                                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-600 text-white">
+                                    Direct wa.me Order
+                                </span>
+                            </div>
+                            <p className="text-xs text-slate-600 mt-1">
+                                Add a <span className="font-semibold text-slate-800">+ Add</span> button next to every dish and a sticky <span className="font-semibold text-emerald-700">Send Order on WhatsApp</span> bar at the bottom.
+                            </p>
+                        </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                            type="checkbox"
+                            checked={whatsappOrderingEnabled}
+                            onChange={(e) => updateData({ whatsappOrderingEnabled: e.target.checked })}
+                            className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                    </label>
+                </div>
+
+                {whatsappOrderingEnabled && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-emerald-200/60">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                                Café / Kitchen WhatsApp Number *
+                            </label>
+                            <input
+                                type="tel"
+                                value={whatsappNumber}
+                                onChange={(e) => updateData({ whatsappNumber: e.target.value })}
+                                placeholder="e.g. +91 98765 43210"
+                                className="w-full bg-white border border-emerald-200 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                            />
+                            <div className="mt-1.5 flex items-center gap-1.5 text-[11px]">
+                                {normalizedWaPhone ? (
+                                    <span className="text-emerald-700 font-medium flex items-center gap-1">
+                                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                                        Orders will open <code className="bg-emerald-100/80 px-1 rounded">wa.me/{normalizedWaPhone}</code>
+                                    </span>
+                                ) : (
+                                    <span className="text-amber-700 font-medium flex items-center gap-1">
+                                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                                        Enter a 10-digit mobile number to activate the cart buttons on your menu
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                                Default Table / Counter Label (Optional)
+                            </label>
+                            <input
+                                type="text"
+                                value={defaultTableNumber}
+                                onChange={(e) => updateData({ defaultTableNumber: e.target.value })}
+                                placeholder="e.g. Table 4 or Counter Pickup"
+                                className="w-full bg-white border border-emerald-200 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                            />
+                            <p className="mt-1.5 text-[11px] text-slate-500">
+                                Customers can also edit their Table # inside the cart before tapping Send.
+                            </p>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Template Selection */}
