@@ -102,10 +102,27 @@ export const uploadFile = async (file) => {
     formData.append('file', file);
     const response = await api.post('/upload', formData, {
         headers: {
-            'Content-Type': 'multipart/form-data',
+            'Content-Type': undefined,
         },
     });
     return response.data;
-}
+};
+
+export const parseMenuPhotos = async ({ files, mode = 'replace', autoFillPhotos = true, existingCategories = [] }) => {
+    const formData = new FormData();
+    const fileList = Array.isArray(files) ? files : [files];
+    fileList.forEach((f) => formData.append('files', f));
+    formData.append('mode', mode);
+    formData.append('autoFillPhotos', String(autoFillPhotos));
+    if (existingCategories && existingCategories.length > 0) {
+        formData.append('existingCategories', JSON.stringify(existingCategories));
+    }
+    const response = await api.post('/qrcodes/parse-menu-photo', formData, {
+        headers: {
+            'Content-Type': undefined,
+        },
+    });
+    return response.data;
+};
 
 export default api;

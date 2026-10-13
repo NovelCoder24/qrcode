@@ -220,3 +220,49 @@ export const deleteQR = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// @desc    Parse uploaded menu photos/PDF into structured digital menu items using Gemini Vision
+// @route   POST /api/qrcodes/parse-menu-photo
+// @access  Private
+export const parseMenuPhoto = async (req, res) => {
+    try {
+        const rawFiles = req.files || (req.file ? [req.file] : []);
+        if (!rawFiles || rawFiles.length === 0) {
+            return res.status(400).json({ message: "Please upload at least one menu photo or PDF." });
+        }
+
+        const mode = req.body.mode === 'append' ? 'append' : 'replace';
+        const autoFillPhotos = req.body.autoFillPhotos !== 'false' && req.body.autoFillPhotos !== false;
+
+        let existingCategories = [];
+        if (req.body.existingCategories) {
+            try {
+                existingCategories = typeof req.body.existingCategories === 'string'
+                    ? JSON.parse(req.body.existingCategories)
+                    : req.body.existingCategories;
+            } catch (parseErr) {
+                existingCategories = [];
+            }
+        }
+
+        const { extractMenuFromPhoto } = await import("../services/MenuAiService.js");
+        const result = await extractMenuFromPhoto({
+            files: rawFiles,
+            mode,
+            autoFillPhotos,
+            existingCategories,
+        });
+
+        res.status(200).json({
+            message: "Menu extracted successfully",
+            ...result,
+        });
+    } catch (error) {
+        console.error("[qrController] parseMenuPhoto error:", error.message);
+        const status = error.status && Number.isInteger(error.status) ? error.status : 500;
+        res.status(status).json({
+            message: error.message || "Failed to extract menu from photo.",
+        });
+    }
+};
+

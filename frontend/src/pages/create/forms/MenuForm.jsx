@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, ChevronDown, ChevronUp, Image as ImageIcon, Loader2, MessageCircle, CheckCircle2, AlertCircle } from 'lucide-react';
-import { uploadFile } from '../../../api/axios';
+import React, { useState, useRef } from 'react';
+import { Plus, Trash2, ChevronDown, ChevronUp, Image as ImageIcon, Loader2, MessageCircle, CheckCircle2, AlertCircle, Camera, Sparkles, UploadCloud, FileText } from 'lucide-react';
+import { uploadFile, parseMenuPhotos } from '../../../api/axios';
 import { normalizeWhatsAppPhone } from '../../../utils/whatsappCart';
+import { compressMultipleFiles } from '../../../utils/imageCompressor';
+import MenuImportModal from '../../../components/MenuTemplates/MenuImportModal';
 
 const MenuForm = ({ data, onChange }) => {
     // Defaults
@@ -13,6 +15,16 @@ const MenuForm = ({ data, onChange }) => {
     const whatsappNumber = d.whatsappNumber || '';
     const defaultTableNumber = d.defaultTableNumber || '';
     const normalizedWaPhone = normalizeWhatsAppPhone(whatsappNumber);
+
+    // AI Photo-to-Menu State
+    const [isScanning, setIsScanning] = useState(false);
+    const [scanStage, setScanStage] = useState('');
+    const [scanError, setScanError] = useState(null);
+    const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [extractedMenuData, setExtractedMenuData] = useState(null);
+    const [uploadedThumbnails, setUploadedThumbnails] = useState([]);
+    const [importSuccessMsg, setImportSuccessMsg] = useState(null);
+    const fileInputRef = useRef(null);
 
     const categories = d.categories || [
         {
@@ -124,8 +136,196 @@ const MenuForm = ({ data, onChange }) => {
         }
     };
 
+    // AI Photo-to-Menu Handlers
+    const handleMenuPhotoUpload = async (e) => {
+        const selectedFiles = e.target.files;
+        if (!selectedFiles || selectedFiles.length === 0) return;
+
+        setIsScanning(true);
+        setScanError(null);
+        setImportSuccessMsg(null);
+
+        // Generate client thumbnails for side-by-side verification
+        const thumbs = Array.from(selectedFiles)
+            .filter((f) => f.type.startsWith('image/'))
+            .map((f) => URL.createObjectURL(f));
+        setUploadedThumbnails(thumbs);
+
+        try {
+            // Stage 1: Client compression (max 1600px, JPEG 0.8)
+            setScanStage('Compressing & preparing menu pages (~200KB/page)...');
+            const compressedFiles = await compressMultipleFiles(selectedFiles);
+
+            // Stage 2: Gemini multimodal call
+            setScanStage('AI is reading categories, dishes, prices & portions...');
+            const data = await parseMenuPhotos({
+                files: compressedFiles,
+                mode: 'replace',
+                autoFillPhotos: true,
+                existingCategories: categories,
+            });
+
+            // Stage 3: Matching photos & descriptions
+            setScanStage('Matching appetizing dish photos from catalog...');
+            setExtractedMenuData(data);
+            setIsReviewModalOpen(true);
+        } catch (err) {
+            console.error('AI Menu Photo Extraction Failed:', err);
+            let msg = 'Failed to parse menu photo. Please try a clearer picture.';
+            if (typeof err.response?.data?.message === 'string') {
+                msg = err.response.data.message;
+            } else if (typeof err.response?.data?.error === 'string') {
+                msg = err.response.data.error;
+            } else if (typeof err.response?.data?.error?.message === 'string') {
+                msg = err.response.data.error.message;
+            } else if (typeof err.response?.data === 'string' && !err.response.data.trim().startsWith('<')) {
+                msg = err.response.data;
+            } else if (typeof err.message === 'string') {
+                msg = err.message;
+            }
+            setScanError(String(msg));
+        } finally {
+            setIsScanning(false);
+            setScanStage('');
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const handleApplyExtractedMenu = ({ categories: newCategories, currency: detectedCurrency, restaurantName: detectedName, mode }) => {
+        let finalCategories = newCategories;
+
+        if (mode === 'append') {
+            // Merge with existing
+            const existingMap = new Map(categories.map((c) => [c.name.toLowerCase(), c]));
+            newCategories.forEach((cat) => {
+                const key = cat.name.toLowerCase();
+                if (existingMap.has(key)) {
+                    const existingCat = existingMap.get(key);
+                    existingCat.items = [...(existingCat.items || []), ...(cat.items || [])];
+                } else {
+                    existingMap.set(key, cat);
+                }
+            });
+            finalCategories = Array.from(existingMap.values());
+        }
+
+        updateData({
+            categories: finalCategories,
+            currency: detectedCurrency || currency,
+            restaurantName: restaurantName || detectedName || '',
+        });
+
+        const dishCount = finalCategories.reduce((acc, c) => acc + (c.items?.length || 0), 0);
+        setImportSuccessMsg(`✨ Successfully imported ${dishCount} dishes across ${finalCategories.length} categories!`);
+        setTimeout(() => setImportSuccessMsg(null), 8000);
+    };
+
     return (
         <div className="space-y-8 pb-10">
+            {/* AI Photo-to-Menu Hero Card */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-indigo-500/20">
+                <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+                <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="space-y-2 max-w-xl">
+                        <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-black uppercase tracking-wider">
+                                <Sparkles className="w-3.5 h-3.5" /> AI Auto-Fill in 5s
+                            </span>
+                            <span className="text-xs text-indigo-300/80 font-medium hidden sm:inline">
+                                Zero-typing menu setup
+                            </span>
+                        </div>
+                        <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                            Upload Photo of Paper Menu
+                        </h3>
+                        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-light">
+                            Snap a picture of your physical menu card or upload a PDF. Gemini Flash AI reads all categories, dishes, prices & portion variants, matches appetizing photos, and auto-fills your menu!
+                        </p>
+                    </div>
+
+                    <div className="shrink-0 flex flex-col items-start md:items-end gap-2">
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*,application/pdf"
+                            multiple
+                            onChange={handleMenuPhotoUpload}
+                            disabled={isScanning}
+                            className="hidden"
+                            id="menu-photo-input"
+                        />
+                        <label
+                            htmlFor="menu-photo-input"
+                            className={`inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl font-black text-sm transition-all cursor-pointer shadow-lg active:scale-95 ${
+                                isScanning
+                                    ? 'bg-slate-800 text-slate-400 cursor-not-allowed border border-white/10'
+                                    : 'bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 shadow-emerald-500/25'
+                            }`}
+                        >
+                            {isScanning ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin text-emerald-400" />
+                                    <span>Scanning Paper Menu...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Camera className="w-5 h-5" />
+                                    <span>📸 Upload Menu Photo (Auto-Fill)</span>
+                                </>
+                            )}
+                        </label>
+                        <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                            Supports up to 8 photos or multi-page PDF
+                        </span>
+                    </div>
+                </div>
+
+                {/* Staged scanning progress banner */}
+                {isScanning && (
+                    <div className="mt-5 pt-4 border-t border-white/10 flex items-center gap-3 animate-pulse">
+                        <Loader2 className="w-4 h-4 text-emerald-400 animate-spin shrink-0" />
+                        <span className="text-xs font-semibold text-emerald-300">{scanStage}</span>
+                    </div>
+                )}
+
+                {/* Dismissible Scan Error */}
+                {scanError && (
+                    <div className="mt-5 p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-start gap-3 text-xs text-rose-300">
+                        <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                            <strong className="font-bold">Scan Error: </strong>
+                            <span>{scanError}</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setScanError(null)}
+                            className="text-rose-400 hover:text-white"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                )}
+
+                {/* Success Banner */}
+                {importSuccessMsg && (
+                    <div className="mt-5 p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center gap-3 text-xs text-emerald-300">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span className="font-semibold">{importSuccessMsg}</span>
+                    </div>
+                )}
+            </div>
+
+            {/* Review & Audit Modal */}
+            <MenuImportModal
+                isOpen={isReviewModalOpen}
+                onClose={() => setIsReviewModalOpen(false)}
+                extractedData={extractedMenuData}
+                uploadedThumbnails={uploadedThumbnails}
+                onApply={handleApplyExtractedMenu}
+            />
+
             {/* Basic Info */}
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <h3 className="font-bold text-slate-800 text-lg">Restaurant Details</h3>

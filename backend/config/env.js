@@ -1,7 +1,13 @@
+// ==============================================================================
+// ENVIRONMENT CONFIG LOADER & VALIDATOR
+// NOTE: DO NOT ADD SECRETS OR EDIT THIS FILE WHEN ADDING NEW ENVIRONMENT VARIABLES!
+// All environment variables and API keys belong strictly in: backend/.env
+// This script automatically loads backend/.env via dotenv and validates it with Zod.
+// ==============================================================================
 import { z } from 'zod';
 import dotenv from 'dotenv';
 
-// Load .env file
+// Load .env file from backend root
 dotenv.config();
 
 // Define the environment schema
@@ -41,7 +47,11 @@ const envSchema = z.object({
   META_APP_SECRET: z.string().optional(),
   META_WHATSAPP_TEMPLATE_NAME: z.string().optional(),
   META_WHATSAPP_LANGUAGE_CODE: z.string().optional(),
-}).superRefine((data, ctx) => {
+
+  // Gemini AI Vision (Photo-to-Menu)
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
+}).passthrough().superRefine((data, ctx) => {
   if (data.NODE_ENV === 'production') {
     if (!data.ANALYTICS_SALT) {
       ctx.addIssue({

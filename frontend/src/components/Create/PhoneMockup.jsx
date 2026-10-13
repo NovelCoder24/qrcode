@@ -2,13 +2,14 @@ import React from 'react';
 import {
     QrCode, Globe, FileText, List, Contact, Briefcase, Video, Image as ImageIcon,
     Facebook, Instagram, Share2, MessageCircle, Music, Phone, Mail, MapPin,
-    ExternalLink, Play, Headphones, Download
+    ExternalLink, Play, Headphones, Download, Coffee, Utensils
 } from 'lucide-react';
 import StyledQRCode from '../StyledQRCode';
 
 const typeConfig = {
     URL: { label: 'Website', icon: <Globe size={48} />, desc: 'Link to any website URL' },
     PDF: { label: 'PDF', icon: <FileText size={48} />, desc: 'Show a PDF' },
+    MENU: { label: 'Digital Menu', icon: <Coffee size={48} />, desc: 'Interactive Menu with WhatsApp Cart' },
     LIST: { label: 'List of Links', icon: <List size={48} />, desc: 'Share multiple links' },
     VCARD: { label: 'vCard', icon: <Contact size={48} />, desc: 'Share a digital business card' },
     BUSINESS: { label: 'Business', icon: <Briefcase size={48} />, desc: 'Share information about your business' },
@@ -310,6 +311,93 @@ const MediaPreview = ({ data }) => {
     );
 };
 
+/* ─── Digital Menu Preview (with WhatsApp Cart) ─── */
+const MenuPreview = ({ data }) => {
+    const categories = data?.categories || [];
+    const restaurantName = data?.restaurantName || data?.title || 'Our Menu';
+    const currency = data?.currency || '₹';
+    const isWaEnabled = data?.whatsappOrderingEnabled !== false;
+
+    const firstCat = (Array.isArray(categories) && categories.length > 0)
+        ? categories[0]
+        : {
+            name: 'Bestsellers',
+            items: [
+                { name: 'Cold Coffee', price: '150', description: 'Rich espresso with cold milk' },
+                { name: 'Garlic Bread', price: '120', description: 'Toasted sourdough with herb butter' }
+            ]
+        };
+
+    const items = Array.isArray(firstCat.items) && firstCat.items.length > 0
+        ? firstCat.items
+        : [
+            { name: 'Cold Coffee', price: '150', description: 'Rich espresso with cold milk' },
+            { name: 'Garlic Bread', price: '120', description: 'Toasted sourdough with herb butter' }
+        ];
+
+    return (
+        <div className="flex flex-col h-full bg-slate-50 text-slate-800 relative">
+            <StatusBar />
+            {/* Header */}
+            <div className="bg-white px-4 py-3 border-b border-slate-100 text-center shadow-xs">
+                <h2 className="text-xs font-black uppercase tracking-wider text-slate-900 truncate">
+                    {restaurantName}
+                </h2>
+                <div className="flex items-center justify-center gap-1.5 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span className="text-[9px] font-bold text-emerald-700">Digital Menu & Cart</span>
+                </div>
+            </div>
+
+            {/* Menu List */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-2.5 pb-20">
+                <div className="flex items-center justify-between pb-1 border-b border-slate-200">
+                    <span className="text-[10px] font-black text-slate-700 uppercase tracking-wide">
+                        {firstCat.name || 'Dishes'}
+                    </span>
+                    <span className="text-[9px] font-semibold text-slate-400">
+                        {items.length} items
+                    </span>
+                </div>
+
+                {items.slice(0, 4).map((item, idx) => (
+                    <div key={idx} className="bg-white rounded-xl p-2.5 border border-slate-200/80 shadow-xs flex items-center justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                            <h4 className="text-[11px] font-bold text-slate-800 truncate">{item.name}</h4>
+                            <p className="text-[9px] text-slate-400 truncate">{item.description || 'Delicious dish'}</p>
+                            <span className="text-[11px] font-extrabold text-indigo-600 mt-0.5 inline-block">
+                                {currency}{item.price}
+                            </span>
+                        </div>
+                        {isWaEnabled && (
+                            <div className="shrink-0">
+                                <span className="inline-flex items-center gap-0.5 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                                    + Add
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+
+            {/* Sticky WhatsApp Cart Bar */}
+            {isWaEnabled && (
+                <div className="absolute bottom-0 inset-x-0 bg-white/95 backdrop-blur-sm border-t border-emerald-200 p-2.5 shadow-lg">
+                    <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl py-2 px-3 flex items-center justify-between text-[11px] font-black shadow-emerald-500/20 shadow-md">
+                        <div className="flex items-center gap-1.5">
+                            <MessageCircle size={13} className="shrink-0" />
+                            <span>Send Order on WhatsApp</span>
+                        </div>
+                        <span className="bg-white/20 px-1.5 py-0.5 rounded text-[10px]">
+                            {currency}420
+                        </span>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
 /* ─── Main PhoneMockup ─── */
 const PhoneMockup = ({ type, data, step, design }) => {
     const activeType = typeConfig[type] || typeConfig.URL;
@@ -318,6 +406,7 @@ const PhoneMockup = ({ type, data, step, design }) => {
         switch (type) {
             case 'URL':      return <URLPreview data={data} />;
             case 'PDF':      return <PDFPreview data={data} />;
+            case 'MENU':     return <MenuPreview data={data} />;
             case 'VCARD':    return <VCardPreview data={data} />;
             case 'WHATSAPP': return <WhatsAppPreview data={data} />;
             case 'SOCIAL':   return <SocialPreview data={data} />;
