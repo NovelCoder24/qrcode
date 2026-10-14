@@ -60,7 +60,7 @@ export async function initGeoLiteReader() {
 // Pre-load database in-process immediately on module import
 try {
   getLookupReaderSync();
-} catch (_) {}
+} catch (_) { }
 
 // 1. IP Normalization & Validation (IPv4 & IPv6 safe)
 function normalizeIp(ip) {
@@ -69,7 +69,6 @@ function normalizeIp(ip) {
 
   if (!ip) return null;
 
-  // Headers sometimes include quoted/bracketed values or ports.
   ip = ip.replace(/^"|"$/g, "");
   if (ip.startsWith("[") && ip.includes("]")) {
     ip = ip.slice(1, ip.indexOf("]"));
@@ -80,7 +79,7 @@ function normalizeIp(ip) {
     ip = ip.slice(7);
   }
 
-  // Strip IPv4 ports such as 203.0.113.10:443 (leave pure IPv6 intact)
+  // Strip IPv4 ports such as 203.0.113.10:443
   if (/^\d{1,3}(\.\d{1,3}){3}:\d+$/.test(ip)) {
     ip = ip.slice(0, ip.lastIndexOf(":"));
   }
@@ -97,13 +96,12 @@ function isPrivateIp(ip) {
   if (lower.startsWith("169.254.")) return true; // link-local
   if (lower.startsWith("100.")) {
     const octet = parseInt(lower.split(".")[1], 10);
-    if (octet >= 64 && octet <= 127) return true; // carrier-grade NAT internal RFC6598
+    if (octet >= 64 && octet <= 127) return true;
   }
   if (lower.startsWith("172.")) {
     const octet = parseInt(lower.split(".")[1], 10);
     if (octet >= 16 && octet <= 31) return true;
   }
-  // IPv6 Unique Local (fc00::/7) and Link-Local (fe80::/10)
   if (lower.startsWith("fc") || lower.startsWith("fd") || lower.startsWith("fe80:")) return true;
   return false;
 }
@@ -115,7 +113,6 @@ function headerValue(req, name) {
 }
 
 // 2. Client IP Extraction
-// Security: Never accept x-test-ip header. Only allow ?test_ip query param when NODE_ENV !== 'production'.
 export function getClientIp(req) {
   if (!req) return null;
 
@@ -125,7 +122,6 @@ export function getClientIp(req) {
     if (normTest) return normTest;
   }
 
-  // 1. Direct Edge Headers from Render / Cloudflare
   const edgeTrueClient = normalizeIp(headerValue(req, "true-client-ip"));
   if (edgeTrueClient && !isPrivateIp(edgeTrueClient)) {
     return edgeTrueClient;
@@ -141,7 +137,6 @@ export function getClientIp(req) {
     return edgeReal;
   }
 
-  // 2. X-Forwarded-For chain (leftmost public IP is the originating client)
   const forwardedFor = headerValue(req, "x-forwarded-for");
   if (forwardedFor) {
     const parts = forwardedFor.split(",").map(normalizeIp).filter(Boolean);
@@ -149,7 +144,6 @@ export function getClientIp(req) {
     if (clientHop) return clientHop;
   }
 
-  // 3. Express req.ips / req.ip (when behind trusted proxies configured via app.set('trust proxy', 1))
   for (const ip of req.ips || []) {
     const norm = normalizeIp(ip);
     if (norm && !isPrivateIp(norm)) return norm;
@@ -165,7 +159,6 @@ export function getClientIp(req) {
     return socketIp;
   }
 
-  // 4. Localhost / Private IP default (no spoofing to fake hardcoded cities)
   const fallbackIp = edgeTrueClient || edgeCf || edgeReal || reqIp || socketIp || "127.0.0.1";
   if (fallbackIp === "::1") return "127.0.0.1";
   return fallbackIp;
@@ -248,15 +241,62 @@ export function getLocationOffline(ip) {
 // 4. Async Geo Lookup: In-process MaxMind with Single-Flight Deduplication, LRU cache, and FreeIPAPI fallback
 export async function getLocationAsync(ip, options = {}) {
   const normIp = normalizeIp(ip);
-  if (!normIp || isPrivateIp(normIp)) {
-    return getLocationOffline(normIp);
+  const isPrivate = !normIp || isPrivateIp(normIp);
+
+  // ✅ DEV FIX: Private/localhost IP → still try FreeIPAPI (it uses the CALLER's public IP)
+  if (isPrivate) {
+    const cacheKey = normIp || "local";
+    if (geoCache.has(cacheKey)) {
+      return geoCache.get(cacheKey);
+    }
+    if (inflight.has(cacheKey)) {
+      return inflight.get(cacheKey);
+    }
+
+    const fetcher = options.fetcher || axios.get;
+
+    const localPromise = (async () => {
+      try {
+        // No IP in URL → FreeIPAPI auto-detects caller's public IP
+        const { data } = await fetcher("https://freeipapi.com/api/json/", {
+          timeout: 3000,
+          headers: {
+            "Accept": "application/json",
+            "User-Agent": "QRVibe-Analytics/1.0"
+          }
+        });
+
+        if (data && (data.countryName || data.countryCode)) {
+          const loc = {
+            country: data.countryName || data.countryCode || "Unknown",
+            country_code: data.countryCode || "Unknown",
+            city: (data.cityName && data.cityName !== "-") ? data.cityName : "Unknown",
+            region: (data.regionName && data.regionName !== "-") ? data.regionName : "Unknown",
+            timezone: Array.isArray(data.timeZones) && data.timeZones[0] ? data.timeZones[0] : "UTC",
+            source: "ip",
+            ll: []
+          };
+          geoCache.set(cacheKey, loc);
+          return loc;
+        }
+      } catch (err) {
+        console.warn("[Geolocation] FreeIPAPI fallback for private IP failed:", err.message);
+      }
+
+      return getLocationOffline(normIp);
+    })().finally(() => {
+      inflight.delete(cacheKey);
+    });
+
+    inflight.set(cacheKey, localPromise);
+    return localPromise;
   }
 
+  // ── Public IP path (unchanged) ──
   if (geoCache.has(normIp)) {
     return geoCache.get(normIp);
   }
 
-  // Single-flight deduplication: prevent cache stampedes when thousands of users share a CGNAT IP
   if (inflight.has(normIp)) {
     return inflight.get(normIp);
   }
@@ -264,14 +304,12 @@ export async function getLocationAsync(ip, options = {}) {
   const fetcher = options.fetcher || axios.get;
 
   const lookupPromise = (async () => {
-    // Primary: In-process MaxMind GeoLite2 lookup
     const localLoc = getLocationOffline(normIp);
     if (localLoc && localLoc.country_code !== "Unknown" && localLoc.city !== "Unknown") {
       geoCache.set(normIp, localLoc);
       return localLoc;
     }
 
-    // Secondary Fallback: FreeIPAPI when local DB misses city or file is absent
     try {
       const { data } = await fetcher(`https://freeipapi.com/api/json/${encodeURIComponent(normIp)}`, {
         timeout: 2500,
@@ -301,9 +339,7 @@ export async function getLocationAsync(ip, options = {}) {
         geoCache.set(normIp, loc);
         return loc;
       }
-    } catch (_) {
-      // API failed or timed out; proceed with localLoc
-    }
+    } catch (_) { }
 
     if (localLoc && localLoc.country_code !== "Unknown") {
       geoCache.set(normIp, localLoc);
