@@ -71,9 +71,8 @@ const issuedTelemetryTokens = new Map();
 const DEDUP_WINDOW_MS = 5000;
 const TOKEN_TTL_MS = 5 * 60 * 1000;
 
-// ── DPDP-Compliant Tap-to-Consent GPS Interstitial ──
-// Hybrid strategy: BDC (IP-based, fast) + GPS (exact, slow) in parallel.
-// GPS wins if it arrives within 10s; otherwise BDC result is sent.
+// ── Legacy HTML GPS interstitial (kept as fallback for direct backend access) ──
+// Primary flow: frontend fetches JSON and renders GpsConsentPage.jsx
 export const renderGpsInterstitial = ({ shortId, destinationUrl, title, telemetryToken }) => {
   const safeTitle = (title || "Redirecting...").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const safeDest = destinationUrl.replace(/"/g, "&quot;");
@@ -282,6 +281,8 @@ export const renderGpsInterstitial = ({ shortId, destinationUrl, title, telemetr
 };
 
 // @desc    Redirect to the target URL and log the scan
+// @route   GET /r/:shortId
+// @access  Public
 export const redirectQR = async (req, res) => {
   try {
     const { shortId } = req.params;
@@ -512,7 +513,24 @@ export const redirectQR = async (req, res) => {
       destinationUrl = `${frontendUrl}${typeRedirects[qr.qr_type]}/${shortId}`;
     }
 
+    // ── GPS consent flow ──
+    // If request wants JSON (from frontend fetch), return consent data
+    const wantsJson =
+      req.headers.accept?.includes('application/json') ||
+      req.query.format === 'json';
+
+    if (isGpsRequested && telemetryToken && wantsJson) {
+      return res.json({
+        needsGpsConsent: true,
+        shortId,
+        telemetryToken,
+        destinationUrl,
+        title: qr.metadata?.title || qr.short_id,
+      });
+    }
+
     if (isGpsRequested && telemetryToken) {
+      // Legacy: HTML interstitial (fallback for direct backend access)
       return res.send(renderGpsInterstitial({
         shortId, destinationUrl,
         title: qr.metadata?.title || qr.short_id,
@@ -528,6 +546,9 @@ export const redirectQR = async (req, res) => {
   }
 };
 
+// @desc    Get public QR data by shortId (for landing pages)
+// @route   GET /r/info/:shortId
+// @access  Public
 export const getPublicQR = async (req, res) => {
   try {
     const qr = await QRCode.findOne({ short_id: req.params.shortId });
@@ -569,6 +590,7 @@ export const processTelemetryPayload = async (
 
   let geoResult = null;
 
+  // PRIORITY 1: Client-side BigDataCloud result
   if (resolvedCity && resolvedCity !== "Unknown") {
     geoResult = {
       country: resolvedCountry || "India",
@@ -582,8 +604,10 @@ export const processTelemetryPayload = async (
       ll: []
     };
   } else if (fallbackWanLookup) {
+    // PRIORITY 2: WAN fallback
     geoResult = await wanGeocode();
   } else {
+    // PRIORITY 3: GPS coordinates → reverse geocode
     geoResult = await geocode(lat, lon);
     if ((!geoResult || geoResult.city === "Unknown") && !deps.geocode) {
       geoResult = (await wanGeocode()) || geoResult;
@@ -759,6 +783,7 @@ export const processTelemetryPayload = async (
 
 // @desc    Record GPS telemetry from client interstitial
 // @route   POST /r/:shortId/telemetry
+// @access  Public (Requires single-use telemetryToken)
 export const recordGpsTelemetry = async (req, res, nextOrProcessor) => {
   try {
     const { shortId } = req.params;
