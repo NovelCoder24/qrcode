@@ -1,9 +1,8 @@
 import React from 'react';
 import { Utensils } from 'lucide-react';
-import DishCartControl from './DishCartControl';
 
-export const ModernTemplate = ({ restaurantName, currency, categories, cartProps }) => (
-    <div className={`bg-slate-50 min-h-screen text-slate-900 font-sans antialiased overflow-x-hidden ${cartProps?.hasCartItems ? 'pb-32' : ''}`}>
+export const ModernTemplate = ({ restaurantName, currency, categories }) => (
+    <div className="bg-slate-50 min-h-screen text-slate-900 font-sans antialiased overflow-x-hidden">
         {/* Header */}
         <header className="sticky top-0 z-30 py-6 px-4 bg-white/80 backdrop-blur-md text-center border-b border-slate-100 shadow-sm w-full">
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-slate-800 uppercase break-words px-2">{restaurantName}</h1>
@@ -17,7 +16,6 @@ export const ModernTemplate = ({ restaurantName, currency, categories, cartProps
                 </div>
             ) : (
                 categories.map((cat, idx) => {
-                    const catId = cat.id ?? idx;
                     return (
                         <div key={idx} className="mb-10 sm:mb-12 w-full">
                             {/* Category Title */}
@@ -29,7 +27,6 @@ export const ModernTemplate = ({ restaurantName, currency, categories, cartProps
                             {/* Responsive Items Grid */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
                                 {(cat.items || []).map((item, iIdx) => {
-                                    const qty = cartProps?.enabled ? cartProps.getItemQty(catId, item, iIdx) : 0;
                                     return (
                                         <div 
                                             key={iIdx} 
@@ -50,18 +47,6 @@ export const ModernTemplate = ({ restaurantName, currency, categories, cartProps
                                                 <p className="text-sm text-slate-500 font-light leading-relaxed mt-1 w-full break-words flex-1">
                                                     {item.description || 'No description available.'}
                                                 </p>
-                                                {cartProps?.enabled && (
-                                                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end">
-                                                        <DishCartControl
-                                                            qty={qty}
-                                                            dishName={item.name}
-                                                            variant="light"
-                                                            onAdd={() => cartProps.onChangeItemQty(catId, cat.name, item, iIdx, 1)}
-                                                            onIncrement={() => cartProps.onChangeItemQty(catId, cat.name, item, iIdx, 1)}
-                                                            onDecrement={() => cartProps.onChangeItemQty(catId, cat.name, item, iIdx, -1)}
-                                                        />
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     );
@@ -80,8 +65,8 @@ export const ModernTemplate = ({ restaurantName, currency, categories, cartProps
     </div>
 );
 
-export const PlayfulTemplate = ({ restaurantName, currency, categories, cartProps }) => (
-    <div className={`bg-rose-50/60 min-h-screen text-slate-800 font-sans antialiased overflow-x-hidden ${cartProps?.hasCartItems ? 'pb-32' : ''}`}>
+export const PlayfulTemplate = ({ restaurantName, currency, categories }) => (
+    <div className="bg-rose-50/60 min-h-screen text-slate-800 font-sans antialiased overflow-x-hidden">
         {/* Header */}
         <header className="sticky top-0 z-30 py-6 sm:py-8 px-4 bg-white text-center rounded-b-[2rem] sm:rounded-b-[3rem] shadow-sm mb-6 sm:mb-10 border-b border-rose-100/50 w-full mx-auto max-w-full">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-rose-500 tracking-tight break-words px-2">{restaurantName}</h1>
@@ -95,7 +80,6 @@ export const PlayfulTemplate = ({ restaurantName, currency, categories, cartProp
                 </div>
             ) : (
                 categories.map((cat, idx) => {
-                    const catId = cat.id ?? idx;
                     return (
                         <div key={idx} className="mb-8 sm:mb-12 text-center sm:text-left w-full">
                             {/* Category Title Pill */}
@@ -108,7 +92,6 @@ export const PlayfulTemplate = ({ restaurantName, currency, categories, cartProp
                             {/* Responsive Items Container */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 w-full">
                                 {(cat.items || []).map((item, iIdx) => {
-                                    const qty = cartProps?.enabled ? cartProps.getItemQty(catId, item, iIdx) : 0;
                                     return (
                                         <div 
                                             key={iIdx} 
@@ -129,18 +112,6 @@ export const PlayfulTemplate = ({ restaurantName, currency, categories, cartProp
                                                 <p className="text-sm sm:text-base text-slate-500 font-medium leading-relaxed w-full break-words flex-1">
                                                     {item.description || 'Tasty preparation prepared fresh.'}
                                                 </p>
-                                                {cartProps?.enabled && (
-                                                    <div className="mt-4 pt-3 border-t border-rose-100/70 flex items-center justify-end">
-                                                        <DishCartControl
-                                                            qty={qty}
-                                                            dishName={item.name}
-                                                            variant="playful"
-                                                            onAdd={() => cartProps.onChangeItemQty(catId, cat.name, item, iIdx, 1)}
-                                                            onIncrement={() => cartProps.onChangeItemQty(catId, cat.name, item, iIdx, 1)}
-                                                            onDecrement={() => cartProps.onChangeItemQty(catId, cat.name, item, iIdx, -1)}
-                                                        />
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     );

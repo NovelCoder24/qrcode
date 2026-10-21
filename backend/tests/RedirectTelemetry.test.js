@@ -4,6 +4,7 @@ import {
     isInAppBrowser,
     resolveInitialLocation,
     renderGpsInterstitial,
+    renderMicroBridgeHtml,
     recordGpsTelemetry,
     processTelemetryPayload
 } from '../controllers/redirectController.js';
@@ -339,9 +340,188 @@ describe('recordGpsTelemetry & processTelemetryPayload (Fast-204, Token Auth, Id
         });
 
         assert.ok(html.includes('timeout: 3500'), 'Coarse geolocation timeout should be 3500ms');
-        assert.ok(html.includes('timeout: 2500'), 'High-accuracy retry timeout should be 2500ms');
-        assert.ok(html.includes('setTimeout(redirectNow, 10000)'), 'Granted geoTimer ceiling (10000ms) must exceed 3500+2500=6000ms');
+        assert.ok(html.includes('timeout: 5000'), 'High-accuracy retry timeout should be 5000ms');
+        assert.ok(html.includes('setTimeout(redirectNow, 10000)'), 'Granted geoTimer ceiling (10000ms) must exceed coarse + high-accuracy timeouts');
         assert.ok(html.includes("permState === 'denied'"), 'Must check permState === denied before aborting on err.code === 1');
+    });
+});
+
+describe('renderMicroBridgeHtml (Architecture D Zero-Prompt Inline Micro-Bridge)', () => {
+    test('renders ultra-light inline script with sendBeacon, scanId, telemetryToken, and window.location.replace', () => {
+        const html = renderMicroBridgeHtml({
+            shortId: 'bridge_qr_1',
+            destinationUrl: 'https://example.com/target',
+            scanId: '652f10b2a792d4f8287a9111',
+            telemetryToken: 'tok_bridge_secret'
+        });
+
+        assert.ok(html.includes('scanId: "652f10b2a792d4f8287a9111"'), 'Must bind scanId');
+        assert.ok(html.includes('telemetryToken: "tok_bridge_secret"'), 'Must bind telemetryToken');
+        assert.ok(html.includes('navigator.sendBeacon'), 'Must use navigator.sendBeacon');
+        assert.ok(html.includes('/r/bridge_qr_1/telemetry'), 'Must target shortId telemetry route');
+        assert.ok(html.includes('window.location.replace('), 'Must perform non-blocking client navigation');
+        assert.ok(html.includes('<noscript><meta http-equiv="refresh" content="0;url=https://example.com/target"></noscript>'), 'Must include noscript refresh fallback');
+    });
+});
+
+describe('Architecture D Telemetry Reconciliation & SendBeacon JSON Parsing', () => {
+    test('recordGpsTelemetry parses stringified JSON payload from navigator.sendBeacon', async () => {
+        let statusCode = null;
+        let ended = false;
+        let processorPayload = null;
+
+        const req = {
+            params: { shortId: 'abc123' },
+            body: JSON.stringify({
+                scanId: '652f10b2a792d4f8287a9111',
+                telemetryToken: 'valid_tok_bridge_1',
+                tz: 'Asia/Kolkata',
+                net: '4g',
+                rtt: 50
+            })
+        };
+        const res = {
+            headersSent: false,
+            status(code) { statusCode = code; return this; },
+            json() { this.headersSent = true; return this; },
+            end() { ended = true; this.headersSent = true; return this; }
+        };
+
+        await recordGpsTelemetry(req, res, async (payload) => {
+            processorPayload = payload;
+        });
+
+        assert.strictEqual(statusCode, 204);
+        assert.strictEqual(ended, true);
+        assert.ok(processorPayload);
+        assert.strictEqual(processorPayload.scanId, '652f10b2a792d4f8287a9111');
+        assert.strictEqual(processorPayload.tz, 'Asia/Kolkata');
+    });
+
+    test('processTelemetryPayload reconciles scan using scanId and updates DailyScanStats via atomic delta swap', async () => {
+        let storedScan = {
+            _id: '652f10b2a792d4f8287a9111',
+            qr_id: 'qr_d_1',
+            telemetryToken: 'tok_swap_1',
+            ipCity: 'Mumbai',
+            appliedCityKey: 'mumbai',
+            appliedLocationKey: 'mumbai::maharashtra::in::india',
+            geoConfidence: 'MEDIUM',
+            telemetryReconciled: false,
+            isBot: false,
+            dateBucket: '2026-10-18',
+            location: {
+                city: 'Mumbai',
+                region: 'Maharashtra',
+                country_code: 'IN',
+                country: 'India',
+                source: 'ip',
+                ll: []
+            }
+        };
+
+        let statsUpdates = [];
+
+        const mockDeps = {
+            findQR: async () => ({ _id: 'qr_d_1', user_id: 'user_d_1' }),
+            findScan: async () => structuredClone(storedScan),
+            geocode: async () => ({
+                country: 'India',
+                country_code: 'IN',
+                region: 'Maharashtra',
+                city: 'Pune',
+                district: 'Pune',
+                timezone: 'Asia/Kolkata',
+                source: 'gps',
+                ll: []
+            }),
+            consumeAndUpdateScan: async (filter, update) => {
+                if (storedScan.telemetryReconciled) return null;
+                const oldDoc = structuredClone(storedScan);
+                storedScan.location = update.$set.location;
+                storedScan.appliedCityKey = update.$set.appliedCityKey;
+                storedScan.appliedLocationKey = update.$set.appliedLocationKey;
+                storedScan.telemetryReconciled = update.$set.telemetryReconciled;
+                delete storedScan.telemetryToken;
+                return oldDoc;
+            },
+            updateDailyStats: async (filter, updateDoc) => {
+                statsUpdates.push({ filter, updateDoc });
+            }
+        };
+
+        const res = await processTelemetryPayload({
+            shortId: 'qr_d_1',
+            scanId: '652f10b2a792d4f8287a9111',
+            lat: 18.5204,
+            lon: 73.8567,
+            telemetryToken: 'tok_swap_1'
+        }, mockDeps);
+
+        assert.strictEqual(res.updated, true);
+        assert.strictEqual(storedScan.location.city, 'Pune');
+        assert.strictEqual(storedScan.appliedCityKey, 'pune');
+        assert.strictEqual(storedScan.telemetryReconciled, true);
+        assert.strictEqual(statsUpdates.length, 1);
+        assert.strictEqual(statsUpdates[0].updateDoc.$inc['cities.pune'], 1);
+        assert.strictEqual(statsUpdates[0].updateDoc.$inc['cities.mumbai'], -1);
+    });
+
+    test('processTelemetryPayload detects Indian scanner masked behind foreign VPN and marks VPN Masked', async () => {
+        let storedScan = {
+            _id: '652f10b2a792d4f8287a9222',
+            qr_id: 'qr_vpn_1',
+            telemetryToken: 'tok_vpn_1',
+            ipCity: 'Frankfurt',
+            appliedCityKey: 'frankfurt',
+            appliedLocationKey: 'frankfurt::hesse::de::germany',
+            geoConfidence: 'LOW',
+            telemetryReconciled: false,
+            isBot: false,
+            dateBucket: '2026-10-18',
+            location: {
+                city: 'Frankfurt',
+                region: 'Hesse',
+                country_code: 'DE',
+                country: 'Germany',
+                source: 'ip',
+                ll: []
+            }
+        };
+
+        let statsUpdates = [];
+
+        const mockDeps = {
+            findQR: async () => ({ _id: 'qr_vpn_1', user_id: 'user_vpn_1' }),
+            findScan: async () => structuredClone(storedScan),
+            consumeAndUpdateScan: async (filter, update) => {
+                if (storedScan.telemetryReconciled) return null;
+                const oldDoc = structuredClone(storedScan);
+                storedScan.location = update.$set.location;
+                storedScan.appliedCityKey = update.$set.appliedCityKey;
+                storedScan.appliedLocationKey = update.$set.appliedLocationKey;
+                storedScan.telemetryReconciled = update.$set.telemetryReconciled;
+                delete storedScan.telemetryToken;
+                return oldDoc;
+            },
+            updateDailyStats: async (filter, updateDoc) => {
+                statsUpdates.push({ filter, updateDoc });
+            }
+        };
+
+        const res = await processTelemetryPayload({
+            shortId: 'qr_vpn_1',
+            scanId: '652f10b2a792d4f8287a9222',
+            telemetryToken: 'tok_vpn_1',
+            tz: 'Asia/Kolkata'
+        }, mockDeps);
+
+        assert.strictEqual(res.updated, true);
+        assert.strictEqual(storedScan.location.city, 'India (VPN Masked)');
+        assert.strictEqual(storedScan.location.country_code, 'IN');
+        assert.strictEqual(statsUpdates.length, 1);
+        assert.strictEqual(statsUpdates[0].updateDoc.$inc['cities.india (vpn masked)'], 1);
+        assert.strictEqual(statsUpdates[0].updateDoc.$inc['cities.frankfurt'], -1);
     });
 });
 

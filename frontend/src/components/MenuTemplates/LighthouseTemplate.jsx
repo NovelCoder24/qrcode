@@ -1,14 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, ChefHat, Cake, GlassWater, LayoutGrid, Inbox } from 'lucide-react';
-import DishCartControl from './DishCartControl';
 
-const LighthouseTemplate = ({ restaurantName, currency, categories, cartProps }) => {
+const LighthouseTemplate = ({ restaurantName, currency, categories }) => {
     const [activeCategory, setActiveCategory] = useState("all");
     const [filters, setFilters] = useState({ veg: false, gf: false });
     const scrollContainerRef = useRef(null);
     const topHeaderRef = useRef(null);
-
-
 
     const getIcon = (idx) => {
         const icons = [<Sparkles className="w-3.5 h-3.5" />, <ChefHat className="w-3.5 h-3.5" />, <Cake className="w-3.5 h-3.5" />, <GlassWater className="w-3.5 h-3.5" />];
@@ -95,7 +92,7 @@ const LighthouseTemplate = ({ restaurantName, currency, categories, cartProps })
             <div className="w-full max-w-[430px] h-[100dvh] sm:h-[880px] sm:rounded-[48px] overflow-hidden flex flex-col glass-panel-light shadow-[0_24px_70px_rgba(139,119,91,0.2)] border-0 sm:border-[8px] border-[#E5DEC3] relative z-10">
                 <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none z-50"></div>
 
-                <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto relative flex flex-col ${cartProps?.hasCartItems ? 'pb-32' : 'pb-16'} bg-[#FAF8F5]`} style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div ref={scrollContainerRef} className="flex-1 overflow-y-auto relative flex flex-col pb-16 bg-[#FAF8F5]" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     
                     <div ref={topHeaderRef} className="relative pt-12 pb-6 px-6 text-center border-b border-[#EDE8DF] transition-opacity duration-75">
                         
@@ -117,21 +114,42 @@ const LighthouseTemplate = ({ restaurantName, currency, categories, cartProps })
                                 <LayoutGrid className="w-3.5 h-3.5" />
                                 <span>All Menu</span>
                             </button>
-                            
-                            {categories.map((cat, idx) => (
-                                <button 
-                                    key={idx}
-                                    onClick={() => handleCategorySelect(idx.toString())}
-                                    className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-300 ${activeCategory === idx.toString() ? "bg-[#C5A880] text-white font-semibold shadow-md shadow-[#C5A880]/20" : "bg-[#F3EFE9] text-[#5E5B54] hover:text-[#2C2B29] border border-[#EDE8DF]"}`}
-                                >
-                                    {getIcon(idx)}
-                                    <span>{cat.name}</span>
-                                </button>
-                            ))}
+                            {categories.map((cat, idx) => {
+                                const key = idx.toString();
+                                const isSelected = activeCategory === key;
+                                return (
+                                    <button 
+                                        key={idx}
+                                        onClick={() => handleCategorySelect(key)}
+                                        className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-300 ${isSelected ? "bg-[#C5A880] text-white font-semibold shadow-md shadow-[#C5A880]/20" : "bg-[#F3EFE9] text-[#5E5B54] hover:text-[#2C2B29] border border-[#EDE8DF]"}`}
+                                    >
+                                        {getIcon(idx)}
+                                        <span>{cat.name}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Dietary Filter Buttons */}
+                        <div className="flex items-center px-6 space-x-3">
+                            <button 
+                                onClick={() => setFilters(prev => ({ ...prev, veg: !prev.veg }))}
+                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-300 border ${filters.veg ? "bg-emerald-500/10 border-emerald-600/30 text-emerald-800 font-semibold" : "bg-transparent border-[#EDE8DF] text-[#78756E]"}`}
+                            >
+                                <span className={`w-2 h-2 rounded-full ${filters.veg ? "bg-emerald-600" : "bg-[#AFAAA0]"}`}></span>
+                                <span>Vegetarian</span>
+                            </button>
+                            <button 
+                                onClick={() => setFilters(prev => ({ ...prev, gf: !prev.gf }))}
+                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-300 border ${filters.gf ? "bg-amber-500/10 border-amber-600/30 text-amber-800 font-semibold" : "bg-transparent border-[#EDE8DF] text-[#78756E]"}`}
+                            >
+                                <span className={`w-2 h-2 rounded-full ${filters.gf ? "bg-amber-600" : "bg-[#AFAAA0]"}`}></span>
+                                <span>Gluten-Free</span>
+                            </button>
                         </div>
                     </div>
 
-                    <div className="px-6 py-6 flex-1 space-y-10">
+                    <div className="p-6 space-y-8 flex-1">
                         {categories.map((cat, idx) => {
                             if (activeCategory !== "all" && activeCategory !== idx.toString()) return null;
 
@@ -143,7 +161,6 @@ const LighthouseTemplate = ({ restaurantName, currency, categories, cartProps })
                             });
 
                             if (filteredItems.length === 0) return null;
-                            const catId = cat.id ?? idx;
 
                             return (
                                 <div key={idx} id={`section-header-${idx.toString()}`} className="space-y-4 animate-fade-in">
@@ -154,7 +171,6 @@ const LighthouseTemplate = ({ restaurantName, currency, categories, cartProps })
                                     </div>
                                     <div className="space-y-4">
                                         {filteredItems.map((item, iIdx) => {
-                                            const qty = cartProps?.enabled ? cartProps.getItemQty(catId, item, iIdx) : 0;
                                             return (
                                                 <div 
                                                     key={iIdx} 
@@ -190,16 +206,6 @@ const LighthouseTemplate = ({ restaurantName, currency, categories, cartProps })
                                                             <span className="text-base font-extrabold text-[#E6C697] bg-[#1E1B18] px-4 py-1 rounded-xl border border-[#3A3530] shadow-md tracking-wider font-['Cinzel'] flex-shrink-0 tabular-nums">
                                                                 {currency}{item.price}
                                                             </span>
-                                                            {cartProps?.enabled && (
-                                                                <DishCartControl
-                                                                    qty={qty}
-                                                                    dishName={item.name}
-                                                                    variant="lighthouse"
-                                                                    onAdd={() => cartProps.onChangeItemQty(catId, cat.name, item, iIdx, 1)}
-                                                                    onIncrement={() => cartProps.onChangeItemQty(catId, cat.name, item, iIdx, 1)}
-                                                                    onDecrement={() => cartProps.onChangeItemQty(catId, cat.name, item, iIdx, -1)}
-                                                                />
-                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>

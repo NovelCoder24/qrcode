@@ -1,7 +1,26 @@
 import React, { useState, useRef } from 'react';
-import { Plus, Trash2, ChevronDown, ChevronUp, Image as ImageIcon, Loader2, MessageCircle, CheckCircle2, AlertCircle, Camera, Sparkles, UploadCloud, FileText } from 'lucide-react';
+import { 
+    Plus, 
+    Trash2, 
+    ChevronDown, 
+    ChevronUp, 
+    ChevronRight, 
+    Image as ImageIcon, 
+    Loader2, 
+    CheckCircle2, 
+    AlertCircle, 
+    Camera, 
+    Sparkles, 
+    UploadCloud, 
+    FileText,
+    BookOpen,
+    Utensils,
+    Pencil,
+    Check,
+    X,
+    Eye
+} from 'lucide-react';
 import { uploadFile, parseMenuPhotos } from '../../../api/axios';
-import { normalizeWhatsAppPhone } from '../../../utils/whatsappCart';
 import { compressMultipleFiles } from '../../../utils/imageCompressor';
 import MenuImportModal from '../../../components/MenuTemplates/MenuImportModal';
 
@@ -11,10 +30,6 @@ const MenuForm = ({ data, onChange }) => {
     const restaurantName = d.restaurantName || '';
     const currency = d.currency || '₹';
     const menuTemplate = d.menuTemplate || 'modern'; // 'immersive', 'lighthouse', 'modern', 'playful'
-    const whatsappOrderingEnabled = d.whatsappOrderingEnabled !== undefined ? Boolean(d.whatsappOrderingEnabled) : true;
-    const whatsappNumber = d.whatsappNumber || '';
-    const defaultTableNumber = d.defaultTableNumber || '';
-    const normalizedWaPhone = normalizeWhatsAppPhone(whatsappNumber);
 
     // AI Photo-to-Menu State
     const [isScanning, setIsScanning] = useState(false);
@@ -26,6 +41,13 @@ const MenuForm = ({ data, onChange }) => {
     const [importSuccessMsg, setImportSuccessMsg] = useState(null);
     const fileInputRef = useRef(null);
 
+    // Dropdown Card & Abstraction States
+    const [isMenuCardOpen, setIsMenuCardOpen] = useState(true);
+    const [collapsedCategories, setCollapsedCategories] = useState({});
+    const [expandedDishes, setExpandedDishes] = useState({});
+    const [hasAiImported, setHasAiImported] = useState(false);
+    const menuCardRef = useRef(null);
+
     const categories = d.categories || [
         {
             id: Date.now().toString(),
@@ -36,6 +58,8 @@ const MenuForm = ({ data, onChange }) => {
             ]
         }
     ];
+
+    const totalDishes = categories.reduce((acc, c) => acc + (c.items?.length || 0), 0);
 
     const templates = [
         { id: 'immersive', label: 'L\'Ambroisie Immersive', desc: 'Premium interactive digital menu', image: 'https://placehold.co/400x600/0d0a0b/d4af37?text=Immersive+Design' },
@@ -51,9 +75,6 @@ const MenuForm = ({ data, onChange }) => {
                 ...d,
                 menuTemplate,
                 currency,
-                whatsappOrderingEnabled,
-                whatsappNumber,
-                defaultTableNumber,
                 categories
             });
         }
@@ -64,17 +85,46 @@ const MenuForm = ({ data, onChange }) => {
             ...d,
             menuTemplate,
             currency,
-            whatsappOrderingEnabled,
-            whatsappNumber,
-            defaultTableNumber,
             categories,
             ...updates
         });
     };
 
+    const toggleCategoryCollapse = (catId) => {
+        setCollapsedCategories(prev => ({ ...prev, [catId]: !prev[catId] }));
+    };
+
+    const toggleDishExpand = (itemId) => {
+        setExpandedDishes(prev => ({ ...prev, [itemId]: !prev[itemId] }));
+    };
+
+    const areAllDishesExpanded = () => {
+        const allItemIds = categories.flatMap(c => (c.items || []).map(i => i.id));
+        if (allItemIds.length === 0) return false;
+        return allItemIds.every(id => !!expandedDishes[id]);
+    };
+
+    const toggleAllDishesExpansion = () => {
+        const currentlyAllExpanded = areAllDishesExpanded();
+        if (currentlyAllExpanded) {
+            setExpandedDishes({});
+        } else {
+            const next = {};
+            categories.forEach(c => {
+                (c.items || []).forEach(i => {
+                    next[i.id] = true;
+                });
+            });
+            setExpandedDishes(next);
+        }
+    };
+
     const addCategory = () => {
-        const newCats = [...categories, { id: Date.now().toString(), name: 'New Category', items: [] }];
+        const newCatId = Date.now().toString();
+        const newCats = [...categories, { id: newCatId, name: 'New Category', items: [] }];
         updateData({ categories: newCats });
+        setCollapsedCategories(prev => ({ ...prev, [newCatId]: false }));
+        setIsMenuCardOpen(true);
     };
 
     const removeCategory = (catId) => {
@@ -86,19 +136,23 @@ const MenuForm = ({ data, onChange }) => {
     };
 
     const addItem = (catId) => {
+        const newItemId = Date.now().toString();
         const newCats = categories.map(c => {
             if (c.id === catId) {
-                return { ...c, items: [...c.items, { id: Date.now().toString(), name: 'New Item', description: '', price: '150' }] };
+                return { ...c, items: [...(c.items || []), { id: newItemId, name: 'New Item', description: '', price: '150' }] };
             }
             return c;
         });
         updateData({ categories: newCats });
+        setCollapsedCategories(prev => ({ ...prev, [catId]: false }));
+        setExpandedDishes(prev => ({ ...prev, [newItemId]: true }));
+        setIsMenuCardOpen(true);
     };
 
     const removeItem = (catId, itemId) => {
         const newCats = categories.map(c => {
             if (c.id === catId) {
-                return { ...c, items: c.items.filter(i => i.id !== itemId) };
+                return { ...c, items: (c.items || []).filter(i => i.id !== itemId) };
             }
             return c;
         });
@@ -112,7 +166,7 @@ const MenuForm = ({ data, onChange }) => {
             if (c.id === catId) {
                 return {
                     ...c,
-                    items: c.items.map(i => i.id === itemId ? { ...i, [field]: value } : i)
+                    items: (c.items || []).map(i => i.id === itemId ? { ...i, [field]: value } : i)
                 };
             }
             return c;
@@ -130,7 +184,6 @@ const MenuForm = ({ data, onChange }) => {
             updateItem(catId, itemId, 'img', res.url);
         } catch (error) {
             console.error("Item image upload failed", error);
-            // Optionally could add a local error state, but failing silently to console is ok here.
         } finally {
             setUploadingItem(null);
         }
@@ -217,7 +270,18 @@ const MenuForm = ({ data, onChange }) => {
 
         const dishCount = finalCategories.reduce((acc, c) => acc + (c.items?.length || 0), 0);
         setImportSuccessMsg(`✨ Successfully imported ${dishCount} dishes across ${finalCategories.length} categories!`);
-        setTimeout(() => setImportSuccessMsg(null), 8000);
+        setHasAiImported(true);
+        setIsMenuCardOpen(true);
+        // All dishes abstracted by default so they fit neatly in the dropdown card
+        setExpandedDishes({});
+        setCollapsedCategories({});
+
+        // Smooth scroll to the Dropdown Card so user instantly sees their imported menu without scrolling mid to bottom
+        setTimeout(() => {
+            menuCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 120);
+
+        setTimeout(() => setImportSuccessMsg(null), 10000);
     };
 
     return (
@@ -301,18 +365,30 @@ const MenuForm = ({ data, onChange }) => {
                         <button
                             type="button"
                             onClick={() => setScanError(null)}
-                            className="text-rose-400 hover:text-white"
+                            className="text-rose-400 hover:text-white cursor-pointer"
                         >
                             <X className="w-3.5 h-3.5" />
                         </button>
                     </div>
                 )}
 
-                {/* Success Banner */}
+                {/* Success Banner with Direct Smooth Scroll to Menu Dropdown Card */}
                 {importSuccessMsg && (
-                    <div className="mt-5 p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center gap-3 text-xs text-emerald-300">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                        <span className="font-semibold">{importSuccessMsg}</span>
+                    <div className="mt-5 p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-between gap-3 text-xs text-emerald-300">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                            <span className="font-semibold truncate">{importSuccessMsg}</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsMenuCardOpen(true);
+                                menuCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }}
+                            className="px-3 py-1 bg-emerald-500/25 hover:bg-emerald-500/35 text-emerald-200 border border-emerald-400/40 rounded-lg font-bold transition-all shrink-0 cursor-pointer text-xs"
+                        >
+                            View Extracted Menu ↓
+                        </button>
                     </div>
                 )}
             </div>
@@ -326,7 +402,7 @@ const MenuForm = ({ data, onChange }) => {
                 onApply={handleApplyExtractedMenu}
             />
 
-            {/* Basic Info */}
+            {/* Basic Info: Restaurant Details */}
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <h3 className="font-bold text-slate-800 text-lg">Restaurant Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -337,7 +413,7 @@ const MenuForm = ({ data, onChange }) => {
                             value={restaurantName}
                             onChange={(e) => updateData({ restaurantName: e.target.value })}
                             placeholder="e.g. The Coffee House"
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-slate-800"
                         />
                     </div>
                     <div>
@@ -345,7 +421,7 @@ const MenuForm = ({ data, onChange }) => {
                         <select
                             value={currency}
                             onChange={(e) => updateData({ currency: e.target.value })}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all cursor-pointer appearance-none"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all cursor-pointer appearance-none font-medium text-slate-800"
                             style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2364748b\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundPosition: 'right 1rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.2em 1.2em' }}
                         >
                             <option value="₹">₹ (INR)</option>
@@ -357,78 +433,392 @@ const MenuForm = ({ data, onChange }) => {
                 </div>
             </div>
 
-            {/* Scan-to-WhatsApp Cart Config */}
-            <div className="bg-emerald-50/60 p-6 rounded-2xl border border-emerald-200/80 shadow-sm space-y-4">
-                <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-700 shrink-0 mt-0.5">
-                            <MessageCircle className="w-5 h-5" />
+            {/* Dropdown Card: Menu Categories & Abstracted Dishes */}
+            <div 
+                ref={menuCardRef} 
+                className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden scroll-mt-6 transition-all"
+            >
+                {/* Main Dropdown Card Header */}
+                <div className="p-5 sm:p-6 flex items-center justify-between gap-4 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 via-white to-indigo-50/20">
+                    <div 
+                        onClick={() => setIsMenuCardOpen(!isMenuCardOpen)}
+                        className="flex items-center gap-3 cursor-pointer select-none flex-1 min-w-0"
+                    >
+                        <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 shadow-2xs">
+                            <BookOpen className="w-5 h-5" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="font-bold text-slate-800 text-base">Scan-to-WhatsApp Cart</h3>
-                                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-600 text-white">
-                                    Direct wa.me Order
+                                <h3 className="font-extrabold text-slate-900 text-lg">
+                                    Menu Categories & Dishes
+                                </h3>
+                                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 tabular-nums">
+                                    {categories.length} {categories.length === 1 ? 'Category' : 'Categories'} • {totalDishes} {totalDishes === 1 ? 'Dish' : 'Dishes'}
                                 </span>
-                            </div>
-                            <p className="text-xs text-slate-600 mt-1">
-                                Add a <span className="font-semibold text-slate-800">+ Add</span> button next to every dish and a sticky <span className="font-semibold text-emerald-700">Send Order on WhatsApp</span> bar at the bottom.
-                            </p>
-                        </div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                        <input
-                            type="checkbox"
-                            checked={whatsappOrderingEnabled}
-                            onChange={(e) => updateData({ whatsappOrderingEnabled: e.target.checked })}
-                            className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                    </label>
-                </div>
-
-                {whatsappOrderingEnabled && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-emerald-200/60">
-                        <div>
-                            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-                                Café / Kitchen WhatsApp Number *
-                            </label>
-                            <input
-                                type="tel"
-                                value={whatsappNumber}
-                                onChange={(e) => updateData({ whatsappNumber: e.target.value })}
-                                placeholder="e.g. +91 98765 43210"
-                                className="w-full bg-white border border-emerald-200 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                            />
-                            <div className="mt-1.5 flex items-center gap-1.5 text-[11px]">
-                                {normalizedWaPhone ? (
-                                    <span className="text-emerald-700 font-medium flex items-center gap-1">
-                                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                                        Orders will open <code className="bg-emerald-100/80 px-1 rounded">wa.me/{normalizedWaPhone}</code>
-                                    </span>
-                                ) : (
-                                    <span className="text-amber-700 font-medium flex items-center gap-1">
-                                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                                        Enter a 10-digit mobile number to activate the cart buttons on your menu
+                                {hasAiImported && (
+                                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                                        <Sparkles className="w-3 h-3 text-emerald-600" /> AI Auto-Filled
                                     </span>
                                 )}
                             </div>
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-                                Default Table / Counter Label (Optional)
-                            </label>
-                            <input
-                                type="text"
-                                value={defaultTableNumber}
-                                onChange={(e) => updateData({ defaultTableNumber: e.target.value })}
-                                placeholder="e.g. Table 4 or Counter Pickup"
-                                className="w-full bg-white border border-emerald-200 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                            />
-                            <p className="mt-1.5 text-[11px] text-slate-500">
-                                Customers can also edit their Table # inside the cart before tapping Send.
+                            <p className="text-xs text-slate-500 mt-0.5">
+                                {isMenuCardOpen 
+                                    ? 'All dishes are cleanly abstracted. Click any dish to expand and edit details.'
+                                    : 'Dropdown card collapsed. Click to expand and manage dishes.'}
                             </p>
                         </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                        {isMenuCardOpen && (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={toggleAllDishesExpansion}
+                                    className="text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer hidden sm:inline-flex items-center gap-1"
+                                    title="Toggle between compact abstracted rows and full multi-line editors"
+                                >
+                                    {areAllDishesExpanded() ? 'Abstract All Dishes' : 'Expand All Dishes'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={addCategory}
+                                    className="text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                                >
+                                    <Plus className="w-3.5 h-3.5" />
+                                    <span>Add Category</span>
+                                </button>
+                            </>
+                        )}
+
+                        <button
+                            type="button"
+                            onClick={() => setIsMenuCardOpen(!isMenuCardOpen)}
+                            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                            title={isMenuCardOpen ? 'Collapse menu card' : 'Expand menu card'}
+                        >
+                            {isMenuCardOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Dropdown Card Body */}
+                {isMenuCardOpen ? (
+                    <div className="p-5 sm:p-6 space-y-5">
+                        {categories.length === 0 ? (
+                            <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                                <Utensils className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                                <p className="text-sm font-semibold text-slate-700 mb-1">No categories in your menu yet.</p>
+                                <p className="text-xs text-slate-500 mb-4">Upload a paper menu photo above or add categories manually.</p>
+                                <button
+                                    type="button"
+                                    onClick={addCategory}
+                                    className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs shadow-sm hover:bg-indigo-700 cursor-pointer"
+                                >
+                                    + Add First Category
+                                </button>
+                            </div>
+                        ) : (
+                            categories.map((cat, cIdx) => {
+                                const isCatCollapsed = !!collapsedCategories[cat.id];
+                                return (
+                                    <div 
+                                        key={cat.id || cIdx} 
+                                        className="bg-slate-50/70 border border-slate-200 rounded-2xl overflow-hidden transition-all shadow-2xs"
+                                    >
+                                        {/* Category Header Card */}
+                                        <div className="p-3.5 sm:p-4 flex items-center justify-between gap-3 bg-white border-b border-slate-200/80">
+                                            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleCategoryCollapse(cat.id)}
+                                                    className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer shrink-0"
+                                                    title={isCatCollapsed ? 'Expand category' : 'Collapse category'}
+                                                >
+                                                    {isCatCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                                                </button>
+
+                                                <input
+                                                    type="text"
+                                                    value={cat.name}
+                                                    onChange={(e) => updateCategoryName(cat.id, e.target.value)}
+                                                    placeholder="Category Name (e.g. Starters, Mains)"
+                                                    className="bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-slate-50 text-sm sm:text-base font-extrabold text-slate-800 px-2 py-1 rounded-lg focus:outline-none flex-1 min-w-0"
+                                                />
+
+                                                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                                                    {cat.items?.length || 0} {cat.items?.length === 1 ? 'dish' : 'dishes'}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => addItem(cat.id)}
+                                                    className="text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                                                >
+                                                    <Plus className="w-3.5 h-3.5" />
+                                                    <span className="hidden sm:inline">Add Dish</span>
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeCategory(cat.id)}
+                                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                                    title="Delete category"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Abstracted Dishes List */}
+                                        {!isCatCollapsed && (
+                                            <div className="p-3.5 sm:p-4 space-y-2.5 bg-slate-50/50">
+                                                {(!cat.items || cat.items.length === 0) ? (
+                                                    <div className="text-center py-6 border border-dashed border-slate-200 rounded-xl bg-white/60">
+                                                        <p className="text-xs text-slate-400 mb-2 font-medium">No dishes in this category yet.</p>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => addItem(cat.id)}
+                                                            className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer"
+                                                        >
+                                                            + Add first dish
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    cat.items.map((item, iIdx) => {
+                                                        const isExpanded = !!expandedDishes[item.id];
+                                                        return (
+                                                            <div
+                                                                key={item.id || iIdx}
+                                                                className={`rounded-xl border transition-all ${
+                                                                    isExpanded
+                                                                        ? 'bg-white border-indigo-500 shadow-md ring-2 ring-indigo-500/10 p-4 space-y-3'
+                                                                        : 'bg-white hover:bg-slate-50/90 border-slate-200/90 p-3 flex items-center justify-between gap-3 shadow-2xs hover:border-slate-300'
+                                                                }`}
+                                                            >
+                                                                {!isExpanded ? (
+                                                                    /* Abstracted Dish View (Compact Row) */
+                                                                    <>
+                                                                        <div 
+                                                                            onClick={() => toggleDishExpand(item.id)}
+                                                                            className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer select-none"
+                                                                        >
+                                                                            {/* Thumbnail or placeholder */}
+                                                                            <div className="w-11 h-11 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center">
+                                                                                {item.img ? (
+                                                                                    <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+                                                                                ) : (
+                                                                                    <Utensils className="w-4 h-4 text-slate-400" />
+                                                                                )}
+                                                                            </div>
+
+                                                                            {/* Name & Description snippet */}
+                                                                            <div className="min-w-0 flex-1">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <span className="font-bold text-sm text-slate-800 truncate">
+                                                                                        {item.name || 'Unnamed Dish'}
+                                                                                    </span>
+                                                                                    {item.description_source === 'ai' && (
+                                                                                        <span className="px-1.5 py-0.2 rounded bg-purple-100 text-purple-700 text-[10px] font-bold shrink-0">
+                                                                                            AI
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+                                                                                <p className="text-xs text-slate-500 truncate mt-0.5">
+                                                                                    {item.description ? item.description : <span className="italic text-slate-400">No description</span>}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Price & Quick Actions */}
+                                                                        <div className="flex items-center gap-2 shrink-0">
+                                                                            <span className="font-black text-xs text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-lg tabular-nums">
+                                                                                {currency}{item.price || '0'}
+                                                                            </span>
+                                                                            
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => toggleDishExpand(item.id)}
+                                                                                className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/70 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-xs font-semibold"
+                                                                                title="Edit dish details"
+                                                                            >
+                                                                                <Pencil className="w-3.5 h-3.5" />
+                                                                                <span className="hidden sm:inline">Edit</span>
+                                                                            </button>
+
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => removeItem(cat.id, item.id)}
+                                                                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                                                                title="Remove dish"
+                                                                            >
+                                                                                <Trash2 className="w-4 h-4" />
+                                                                            </button>
+                                                                        </div>
+                                                                    </>
+                                                                ) : (
+                                                                    /* Expanded Dish Full Editor */
+                                                                    <div className="space-y-3">
+                                                                        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-1">
+                                                                                    <Pencil className="w-3.5 h-3.5" /> Edit Dish Details
+                                                                                </span>
+                                                                                {item.description_source === 'ai' && (
+                                                                                    <span className="px-1.5 py-0.2 rounded bg-purple-100 text-purple-700 text-[10px] font-bold">
+                                                                                        AI-Written
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => toggleDishExpand(item.id)}
+                                                                                className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                                                                            >
+                                                                                <Check className="w-3.5 h-3.5 text-emerald-600" /> Done
+                                                                            </button>
+                                                                        </div>
+
+                                                                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                                                                            <div className="sm:col-span-8 space-y-2">
+                                                                                <div>
+                                                                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                                                                        Dish Name
+                                                                                    </label>
+                                                                                    <input
+                                                                                        type="text"
+                                                                                        value={item.name}
+                                                                                        onChange={(e) => updateItem(cat.id, item.id, 'name', e.target.value)}
+                                                                                        placeholder="e.g. Truffle Mushroom Risotto"
+                                                                                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                                                    />
+                                                                                </div>
+
+                                                                                <div>
+                                                                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                                                                        Description
+                                                                                    </label>
+                                                                                    <textarea
+                                                                                        value={item.description}
+                                                                                        onChange={(e) => updateItem(cat.id, item.id, 'description', e.target.value)}
+                                                                                        placeholder="Ingredients, preparation, portion details..."
+                                                                                        rows="2"
+                                                                                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                                                                                    />
+                                                                                </div>
+                                                                            </div>
+
+                                                                            <div className="sm:col-span-4 space-y-2 flex flex-col justify-between">
+                                                                                <div>
+                                                                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                                                                        Price
+                                                                                    </label>
+                                                                                    <div className="relative">
+                                                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">{currency}</span>
+                                                                                        <input
+                                                                                            type="text"
+                                                                                            value={item.price}
+                                                                                            onChange={(e) => updateItem(cat.id, item.id, 'price', e.target.value)}
+                                                                                            placeholder="0"
+                                                                                            className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-2 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 tabular-nums"
+                                                                                        />
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                <div>
+                                                                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                                                                        Photo
+                                                                                    </label>
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <div className="relative">
+                                                                                            <input
+                                                                                                type="file"
+                                                                                                accept="image/*"
+                                                                                                onChange={(e) => handleImageUpload(e, cat.id, item.id)}
+                                                                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                                                                                                disabled={uploadingItem === item.id}
+                                                                                            />
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                disabled={uploadingItem === item.id}
+                                                                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors cursor-pointer"
+                                                                                            >
+                                                                                                {uploadingItem === item.id ? (
+                                                                                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-500" />
+                                                                                                ) : (
+                                                                                                    <ImageIcon className="w-3.5 h-3.5" />
+                                                                                                )}
+                                                                                                {item.img ? 'Change' : 'Upload'}
+                                                                                            </button>
+                                                                                        </div>
+
+                                                                                        {item.img && (
+                                                                                            <div className="flex items-center gap-1.5">
+                                                                                                <div className="relative w-8 h-8 rounded-md overflow-hidden border border-slate-200 shrink-0">
+                                                                                                    <img src={item.img} className="w-full h-full object-cover" alt="" />
+                                                                                                </div>
+                                                                                                <button
+                                                                                                    type="button"
+                                                                                                    onClick={() => updateItem(cat.id, item.id, 'img', '')}
+                                                                                                    className="text-[11px] text-slate-400 hover:text-rose-600 underline cursor-pointer"
+                                                                                                >
+                                                                                                    Remove
+                                                                                                </button>
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                <div className="flex justify-between items-center pt-2">
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => removeItem(cat.id, item.id)}
+                                                                                        className="text-xs text-rose-500 hover:text-rose-700 font-semibold flex items-center gap-1 cursor-pointer"
+                                                                                    >
+                                                                                        <Trash2 className="w-3.5 h-3.5" /> Remove
+                                                                                    </button>
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => toggleDishExpand(item.id)}
+                                                                                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                                                                                    >
+                                                                                        Collapse ▲
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                ) : (
+                    /* Collapsed Card Summary Strip */
+                    <div 
+                        onClick={() => setIsMenuCardOpen(true)}
+                        className="px-6 py-4 bg-slate-50/70 hover:bg-slate-100/70 transition-colors cursor-pointer flex items-center justify-between gap-3 text-xs text-slate-600"
+                    >
+                        <div className="flex items-center gap-2 overflow-x-auto py-0.5 scrollbar-hide">
+                            <span className="font-bold text-slate-700 shrink-0">Categories:</span>
+                            {categories.map((cat, idx) => (
+                                <span key={cat.id || idx} className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 text-xs font-semibold shrink-0 shadow-2xs">
+                                    {cat.name} ({cat.items?.length || 0})
+                                </span>
+                            ))}
+                        </div>
+                        <span className="text-indigo-600 font-bold shrink-0 hover:underline flex items-center gap-1">
+                            Expand & Edit Dishes <ChevronDown className="w-3.5 h-3.5" />
+                        </span>
                     </div>
                 )}
             </div>
@@ -454,102 +844,9 @@ const MenuForm = ({ data, onChange }) => {
                     ))}
                 </div>
             </div>
-
-            {/* Menu Builder */}
-            <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-slate-800 text-lg">Menu Categories & Items</h3>
-                    <button onClick={addCategory} className="text-sm font-semibold text-indigo-600 flex items-center gap-1 hover:text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg">
-                        <Plus className="w-4 h-4" /> Add Category
-                    </button>
-                </div>
-
-                {categories.map((cat, cIdx) => (
-                    <div key={cat.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                        <div className="flex items-center gap-3">
-                            <input
-                                type="text"
-                                value={cat.name}
-                                onChange={(e) => updateCategoryName(cat.id, e.target.value)}
-                                placeholder="Category Name (e.g. Starters, Mains)"
-                                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-base font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            />
-                            <button onClick={() => removeCategory(cat.id)} className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors">
-                                <Trash2 className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <div className="space-y-3 pl-2 sm:pl-6 border-l-2 border-indigo-100 ml-2 sm:ml-4">
-                            {cat.items.map((item, iIdx) => (
-                                <div key={item.id} className="bg-slate-50 p-4 rounded-xl border border-slate-100 relative group">
-                                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                                        <div className="sm:col-span-8">
-                                            <input
-                                                type="text"
-                                                value={item.name}
-                                                onChange={(e) => updateItem(cat.id, item.id, 'name', e.target.value)}
-                                                placeholder="Item Name"
-                                                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:border-indigo-500 mb-2"
-                                            />
-                                            <textarea
-                                                value={item.description}
-                                                onChange={(e) => updateItem(cat.id, item.id, 'description', e.target.value)}
-                                                placeholder="Item description (e.g. ingredients)"
-                                                rows="2"
-                                                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 resize-none mb-2"
-                                            />
-                                            <div className="flex items-center gap-3">
-                                                <div className="relative">
-                                                    <input 
-                                                        type="file" 
-                                                        accept="image/*" 
-                                                        onChange={(e) => handleImageUpload(e, cat.id, item.id)}
-                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                                                        disabled={uploadingItem === item.id}
-                                                    />
-                                                    <button 
-                                                        disabled={uploadingItem === item.id}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
-                                                    >
-                                                        {uploadingItem === item.id ? <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-500" /> : <ImageIcon className="w-3.5 h-3.5" />}
-                                                        {item.img ? 'Change Image' : 'Upload Image'}
-                                                    </button>
-                                                </div>
-                                                {item.img && (
-                                                    <div className="relative w-8 h-8 rounded-md overflow-hidden border border-slate-200 group-hover:border-indigo-200 transition-colors">
-                                                        <img src={item.img} className="w-full h-full object-cover" alt="" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="sm:col-span-4 flex flex-col gap-2">
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">{currency}</span>
-                                                <input
-                                                    type="text"
-                                                    value={item.price}
-                                                    onChange={(e) => updateItem(cat.id, item.id, 'price', e.target.value)}
-                                                    placeholder="Price"
-                                                    className="w-full bg-white border border-slate-200 rounded-lg pl-8 pr-3 py-2 text-sm font-bold focus:outline-none focus:border-indigo-500"
-                                                />
-                                            </div>
-                                            <button onClick={() => removeItem(cat.id, item.id)} className="text-xs text-red-500 font-semibold text-right hover:underline mt-auto">
-                                                Remove Item
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                            
-                            <button onClick={() => addItem(cat.id)} className="text-sm font-semibold text-slate-500 flex items-center gap-1 hover:text-indigo-600 mt-2 px-2 py-1">
-                                <Plus className="w-4 h-4" /> Add Item
-                            </button>
-                        </div>
-                    </div>
-                ))}
-            </div>
         </div>
     );
 };
 
 export default MenuForm;
+

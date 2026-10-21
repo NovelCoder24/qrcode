@@ -85,7 +85,7 @@ app.use(cors({
 // ==========================================
 app.use('/api/webhooks', express.raw({ type: 'application/json' }), webhookRoutes);
 
-app.use(express.json());
+app.use(express.json({ type: ['application/json', 'text/plain'] }));
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 

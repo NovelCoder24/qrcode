@@ -76,15 +76,17 @@ const mergeStatLocations = (stat, locationCounts) => {
     let hasPositiveKnownLoc = false;
     if (stat.locations && stat.locations.size > 0) {
         for (const [locKey, count] of stat.locations.entries()) {
-            locationCounts[locKey] = (locationCounts[locKey] || 0) + count;
-            if (count > 0 && !String(locKey).toLowerCase().startsWith('unknown::')) {
-                hasPositiveKnownLoc = true;
+            if (count > 0) {
+                locationCounts[locKey] = (locationCounts[locKey] || 0) + count;
+                if (!String(locKey).toLowerCase().startsWith('unknown::')) {
+                    hasPositiveKnownLoc = true;
+                }
             }
         }
     }
     if (!hasPositiveKnownLoc && stat.cities && stat.cities.size > 0) {
         for (const [city, count] of stat.cities.entries()) {
-            if (!hasPositiveKnownLoc || String(city).toLowerCase() !== 'unknown') {
+            if (count > 0 && (!hasPositiveKnownLoc || String(city).toLowerCase() !== 'unknown')) {
                 const formattedCity = city.charAt(0).toUpperCase() + city.slice(1);
                 const fallbackKey = `${formattedCity}::Unknown::Unknown::Unknown`;
                 locationCounts[fallbackKey] = (locationCounts[fallbackKey] || 0) + count;

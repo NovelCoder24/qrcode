@@ -8,25 +8,7 @@ export const placementSchema = z.object({
     label: z.string().trim().optional()
 }).optional().nullable();
 
-export const metadataSchema = z.object({
-    whatsappOrderingEnabled: z.boolean().optional(),
-    whatsappNumber: z.string().trim().max(25).optional().nullable(),
-    defaultTableNumber: z.string().trim().max(40).optional().nullable(),
-}).passthrough().superRefine((val, ctx) => {
-    if (val && typeof val.whatsappNumber === 'string' && val.whatsappNumber.trim() !== '') {
-        let digits = val.whatsappNumber.replace(/\D/g, '');
-        if (digits.length === 11 && digits.startsWith('0')) {
-            digits = digits.slice(1);
-        }
-        if (digits.length < 10 || digits.length > 15) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['whatsappNumber'],
-                message: 'WhatsApp number must contain between 10 and 15 digits',
-            });
-        }
-    }
-}).optional();
+export const metadataSchema = z.record(z.any()).optional();
 
 export const createQRSchema = z.object({
     target_url: z.string()

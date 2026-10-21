@@ -30,6 +30,11 @@ export default function MenuImportModal({
   const [categories, setCategories] = useState(
     JSON.parse(JSON.stringify(extractedData?.categories || []))
   );
+  const [collapsedCategories, setCollapsedCategories] = useState({});
+
+  const toggleCategoryCollapse = (cIdx) => {
+    setCollapsedCategories(prev => ({ ...prev, [cIdx]: !prev[cIdx] }));
+  };
 
   React.useEffect(() => {
     if (extractedData?.categories) {
@@ -189,87 +194,106 @@ export default function MenuImportModal({
         <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Extracted Categories Column */}
           <div className={uploadedThumbnails.length > 0 ? 'lg:col-span-8 space-y-6' : 'lg:col-span-12 space-y-6'}>
-            {categories.map((cat, cIdx) => (
-              <div key={cat.id || cIdx} className="bg-slate-50/80 rounded-2xl border border-slate-200 p-4 space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
-                  <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wide">
-                    {cat.name} ({cat.items?.length || 0})
-                  </h3>
-                </div>
-
-                <div className="space-y-2.5">
-                  {cat.items?.map((item, iIdx) => {
-                    const isLowConfidence = (item.confidence ?? 1) < 0.85;
-                    return (
-                      <div
-                        key={item.id || iIdx}
-                        className={`p-3 rounded-xl border transition-all ${
-                          isLowConfidence
-                            ? 'bg-amber-50/70 border-amber-300 ring-1 ring-amber-300'
-                            : 'bg-white border-slate-200 hover:border-slate-300'
-                        }`}
+            {categories.map((cat, cIdx) => {
+              const isCollapsed = !!collapsedCategories[cIdx];
+              return (
+                <div key={cat.id || cIdx} className="bg-slate-50/80 rounded-2xl border border-slate-200 p-4 space-y-3 transition-all">
+                  <div 
+                    onClick={() => toggleCategoryCollapse(cIdx)}
+                    className="flex items-center justify-between pb-2 border-b border-slate-200/80 cursor-pointer select-none group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className="p-1 text-slate-400 group-hover:text-indigo-600 rounded transition-colors"
                       >
-                        <div className="flex items-start gap-3">
-                          {autoFillPhotos && item.img && (
-                            <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
-                              <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
-                            </div>
-                          )}
+                        {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                      </button>
+                      <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wide">
+                        {cat.name} ({cat.items?.length || 0})
+                      </h3>
+                    </div>
+                    <span className="text-[11px] font-bold text-indigo-600 group-hover:underline">
+                      {isCollapsed ? 'Expand' : 'Collapse'}
+                    </span>
+                  </div>
 
-                          <div className="flex-1 min-w-0 space-y-1.5">
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="text"
-                                value={item.name}
-                                onChange={(e) => handleUpdateItem(cIdx, iIdx, 'name', e.target.value)}
-                                className="font-bold text-sm text-slate-900 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white px-1 py-0.5 rounded outline-none flex-1 truncate"
-                              />
-                              <div className="flex items-center gap-1 shrink-0">
-                                <span className="text-xs font-bold text-slate-400">{extractedData.currency || '₹'}</span>
-                                <input
-                                  type="text"
-                                  value={item.price}
-                                  onChange={(e) => handleUpdateItem(cIdx, iIdx, 'price', e.target.value)}
-                                  className="w-16 text-right font-black text-sm text-indigo-600 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white px-1 py-0.5 rounded outline-none tabular-nums"
-                                />
+                  {!isCollapsed && (
+                    <div className="space-y-2.5">
+                      {cat.items?.map((item, iIdx) => {
+                        const isLowConfidence = (item.confidence ?? 1) < 0.85;
+                        return (
+                          <div
+                            key={item.id || iIdx}
+                            className={`p-3 rounded-xl border transition-all ${
+                              isLowConfidence
+                                ? 'bg-amber-50/70 border-amber-300 ring-1 ring-amber-300'
+                                : 'bg-white border-slate-200 hover:border-slate-300'
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              {autoFillPhotos && item.img && (
+                                <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
+                                  <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+                                </div>
+                              )}
+
+                              <div className="flex-1 min-w-0 space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    value={item.name}
+                                    onChange={(e) => handleUpdateItem(cIdx, iIdx, 'name', e.target.value)}
+                                    className="font-bold text-sm text-slate-900 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white px-1 py-0.5 rounded outline-none flex-1 truncate"
+                                  />
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <span className="text-xs font-bold text-slate-400">{extractedData.currency || '₹'}</span>
+                                    <input
+                                      type="text"
+                                      value={item.price}
+                                      onChange={(e) => handleUpdateItem(cIdx, iIdx, 'price', e.target.value)}
+                                      className="w-16 text-right font-black text-sm text-indigo-600 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white px-1 py-0.5 rounded outline-none tabular-nums"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    value={item.description || ''}
+                                    placeholder="Add description..."
+                                    onChange={(e) => handleUpdateItem(cIdx, iIdx, 'description', e.target.value)}
+                                    className="text-xs text-slate-600 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white px-1 py-0.5 rounded outline-none w-full truncate"
+                                  />
+                                  {item.description_source === 'ai' && (
+                                    <span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 text-[10px] font-bold shrink-0">
+                                      AI-written
+                                    </span>
+                                  )}
+                                  {isLowConfidence && (
+                                    <span className="px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 text-[10px] font-bold shrink-0 flex items-center gap-1">
+                                      <AlertTriangle className="w-3 h-3" /> Check Price
+                                    </span>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveItem(cIdx, iIdx)}
+                                    className="p-1 text-slate-400 hover:text-rose-500 transition-colors cursor-pointer shrink-0"
+                                    title="Remove dish"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
                               </div>
                             </div>
-
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="text"
-                                value={item.description || ''}
-                                placeholder="Add description..."
-                                onChange={(e) => handleUpdateItem(cIdx, iIdx, 'description', e.target.value)}
-                                className="text-xs text-slate-600 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white px-1 py-0.5 rounded outline-none w-full truncate"
-                              />
-                              {item.description_source === 'ai' && (
-                                <span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 text-[10px] font-bold shrink-0">
-                                  AI-written
-                                </span>
-                              )}
-                              {isLowConfidence && (
-                                <span className="px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 text-[10px] font-bold shrink-0 flex items-center gap-1">
-                                  <AlertTriangle className="w-3 h-3" /> Check Price
-                                </span>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveItem(cIdx, iIdx)}
-                                className="p-1 text-slate-400 hover:text-rose-500 transition-colors cursor-pointer shrink-0"
-                                title="Remove dish"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
                           </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Side-by-Side Original Photo Preview Column */}

@@ -8,12 +8,16 @@ import { LRUCache } from "lru-cache";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Database path for MaxMind GeoLite2-City
-const DEFAULT_DB_PATH = path.resolve(__dirname, "../data/GeoLite2-City.mmdb");
-const dbPath = process.env.GEOLITE2_DB_PATH || process.env.MAXMIND_DB_PATH || DEFAULT_DB_PATH;
+// Database paths for MaxMind GeoLite2-City and GeoLite2-ASN
+const DEFAULT_CITY_DB_PATH = path.resolve(__dirname, "../data/GeoLite2-City.mmdb");
+const DEFAULT_ASN_DB_PATH = path.resolve(__dirname, "../data/GeoLite2-ASN.mmdb");
 
-// In-process Reader instance, LRU Cache, and Single-Flight Inflight Map
+const cityDbPath = process.env.GEOLITE2_DB_PATH || process.env.MAXMIND_DB_PATH || DEFAULT_CITY_DB_PATH;
+const asnDbPath = process.env.GEOLITE2_ASN_DB_PATH || process.env.MAXMIND_ASN_DB_PATH || DEFAULT_ASN_DB_PATH;
+
+// In-process Reader instances, LRU Cache, and Single-Flight Inflight Map
 let lookupReader = null;
+let asnReader = null;
 const geoCache = new LRUCache({ max: 5000, ttl: 1000 * 60 * 60 * 24 });
 const inflight = new Map();
 
@@ -23,13 +27,13 @@ export function clearGeoCache() {
 }
 
 /**
- * Synchronously retrieves or instantiates the MaxMind reader into memory.
+ * Synchronously retrieves or instantiates the MaxMind City reader into memory.
  */
 function getLookupReaderSync() {
   if (lookupReader) return lookupReader;
   try {
-    if (fs.existsSync(dbPath)) {
-      const buffer = fs.readFileSync(dbPath);
+    if (fs.existsSync(cityDbPath)) {
+      const buffer = fs.readFileSync(cityDbPath);
       lookupReader = new Reader(buffer);
       return lookupReader;
     }
@@ -40,30 +44,53 @@ function getLookupReaderSync() {
 }
 
 /**
- * Asynchronously initializes the reader if preferred at boot.
+ * Synchronously retrieves or instantiates the MaxMind ASN reader into memory.
  */
-export async function initGeoLiteReader() {
-  if (lookupReader) return lookupReader;
+function getAsnReaderSync() {
+  if (asnReader) return asnReader;
   try {
-    if (fs.existsSync(dbPath)) {
-      lookupReader = await maxmind.open(dbPath);
-      return lookupReader;
-    } else {
-      console.warn(`[Geolocation] GeoLite2-City database not found at ${dbPath}`);
+    if (fs.existsSync(asnDbPath)) {
+      const buffer = fs.readFileSync(asnDbPath);
+      asnReader = new Reader(buffer);
+      return asnReader;
     }
   } catch (err) {
-    console.error("[Geolocation] Failed to open GeoLite2 database asynchronously:", err.message);
+    console.warn("[Geolocation] GeoLite2-ASN.mmdb not found or failed to load synchronously:", err.message);
   }
   return null;
 }
 
-// Pre-load database in-process immediately on module import
+/**
+ * Asynchronously initializes the readers if preferred at boot.
+ */
+export async function initGeoLiteReader() {
+  try {
+    if (!lookupReader && fs.existsSync(cityDbPath)) {
+      lookupReader = await maxmind.open(cityDbPath);
+    }
+  } catch (err) {
+    console.error("[Geolocation] Failed to open GeoLite2 City database asynchronously:", err.message);
+  }
+
+  try {
+    if (!asnReader && fs.existsSync(asnDbPath)) {
+      asnReader = await maxmind.open(asnDbPath);
+    }
+  } catch (err) {
+    console.warn("[Geolocation] Failed to open GeoLite2 ASN database asynchronously:", err.message);
+  }
+
+  return { lookupReader, asnReader };
+}
+
+// Pre-load databases in-process immediately on module import
 try {
   getLookupReaderSync();
+  getAsnReaderSync();
 } catch (_) {}
 
 // 1. IP Normalization & Validation (IPv4 & IPv6 safe)
-function normalizeIp(ip) {
+export function normalizeIp(ip) {
   if (!ip || typeof ip !== "string") return null;
   ip = ip.trim();
 
@@ -88,7 +115,7 @@ function normalizeIp(ip) {
   return ip || null;
 }
 
-function isPrivateIp(ip) {
+export function isPrivateIp(ip) {
   if (!ip) return true;
   const lower = ip.toLowerCase();
   if (lower === "127.0.0.1" || lower === "::1" || lower === "localhost") return true;
@@ -108,8 +135,10 @@ function isPrivateIp(ip) {
   return false;
 }
 
-function headerValue(req, name) {
-  const value = req.headers?.[name];
+function headerValue(reqOrHeaders, name) {
+  if (!reqOrHeaders) return null;
+  const headers = reqOrHeaders.headers || reqOrHeaders;
+  const value = headers[name] || headers[name.toLowerCase()];
   if (Array.isArray(value)) return value[0];
   return value;
 }
@@ -171,7 +200,100 @@ export function getClientIp(req) {
   return fallbackIp;
 }
 
-// 3. GeoIP Lookup (Synchronous, in-process via MaxMind GeoLite2-City)
+// 3. Regex matchers for Carrier & Datacenter / VPN classification
+const MOBILE_CARRIER_REGEX = /jio|airtel|bharti|vodafone|idea|bsnl|rjil/i;
+const VPN_DATACENTER_REGEX = /icloud|private relay|cloudflare|amazon|aws|digitalocean|linode|google cloud|microsoft|ovh|hetzner|m247|datacamp/i;
+
+/**
+ * Architecture D: Confidence-Tiered IP Geolocation Service.
+ * Combines GeoLite2-City with GeoLite2-ASN and URL-decoded Edge Headers.
+ * Returns confidence: 'HIGH' | 'MEDIUM' | 'LOW'
+ */
+export function resolveIpGeo(ip, reqHeaders = {}) {
+  const normIp = normalizeIp(ip);
+
+  // Fallback for private / localhost during development & tests
+  if (!normIp || isPrivateIp(normIp)) {
+    return {
+      country: "India",
+      country_code: "IN",
+      region: "Local",
+      city: "Local Dev",
+      accuracyRadius: 0,
+      asnOrg: "Local Network",
+      isMobileCarrier: false,
+      isVpnOrDatacenter: false,
+      confidence: "HIGH"
+    };
+  }
+
+  const cityReader = lookupReader || getLookupReaderSync();
+  const asn = asnReader || getAsnReaderSync();
+
+  const cityData = cityReader ? cityReader.get(normIp) : null;
+  const asnData = asn ? asn.get(normIp) : null;
+
+  const asnOrg = asnData?.autonomous_system_organization || "";
+  const isVpnOrDatacenter = VPN_DATACENTER_REGEX.test(asnOrg);
+  const isMobileCarrier = MOBILE_CARRIER_REGEX.test(asnOrg);
+
+  const accuracyRadius = typeof cityData?.location?.accuracy_radius === "number"
+    ? cityData.location.accuracy_radius
+    : 999;
+
+  // Fix 2: URL-decode x-vercel-ip-city before using in map keys or city resolution
+  let vercelCity = headerValue(reqHeaders, "x-vercel-ip-city");
+  if (vercelCity && typeof vercelCity === "string") {
+    try {
+      vercelCity = decodeURIComponent(vercelCity);
+    } catch (_) {}
+  }
+
+  const edgeCity = headerValue(reqHeaders, "cf-ipcity") || vercelCity;
+  const rawCity =
+    (edgeCity && edgeCity !== "Unknown")
+      ? edgeCity
+      : (cityData?.city?.names?.en || "Unknown");
+
+  const edgeRegion = headerValue(reqHeaders, "cf-region") || headerValue(reqHeaders, "x-vercel-ip-country-region");
+  const region =
+    (edgeRegion && edgeRegion !== "Unknown")
+      ? edgeRegion
+      : (cityData?.subdivisions?.[0]?.names?.en || "Unknown");
+
+  const edgeCountry = headerValue(reqHeaders, "cf-ipcountry") || headerValue(reqHeaders, "x-vercel-ip-country");
+  const country =
+    (edgeCountry && edgeCountry !== "Unknown")
+      ? edgeCountry
+      : (cityData?.country?.names?.en || "Unknown");
+
+  const countryCode =
+    (edgeCountry && edgeCountry !== "Unknown")
+      ? edgeCountry
+      : (cityData?.country?.iso_code || "Unknown");
+
+  // Determine confidence tier
+  let confidence = "LOW";
+  if (!isVpnOrDatacenter && accuracyRadius <= 25 && rawCity !== "Unknown") {
+    confidence = "HIGH"; // Broadband / Fiber Wi-Fi -> High city accuracy
+  } else if (!isVpnOrDatacenter && (accuracyRadius <= 120 || isMobileCarrier)) {
+    confidence = "MEDIUM"; // Cellular CGNAT -> State is accurate, City is a gateway guess
+  }
+
+  return {
+    country,
+    country_code: countryCode,
+    region,
+    city: rawCity,
+    accuracyRadius,
+    asnOrg,
+    isMobileCarrier,
+    isVpnOrDatacenter,
+    confidence
+  };
+}
+
+// 4. GeoIP Lookup (Synchronous, in-process via MaxMind GeoLite2-City)
 export function getLocationOffline(ip) {
   const normIp = normalizeIp(ip);
   if (!normIp || isPrivateIp(normIp)) {
@@ -182,6 +304,7 @@ export function getLocationOffline(ip) {
       region: "Unknown",
       timezone: "UTC",
       source: "ip",
+      accuracyRadius: 999,
       ll: []
     };
   }
@@ -195,6 +318,7 @@ export function getLocationOffline(ip) {
       region: "Unknown",
       timezone: "UTC",
       source: "ip",
+      accuracyRadius: 999,
       ll: []
     };
   }
@@ -209,6 +333,7 @@ export function getLocationOffline(ip) {
         region: "Unknown",
         timezone: "UTC",
         source: "ip",
+        accuracyRadius: 999,
         ll: []
       };
     }
@@ -218,6 +343,7 @@ export function getLocationOffline(ip) {
     const city = geo.city?.names?.en || "Unknown";
     const region = geo.subdivisions?.[0]?.names?.en || geo.subdivisions?.[0]?.iso_code || "Unknown";
     const timezone = geo.location?.time_zone || "UTC";
+    const accuracyRadius = typeof geo.location?.accuracy_radius === "number" ? geo.location.accuracy_radius : 999;
     const lat = geo.location?.latitude;
     const lon = geo.location?.longitude;
     const ll = (typeof lat === "number" && typeof lon === "number") ? [lat, lon] : [];
@@ -229,6 +355,7 @@ export function getLocationOffline(ip) {
       region,
       timezone,
       source: "ip",
+      accuracyRadius,
       ll
     };
   } catch (err) {
@@ -240,12 +367,13 @@ export function getLocationOffline(ip) {
       region: "Unknown",
       timezone: "UTC",
       source: "ip",
+      accuracyRadius: 999,
       ll: []
     };
   }
 }
 
-// 4. Async Geo Lookup: In-process MaxMind with Single-Flight Deduplication, LRU cache, and FreeIPAPI fallback
+// 5. Async Geo Lookup: In-process MaxMind with Single-Flight Deduplication, LRU cache, and FreeIPAPI fallback
 export async function getLocationAsync(ip, options = {}) {
   const normIp = normalizeIp(ip);
   if (!normIp || isPrivateIp(normIp)) {
@@ -295,6 +423,7 @@ export async function getLocationAsync(ip, options = {}) {
           region: regionName,
           timezone: timeZone,
           source: "ip",
+          accuracyRadius: 100,
           ll: []
         };
 
@@ -318,14 +447,21 @@ export async function getLocationAsync(ip, options = {}) {
   return lookupPromise;
 }
 
-// 5. Hybrid Geolocation: Read from CDN Edge Headers
+// 6. Hybrid Geolocation: Read from CDN Edge Headers (with URL decoding)
 export function getLocationFromHeaders(req) {
-  if (!req || !req.headers) return null;
+  if (!req) return null;
+  const headers = req.headers || req;
 
-  const country = req.headers["cf-ipcountry"] || req.headers["x-vercel-ip-country"];
-  const city = req.headers["cf-ipcity"] || req.headers["x-vercel-ip-city"];
-  const region = req.headers["cf-region"] || req.headers["x-vercel-ip-country-region"];
-  const timezone = req.headers["cf-timezone"] || req.headers["x-vercel-ip-timezone"];
+  const country = headerValue(headers, "cf-ipcountry") || headerValue(headers, "x-vercel-ip-country");
+  let vercelCity = headerValue(headers, "x-vercel-ip-city");
+  if (vercelCity && typeof vercelCity === "string") {
+    try {
+      vercelCity = decodeURIComponent(vercelCity);
+    } catch (_) {}
+  }
+  const city = headerValue(headers, "cf-ipcity") || vercelCity;
+  const region = headerValue(headers, "cf-region") || headerValue(headers, "x-vercel-ip-country-region");
+  const timezone = headerValue(headers, "cf-timezone") || headerValue(headers, "x-vercel-ip-timezone");
 
   if (!country && !city) {
     return null;
@@ -338,6 +474,7 @@ export function getLocationFromHeaders(req) {
     region: region || "Unknown",
     timezone: timezone || "UTC",
     source: "ip",
+    accuracyRadius: 100,
     ll: []
   };
 }

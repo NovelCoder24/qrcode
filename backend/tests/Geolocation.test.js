@@ -5,6 +5,7 @@ import {
     getClientIp,
     getLocationAsync,
     getLocationOffline,
+    resolveIpGeo,
     clearGeoCache
 } from '../services/Geolocation.js';
 import {
@@ -23,11 +24,11 @@ describe('getLocationFromHeaders', () => {
         assert.strictEqual(result.city, 'New York');
     });
 
-    test('extracts from Vercel headers', () => {
-        const req = { headers: { 'x-vercel-ip-country': 'CA', 'x-vercel-ip-city': 'Toronto' } };
+    test('extracts from Vercel headers with URL-decoding', () => {
+        const req = { headers: { 'x-vercel-ip-country': 'IN', 'x-vercel-ip-city': 'New%20Delhi' } };
         const result = getLocationFromHeaders(req);
-        assert.strictEqual(result.country_code, 'CA');
-        assert.strictEqual(result.city, 'Toronto');
+        assert.strictEqual(result.country_code, 'IN');
+        assert.strictEqual(result.city, 'New Delhi');
     });
 
     test('extracts country when city is missing from headers', () => {
@@ -373,3 +374,40 @@ describe('QR Validation Schema (gpsLocationEnabled & placement metadata)', () =>
         assert.strictEqual(parsed.placement.label, 'FC Road Outlet, Table 4');
     });
 });
+
+describe('resolveIpGeo (Architecture D Confidence Tiers & ASN Filtering)', () => {
+    test('URL-decodes x-vercel-ip-city before resolving city and map key', () => {
+        const headers = {
+            'x-vercel-ip-country': 'IN',
+            'x-vercel-ip-city': 'New%20Delhi',
+            'x-vercel-ip-country-region': 'Delhi'
+        };
+        const geo = resolveIpGeo('103.21.125.5', headers);
+        assert.strictEqual(geo.city, 'New Delhi');
+        assert.strictEqual(geo.country_code, 'IN');
+    });
+
+    test('URL-decodes Navi%20Mumbai cleanly', () => {
+        const headers = {
+            'x-vercel-ip-country': 'IN',
+            'x-vercel-ip-city': 'Navi%20Mumbai'
+        };
+        const geo = resolveIpGeo('103.21.125.5', headers);
+        assert.strictEqual(geo.city, 'Navi Mumbai');
+    });
+
+    test('returns HIGH confidence for private / localhost during local development', () => {
+        const geo = resolveIpGeo('127.0.0.1');
+        assert.strictEqual(geo.confidence, 'HIGH');
+        assert.strictEqual(geo.city, 'Local Dev');
+        assert.strictEqual(geo.country_code, 'IN');
+    });
+
+    test('detects mobile carriers and assigns confidence appropriately', () => {
+        const geo = resolveIpGeo('2405:201:4001:10::1'); // Jio IPv6
+        assert.ok(geo);
+        assert.strictEqual(geo.country_code, 'IN');
+        assert.ok(['HIGH', 'MEDIUM', 'LOW'].includes(geo.confidence));
+    });
+});
+

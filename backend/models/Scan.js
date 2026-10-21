@@ -31,6 +31,28 @@ const scanSchema = new mongoose.Schema({
         type: String,
         index: { sparse: true }
     },
+    // Architecture D: Atomic Telemetry Reconciliation fields
+    dateBucket: {
+        type: String,
+        index: true
+    },
+    appliedCityKey: {
+        type: String,
+        default: "unknown"
+    },
+    appliedLocationKey: {
+        type: String,
+        default: "unknown"
+    },
+    geoConfidence: {
+        type: String,
+        enum: ["HIGH", "MEDIUM", "LOW", "TELEMETRY_VERIFIED", "GPS_EXACT"],
+        default: "MEDIUM"
+    },
+    telemetryReconciled: {
+        type: Boolean,
+        default: false
+    },
     device: {
         os: String,
         browser: String,
@@ -56,7 +78,7 @@ const scanSchema = new mongoose.Schema({
     versionKey: false
 });
 
-// Minimal indexes for raw exports and drill-downs
+// Minimal indexes for raw exports, drill-downs, and telemetry lookup
 scanSchema.index({ qr_id: 1, createdAt: -1 });
 scanSchema.index({ owner_id: 1, "campaign.category": 1, createdAt: -1 });
 

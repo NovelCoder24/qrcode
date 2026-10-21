@@ -66,15 +66,27 @@ Use these semantic token names in your Tailwind classes (e.g., `bg-primary`, `te
 
 ---
 
-## 4. Voice & Tone (Copywriting)
+## 4. Brand Persona, Voice & In-Store Micro-Copy
 
-When generating UI text, marketing copy, or error messages, adhere to the QRVibe persona:
+### 4.1 Brand Identity: "Warm Professional"
+QRVibe operates in the sweet spot between cold corporate enterprise tools (Scanova/Uniqode) and chaotic meme energy (Linktree/Bento):
+* **Visual Tone:** Warm charcoal (`#1C1C1E`), off-white canvas (`#FAFAF9`), and warm amber/coral accents (`#F59E0B` / `#FF6B4A`). Clean, high-contrast, and trustworthy.
+* **Core Personality:** Direct, respectful, business-empowering, and grounded in "Zero-Mehnat" (zero-effort).
+* **The "Invisible AI" Rule:** Never ask merchants to write prompts or debug layout blocks. Use AI solely for seamless automated inputs (upload photo of paper menu -> live digital catalog in 60s).
 
-* **Personality:** Professional but approachable, direct and efficient, tech-savvy but jargon-free, empathetic.
-* **Grammar Rules:**
-  * **Punctuation:** Avoid exclamation points (`!`) in standard interface copy. Use periods for complete sentences.
-  * **Clarity:** Prefer **active voice** over passive voice. Keep sentences concise.
-* **Terminology Guide:**
-  * ❌ *Do Not Use:* "Utilize" ➔ ✅ *Use:* "Use"
-  * ❌ *Do Not Use:* "In order to..." ➔ ✅ *Use:* "To..."
-  * ❌ *Do Not Use:* "Click here" ➔ ✅ *Use:* Descriptive action (e.g., "Download QR Code")
+### 4.2 Copywriting Principles
+* **Active, Outcome-Driven Headlines:**
+  * ❌ *Avoid:* "Next-gen dynamic QR redirect management infrastructure."
+  * ❌ *Avoid:* "Make ur menu aesthetic bestie ✨"
+  * ✅ *Use:* "Turn your tables and counters into 5-star Google reviews and instant inquiries. Zero typing required."
+* **Punctuation & Grammar:** Avoid excessive exclamation points (`!`) in standard interface copy. Use periods for complete sentences. Prefer **active voice** over passive voice.
+
+### 4.3 In-Store QR Standee Micro-Copy (Preventing UPI Muscle-Memory Confusion)
+When generating templates for physical standees and exported table cards:
+* **The Camera Instruction:** Always include the 5-word micro-copy below or around the QR code:
+  * 👉 **`📷 Open Phone Camera to Scan (Not GPay)`**  
+  * Hindi: **`फ़ोन कैमरा से स्कैन करें`**
+* **The Center Icon Rule:** Never export naked barcodes for storefronts. Always position a clear category icon in the dead-center (Fork & Spoon for dining; Scissors for salons; Stethoscope for clinics; or the merchant's uploaded logo) to instantly break the UPI payment visual reflex.
+* **The Anti-Hostageware Trust Badge:**
+  * Emphasize the platform pledge across onboarding and footer links:
+  * *"100% Anti-Hostageware Guarantee: Your printed QR codes never break."*

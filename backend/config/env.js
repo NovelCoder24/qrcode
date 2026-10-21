@@ -6,8 +6,14 @@
 // ==============================================================================
 import { z } from 'zod';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load .env file from backend root
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env file from backend root, with fallback to cwd
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config();
 
 // Define the environment schema
