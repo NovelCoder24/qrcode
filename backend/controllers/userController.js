@@ -61,6 +61,7 @@ const sendTokens = async (res, user, statusCode = 200) => {
         emailAlertsOptIn: user.emailAlertsOptIn ?? true,
         analyticsOptIn: user.analyticsOptIn ?? true,
         hasCreatedFirstQR: user.hasCreatedFirstQR,
+        workspaceMode: user.workspaceMode ?? null,
         activeQrCount,
     });
 };
@@ -265,6 +266,7 @@ export const getMe = async (req, res) => {
                 emailAlertsOptIn: user.emailAlertsOptIn ?? true,
                 analyticsOptIn: user.analyticsOptIn ?? true,
                 hasCreatedFirstQR: user.hasCreatedFirstQR,
+                workspaceMode: user.workspaceMode ?? null,
                 activeQrCount,
             });
         } else {
@@ -289,13 +291,20 @@ export const updateProfile = async (req, res) => {
             if (req.body.whatsappNumber !== undefined) {
                 user.whatsappNumber = req.body.whatsappNumber;
             }
+            if (req.body.workspaceMode !== undefined) {
+                const validModes = ['storefront', 'marketing'];
+                if (validModes.includes(req.body.workspaceMode)) {
+                    user.workspaceMode = req.body.workspaceMode;
+                }
+            }
             
             const updatedUser = await user.save();
             res.json({
                 _id: updatedUser._id,
                 name: updatedUser.name,
                 email: updatedUser.email,
-                whatsappNumber: updatedUser.whatsappNumber
+                whatsappNumber: updatedUser.whatsappNumber,
+                workspaceMode: updatedUser.workspaceMode ?? null
             });
         } else {
             res.status(404).json({ message: "User not found" });

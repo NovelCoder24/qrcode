@@ -5,6 +5,7 @@ import axios from 'axios';
 import { ModernTemplate, PlayfulTemplate } from '../components/MenuTemplates/BasicTemplates';
 import ImmersiveTemplate from '../components/MenuTemplates/ImmersiveTemplate';
 import LighthouseTemplate from '../components/MenuTemplates/LighthouseTemplate';
+import ReviewFunnel from '../components/MenuTemplates/ReviewFunnel';
 
 const MenuViewPage = () => {
     const { shortId } = useParams();
@@ -68,6 +69,10 @@ const MenuViewPage = () => {
     const currency = meta.currency || '₹';
     const categories = Array.isArray(meta.categories) ? meta.categories : [];
     const template = meta.menuTemplate || 'modern'; // immersive, lighthouse, modern, playful
+    const googleReviewUrl = meta.googleReviewUrl || '';
+    const shieldPhone = meta.shieldPhone || meta.whatsappNumber || '';
+    const resolutionOffer = meta.resolutionOffer || '20% off next visit & direct resolution';
+    const enableReviewBooster = meta.enableReviewBooster !== false;
 
     const renderTemplate = () => {
         if (template === 'immersive') {
@@ -106,7 +111,21 @@ const MenuViewPage = () => {
         );
     };
 
-    return renderTemplate();
+    return (
+        <div className="relative min-h-screen">
+            {renderTemplate()}
+
+            {enableReviewBooster && (
+                <ReviewFunnel
+                    restaurantName={restaurantName}
+                    googleReviewUrl={googleReviewUrl}
+                    shieldPhone={shieldPhone}
+                    categories={categories}
+                    resolutionOffer={resolutionOffer}
+                />
+            )}
+        </div>
+    );
 };
 
 export default MenuViewPage;

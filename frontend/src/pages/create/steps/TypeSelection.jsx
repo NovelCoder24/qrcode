@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSelector } from 'react-redux';
 import {
     Globe,
     FileText,
@@ -10,10 +11,14 @@ import {
 } from 'lucide-react';
 
 const TypeSelection = ({ selectedType, onSelect, onProceed }) => {
+    const { user } = useSelector((state) => state.auth);
+    const workspaceMode = user?.workspaceMode || 'marketing';
+
     const types = [
         {
             id: 'URL',
             label: 'Website',
+            modes: ['storefront', 'marketing'],
             icon: <Globe size={24} />,
             desc: 'Link to any website URL',
             color: 'indigo'
@@ -21,6 +26,7 @@ const TypeSelection = ({ selectedType, onSelect, onProceed }) => {
         {
             id: 'PDF',
             label: 'PDF',
+            modes: ['marketing'],
             icon: <FileText size={24} />,
             desc: 'Show a PDF document',
             color: 'rose'
@@ -28,6 +34,7 @@ const TypeSelection = ({ selectedType, onSelect, onProceed }) => {
         {
             id: 'MENU',
             label: 'Menu',
+            modes: ['storefront', 'marketing'],
             icon: <Coffee size={24} />,
             desc: 'Restaurant or Cafe Menu',
             color: 'orange'
@@ -35,6 +42,7 @@ const TypeSelection = ({ selectedType, onSelect, onProceed }) => {
         {
             id: 'VCARD',
             label: 'vCard',
+            modes: ['storefront', 'marketing'],
             icon: <Contact size={24} />,
             desc: 'Digital business card',
             color: 'emerald'
@@ -42,6 +50,7 @@ const TypeSelection = ({ selectedType, onSelect, onProceed }) => {
         {
             id: 'WHATSAPP',
             label: 'WhatsApp',
+            modes: ['marketing'],
             icon: <MessageCircle size={24} />,
             desc: 'Pre-filled message link',
             color: 'green'
@@ -49,6 +58,7 @@ const TypeSelection = ({ selectedType, onSelect, onProceed }) => {
         {
             id: 'SOCIAL',
             label: 'Social Media',
+            modes: ['marketing'],
             icon: <Share2 size={24} />,
             desc: 'All your social links',
             color: 'blue'
@@ -56,6 +66,7 @@ const TypeSelection = ({ selectedType, onSelect, onProceed }) => {
         {
             id: 'MEDIA',
             label: 'Media',
+            modes: ['marketing'],
             icon: <Film size={24} />,
             desc: 'Image, video, or audio',
             color: 'purple'
@@ -85,7 +96,7 @@ const TypeSelection = ({ selectedType, onSelect, onProceed }) => {
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full">
-                {types.map((type) => {
+                {types.filter(t => t.modes.includes(workspaceMode)).map((type) => {
                     const isActive = selectedType === type.id;
                     return (
                         <div

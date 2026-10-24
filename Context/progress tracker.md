@@ -26,11 +26,20 @@ Build out QRVibe as the **In-Store Digital Front-Desk & Google Review Engine for
   - Built & hardened "AI Photo-to-Menu" in Step 2 of QR Creator (`backend/services/MenuAiService.js`, `MenuImportModal.jsx`, `MenuForm.jsx`, Gemini Flash multimodal OCR with allergen-safe descriptions and Unsplash dish fallback catalog).
   - Abstracted Menu Dishes & Dropdown Card UI in Step 2 of QR Creator (`frontend/src/pages/create/forms/MenuForm.jsx`, `frontend/src/components/MenuTemplates/MenuImportModal.jsx`): Replaced giant vertical scroll with a collapsible Dropdown Card right below Restaurant Details, abstracted dishes into compact expandable rows with inline editors, global expand/abstract controls, and smooth auto-scroll on AI import.
   - Implemented Architecture D: Smart Adaptive Redirect + Zero-Prompt Micro-Bridge + Atomic Telemetry Reconciliation (`redirectController.js`, `Geolocation.js`, 100% test pass on 45 tests).
+  - Built & deployed In-Menu **AI Google Review Booster & 1-to-3 Star Private Shield** (`ReviewFunnel.jsx`, `MenuViewPage.jsx`, `MenuForm.jsx`): Includes persistent floating bottom pill ("⭐ Loved our food? Tap to leave a 10s Google Review"), interactive 5-star rating modal, dynamic 3-draft AI review generator tailored to menu dishes with 1-tap clipboard copy & Google Maps review launcher, and private WhatsApp complaint shield with custom resolution offers.
+  - Implemented **Storefront vs. Marketing Workspace Mode (Progressive Disclosure)**:
+    - Backend: Added `workspaceMode` enum (`'storefront'`, `'marketing'`, default `null`) to `User.js` model, serialized in `sendTokens`, `getMe`, and allowed in `updateProfile`.
+    - Redux: Added `setWorkspaceMode` action to `authSlice.js` for reactive optimistic updates.
+    - Navigation: Sidebar conditionally displays 5 clean items for Storefront mode (`/dashboard`, `/qrcodes`, `/create`, `/billing`, `/account`) and hides high-noise items (Folders, Analytics, Alerts, Privacy); adapts plan card copy to "Table QR codes used".
+    - Overview: DashboardOverview dynamically hides marketing-specific cards (Print Safety Score with UTM checks, Team Seats) and surfaces localized table vocabulary.
+    - QR Creation: `TypeSelection.jsx` filters down to storefront essentials (Menu, vCard, Website URL) while preserving all 7 types in Marketing mode.
+    - Onboarding & Switcher: New users without mode selection receive a friendly `WorkspaceModeModal` prompt on their first visit, and merchants can freely toggle their mode anytime from `AccountPage.jsx` Settings.
+- **Menu Templates & Review Funnel Optimization:**
+  - **L'Ambroisie Immersive Layout Overhaul (`ImmersiveTemplate.jsx`):** Removed intrusive dish detail drawer popup, fake sommelier/calories/narrative mockups, and confusing chevron buttons. Upgraded typography with Google Fonts (`Playfair Display`, `Plus Jakarta Sans`), streamlined dish cards with baseline title/price alignment and full-width descriptions, added cross-category search, and expanded bottom clearance (`pb-28 sm:pb-32`).
+  - **Mobile-Responsive Review Badge (`ReviewFunnel.jsx` & Templates):** Eliminated broken multi-line text wrapping by adding `whitespace-nowrap` and responsive label scaling (compact `Leave a 10s Review` on narrow screens `<390px` and full label on larger screens). Increased bottom padding across all templates (`ImmersiveTemplate`, `LighthouseTemplate`, `BasicTemplates`) to ensure zero content overlap.
 
 ## ⏳ In Progress
-- Specifying and building the **AI Google Review Booster & 1-to-3 Star Private Shield** flow.
-- Adding "Call Waiter / Request Bill" actions to `MenuViewPage.jsx`.
-- 2-Sided Acrylic Standee printable canvas generator (4x6 inch export).
+- 2-Sided Acrylic Standee printable canvas generator (4x6 inch export with "Open Phone Camera to Scan, Not GPay").
 
 ## 🔜 Next Up
 1. **Finalize Pricing & Billing Architecture** (evaluate Annual Prepaid bundle vs Monthly UPI AutoPay).

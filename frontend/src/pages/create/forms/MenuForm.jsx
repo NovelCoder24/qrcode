@@ -18,7 +18,11 @@ import {
     Pencil,
     Check,
     X,
-    Eye
+    Eye,
+    Star,
+    ShieldCheck,
+    MessageSquare,
+    Gift
 } from 'lucide-react';
 import { uploadFile, parseMenuPhotos } from '../../../api/axios';
 import { compressMultipleFiles } from '../../../utils/imageCompressor';
@@ -30,6 +34,10 @@ const MenuForm = ({ data, onChange }) => {
     const restaurantName = d.restaurantName || '';
     const currency = d.currency || '₹';
     const menuTemplate = d.menuTemplate || 'modern'; // 'immersive', 'lighthouse', 'modern', 'playful'
+    const googleReviewUrl = d.googleReviewUrl || '';
+    const shieldPhone = d.shieldPhone || d.whatsappNumber || '';
+    const resolutionOffer = d.resolutionOffer || '20% off next visit & direct resolution';
+    const enableReviewBooster = d.enableReviewBooster !== false;
 
     // AI Photo-to-Menu State
     const [isScanning, setIsScanning] = useState(false);
@@ -86,6 +94,10 @@ const MenuForm = ({ data, onChange }) => {
             menuTemplate,
             currency,
             categories,
+            googleReviewUrl,
+            shieldPhone,
+            resolutionOffer,
+            enableReviewBooster,
             ...updates
         });
     };
@@ -405,32 +417,113 @@ const MenuForm = ({ data, onChange }) => {
             {/* Basic Info: Restaurant Details */}
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <h3 className="font-bold text-slate-800 text-lg">Restaurant Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Restaurant/Cafe Name</label>
-                        <input
-                            type="text"
-                            value={restaurantName}
-                            onChange={(e) => updateData({ restaurantName: e.target.value })}
-                            placeholder="e.g. The Coffee House"
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-slate-800"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Currency Symbol</label>
-                        <select
-                            value={currency}
-                            onChange={(e) => updateData({ currency: e.target.value })}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all cursor-pointer appearance-none font-medium text-slate-800"
-                            style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2364748b\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundPosition: 'right 1rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.2em 1.2em' }}
-                        >
-                            <option value="₹">₹ (INR)</option>
-                            <option value="$">$ (Dollar)</option>
-                            <option value="€">€ (Euro)</option>
-                            <option value="£">£ (Pound)</option>
-                        </select>
-                    </div>
+                <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Restaurant/Cafe Name</label>
+                    <input
+                        type="text"
+                        value={restaurantName}
+                        onChange={(e) => updateData({ restaurantName: e.target.value })}
+                        placeholder="e.g. The Coffee House"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-slate-800"
+                    />
                 </div>
+            </div>
+
+            {/* Google Review Booster & Private WhatsApp Shield */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-amber-500 shrink-0 shadow-2xs">
+                            <Star className="w-5 h-5 fill-amber-400" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h3 className="font-extrabold text-slate-900 text-lg">
+                                    Google Review Booster & Private Shield
+                                </h3>
+                                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
+                                    Reputation Engine
+                                </span>
+                            </div>
+                            <p className="text-xs text-slate-500 font-light mt-0.5">
+                                Captures 5-star Google reviews with AI drafts; shields 1-3 star complaints via private WhatsApp.
+                            </p>
+                        </div>
+                    </div>
+
+                    <label className="inline-flex items-center gap-2.5 cursor-pointer self-start sm:self-auto">
+                        <input
+                            type="checkbox"
+                            checked={enableReviewBooster}
+                            onChange={(e) => updateData({ enableReviewBooster: e.target.checked })}
+                            className="sr-only peer"
+                        />
+                        <div className="relative w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                        <span className="text-xs font-bold text-slate-700 select-none">
+                            {enableReviewBooster ? 'Enabled' : 'Disabled'}
+                        </span>
+                    </label>
+                </div>
+
+                {enableReviewBooster && (
+                    <div className="space-y-4 pt-2 border-t border-slate-100">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <span>Google Review Link</span>
+                                    <span className="text-[10px] text-amber-600 font-bold lowercase bg-amber-50 px-1.5 py-0.5 rounded">
+                                        (For 4 & 5 stars)
+                                    </span>
+                                </label>
+                                <input
+                                    type="url"
+                                    value={googleReviewUrl}
+                                    onChange={(e) => updateData({ googleReviewUrl: e.target.value })}
+                                    placeholder="https://g.page/r/.../review or Google Maps URL"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all font-medium text-slate-800"
+                                />
+                                <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
+                                    Get this from Google Business Profile → "Ask for reviews". We auto-copy 3 AI drafts so customers don't have to type!
+                                </p>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <span>Owner WhatsApp Phone (Private Shield)</span>
+                                    <span className="text-[10px] text-rose-600 font-bold lowercase bg-rose-50 px-1.5 py-0.5 rounded">
+                                        (For 1–3 stars)
+                                    </span>
+                                </label>
+                                <input
+                                    type="tel"
+                                    value={shieldPhone}
+                                    onChange={(e) => updateData({ shieldPhone: e.target.value })}
+                                    placeholder="e.g. +91 98765 43210 or 10-digit mobile"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all font-medium text-slate-800"
+                                />
+                                <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
+                                    Unhappy guests are routed here privately before damaging your public Google rating.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="pt-1">
+                            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                                Unhappy Guest Resolution Offer
+                            </label>
+                            <input
+                                type="text"
+                                value={resolutionOffer}
+                                onChange={(e) => updateData({ resolutionOffer: e.target.value })}
+                                placeholder="e.g. 20% off next visit & direct resolution"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-slate-800"
+                            />
+                            <p className="text-[11px] text-slate-400 mt-1.5">
+                                Offer promised to unhappy guests to defuse dissatisfaction and turn a bad review into a loyal repeat visit.
+                            </p>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Dropdown Card: Menu Categories & Abstracted Dishes */}

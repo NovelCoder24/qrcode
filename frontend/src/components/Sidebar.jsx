@@ -26,18 +26,20 @@ const UI_PLAN_LIMITS = {
 
 const Sidebar = ({ isOpen, overlay = false, onClose }) => {
     const primaryNav = [
-        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-        { id: 'qrcodes', label: 'My QR Codes', icon: QrCode, path: '/qrcodes' },
-        { id: 'folders', label: 'Folders', icon: Folder, path: '/folders' },
-        { id: 'create', label: 'Create QR', icon: PlusCircle, path: '/create', gated: true },
-        { id: 'analytics', label: 'Analytics', icon: BarChart2, path: '/analytics' },
-        { id: 'alerts', label: 'Alerts', icon: Bell, path: '/alerts' },
-        { id: 'billing', label: 'Billing', icon: CreditCard, path: '/billing' },
-        { id: 'privacy', label: 'Privacy & Data', icon: Shield, path: '/privacy-data' },
-        { id: 'settings', label: 'Settings', icon: Settings, path: '/account' },
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', modes: ['storefront', 'marketing'] },
+        { id: 'qrcodes', label: 'My QR Codes', icon: QrCode, path: '/qrcodes', modes: ['storefront', 'marketing'] },
+        { id: 'folders', label: 'Folders', icon: Folder, path: '/folders', modes: ['marketing'] },
+        { id: 'create', label: 'Create QR', icon: PlusCircle, path: '/create', gated: true, modes: ['storefront', 'marketing'] },
+        { id: 'analytics', label: 'Analytics', icon: BarChart2, path: '/analytics', modes: ['marketing'] },
+        { id: 'alerts', label: 'Alerts', icon: Bell, path: '/alerts', modes: ['marketing'] },
+        { id: 'billing', label: 'Billing', icon: CreditCard, path: '/billing', modes: ['storefront', 'marketing'] },
+        { id: 'privacy', label: 'Privacy & Data', icon: Shield, path: '/privacy-data', modes: ['marketing'] },
+        { id: 'settings', label: 'Settings', icon: Settings, path: '/account', modes: ['storefront', 'marketing'] },
     ];
 
     const { user } = useSelector((state) => state.auth);
+    const workspaceMode = user?.workspaceMode || 'marketing';
+    const filteredNav = primaryNav.filter(item => item.modes.includes(workspaceMode));
     const subscription = user?.subscription;
 
     const [showLimitModal, setShowLimitModal] = useState(false);
@@ -83,7 +85,7 @@ const Sidebar = ({ isOpen, overlay = false, onClose }) => {
 
             {/* Navigation */}
             <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-                {primaryNav.map((item) => {
+                {filteredNav.map((item) => {
                     const Icon = item.icon;
                     return (
                         <NavLink
@@ -118,7 +120,7 @@ const Sidebar = ({ isOpen, overlay = false, onClose }) => {
                 <NavLink to="/billing" className="block" onClick={() => onClose?.()}>
                     <p className="text-sm font-bold text-slate-800">{planName}</p>
                     <p className="text-xs text-slate-500 mt-0.5">
-                        {used}/{dynamicLimit === Infinity ? '∞' : dynamicLimit} QR codes used
+                        {used}/{dynamicLimit === Infinity ? '∞' : dynamicLimit} {workspaceMode === 'storefront' ? 'Table QR codes used' : 'QR codes used'}
                     </p>
                     <div className="mt-2.5 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <div

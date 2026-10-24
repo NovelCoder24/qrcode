@@ -92,7 +92,7 @@ const LighthouseTemplate = ({ restaurantName, currency, categories }) => {
             <div className="w-full max-w-[430px] h-[100dvh] sm:h-[880px] sm:rounded-[48px] overflow-hidden flex flex-col glass-panel-light shadow-[0_24px_70px_rgba(139,119,91,0.2)] border-0 sm:border-[8px] border-[#E5DEC3] relative z-10">
                 <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none z-50"></div>
 
-                <div ref={scrollContainerRef} className="flex-1 overflow-y-auto relative flex flex-col pb-16 bg-[#FAF8F5]" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div ref={scrollContainerRef} className="flex-1 overflow-y-auto relative flex flex-col pb-28 sm:pb-32 bg-[#FAF8F5]" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     
                     <div ref={topHeaderRef} className="relative pt-12 pb-6 px-6 text-center border-b border-[#EDE8DF] transition-opacity duration-75">
                         

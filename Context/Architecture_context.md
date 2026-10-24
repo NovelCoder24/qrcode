@@ -123,6 +123,7 @@ erDiagram
         string authProvider
         string whatsappNumber
         boolean whatsappOptIn
+        string workspaceMode
         object subscription
         object billing
     }
@@ -178,6 +179,7 @@ erDiagram
    * Indexes: `{ email: 1 }` (unique).
    * Password hashing: Bcrypt pre-save hook (salt rounds: 5).
    * JWT methods: `generateAccessToken()` (15m), `generateRefreshToken()` (7d).
+   * Workspace Mode: `workspaceMode` enum (`'storefront'`, `'marketing'`, default: `null`). Governs progressive disclosure across dashboard navigation, overview cards, and creation options.
 2. **`QRCode.js`:**
    * Indexes: `{ short_id: 1 }` (unique), `{ user_id: 1, accessMode: 1 }`, `{ folder_id: 1 }`.
    * Access modes: `'dynamic_active'`, `'static_locked'`, `'disabled'`.

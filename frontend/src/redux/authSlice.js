@@ -80,6 +80,11 @@ const authSlice = createSlice({
             if (state.user) {
                 state.user.activeQrCount = action.payload;
             }
+        },
+        setWorkspaceMode: (state, action) => {
+            if (state.user) {
+                state.user.workspaceMode = action.payload;
+            }
         }
     },
     // Handle the Thunk lifecycles (Pending, Fulfilled, Rejected)
@@ -151,5 +156,5 @@ const authSlice = createSlice({
     }
 });
 
-export const { clearError, setAuthError, updateSubscriptionStatus, setActiveQrCount } = authSlice.actions;
+export const { clearError, setAuthError, updateSubscriptionStatus, setActiveQrCount, setWorkspaceMode } = authSlice.actions;
 export default authSlice.reducer;

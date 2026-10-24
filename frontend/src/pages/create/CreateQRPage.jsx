@@ -192,7 +192,7 @@ const CreateQRPage = () => {
                         ...qrData,
                         title: qrData?.title || qrData?.restaurantName || 'Menu QR Code',
                         restaurantName: qrData?.restaurantName || 'Our Menu',
-                        currency: qrData?.currency || '$',
+                        currency: qrData?.currency || '₹',
                         menuTemplate: qrData?.menuTemplate || 'modern',
                         categories: Array.isArray(qrData?.categories) && qrData.categories.length > 0
                             ? qrData.categories

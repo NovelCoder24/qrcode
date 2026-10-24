@@ -26,6 +26,7 @@ Rather than competing as a generic "dynamic QR code utility" (a commoditized mar
    * **Side B (Merchant Payment):** Merchant's existing UPI QR (PhonePe/GPay/Paytm) for clean table bill settlement, eliminating table clutter and UPI muscle-memory confusion.
 6. **Monday Morning WhatsApp Push Digest:** Automated weekly delivery of scan counts, review clicks, and top-viewed items directly to the owner's WhatsApp, proving software value weekly without requiring desktop dashboard logins.
 7. **Data Privacy by Design (DPDP):** Full compliance with India's Digital Personal Data Protection Act using salted SHA-256 session context hashing instead of storing raw PII or IP addresses.
+8. **Storefront vs. Studio Workspace Mode (Progressive Disclosure):** Automatically adapts dashboard complexity to merchant needs. Local store owners (cafes, salons, clinics) get a focused, clutter-free 5-item sidebar (Dashboard, QR Codes, Create, Billing, Settings) and streamlined metrics, while agency/D2C marketers retain the full CRM dashboard with UTM builders, campaign folders, and deep multi-QR breakdowns. Switchable anytime from profile settings.
 
 ---
 
@@ -142,6 +143,7 @@ flowchart TD
 | **AI Snap-to-Page Importer** | Production | Multimodal Gemini Flash OCR extracting paper menus/rate cards into structured JSON in <60s |
 | **Visual Menus & Catalogs** | Production | 4 designer mobile templates (Modern, Playful, Immersive, Lighthouse) with dish photos & special tags |
 | **AI Google Review Booster** | In Development | 5★ AI draft generator + 1–3★ Private WhatsApp Owner Shield |
+| **Workspace Mode (Storefront vs. Studio)** | Production | Progressive disclosure adapting dashboard complexity between local store owners and D2C brands |
 | **2-Sided Standee Hardware** | Specified | Heavy-duty acrylic countertop standee (Side A: Menu/Reviews; Side B: Merchant UPI QR) |
 | **Monday WhatsApp Digest** | Specified | Automated weekly scan & review summary pushed directly to merchant WhatsApp |
 | **Hybrid Geolocation Engine** | Production | CDN headers -> MaxMind GeoLite2 -> FreeIPAPI with LRU caching |

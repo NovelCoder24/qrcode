@@ -59,7 +59,7 @@ export const ModernTemplate = ({ restaurantName, currency, categories }) => (
         </main>
         
         {/* Footer */}
-        <footer className="text-center py-8 opacity-40 text-xs font-sans tracking-widest text-slate-500 uppercase w-full">
+        <footer className="text-center pt-8 pb-24 sm:pb-28 opacity-40 text-xs font-sans tracking-widest text-slate-500 uppercase w-full">
             Powered by QRVibe
         </footer>
     </div>
@@ -124,7 +124,7 @@ export const PlayfulTemplate = ({ restaurantName, currency, categories }) => (
         </main>
         
         {/* Footer */}
-        <footer className="text-center py-8 opacity-40 text-xs font-bold tracking-widest text-rose-500 uppercase w-full">
+        <footer className="text-center pt-8 pb-24 sm:pb-28 opacity-40 text-xs font-bold tracking-widest text-rose-500 uppercase w-full">
             Powered by QRVibe
         </footer>
     </div>

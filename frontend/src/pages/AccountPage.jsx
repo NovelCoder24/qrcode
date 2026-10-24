@@ -11,6 +11,8 @@ import {
   Camera,
   Save,
   ExternalLink,
+  Store,
+  Package,
 } from "lucide-react"
 import { useDispatch, useSelector } from "react-redux"
 
@@ -20,7 +22,7 @@ import { Badge } from "@/components/UI/badge"
 import { cn } from "@/lib/utils"
 
 import api from "../api/axios"
-import { loadUser } from "../redux/authSlice"
+import { loadUser, setWorkspaceMode } from "../redux/authSlice"
 
 // ==========================================
 // MOCK DATA FOR DUMMY FEATURES
@@ -153,13 +155,15 @@ function ProfileSettings({ user, dispatch }) {
   const [email, setEmail] = React.useState(user?.email || "")
   const [company, setCompany] = React.useState("")
   const [whatsapp, setWhatsapp] = React.useState(user?.whatsappNumber || "")
+  const [workspaceMode, setLocalWorkspaceMode] = React.useState(user?.workspaceMode || "marketing")
   const [isSaving, setIsSaving] = React.useState(false)
 
   const handleSave = async () => {
     setIsSaving(true)
     try {
       // Pushing everything to profile endpoint. Backend will handle what it supports.
-      await api.put('/users/profile', { whatsappNumber: whatsapp, name, company });
+      await api.put('/users/profile', { whatsappNumber: whatsapp, name, company, workspaceMode });
+      dispatch(setWorkspaceMode(workspaceMode));
       await dispatch(loadUser());
       alert("Profile updated successfully!");
     } catch (e) {
@@ -241,6 +245,65 @@ function ProfileSettings({ user, dispatch }) {
                 onChange={(e) => setWhatsapp(e.target.value)}
               />
               <p className="text-[10px] text-muted-foreground mt-1">Used for broken link alerts if opted in via Privacy page.</p>
+            </div>
+          </div>
+
+          {/* Dashboard Mode Selection */}
+          <div className="space-y-3 pt-3 border-t">
+            <div>
+              <Label className="text-sm font-semibold">Dashboard Mode</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Customize navigation and tools based on your business model.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setLocalWorkspaceMode('storefront')}
+                className={cn(
+                  "flex items-start gap-3 rounded-xl border p-4 text-left transition-all",
+                  workspaceMode === 'storefront'
+                    ? "border-indigo-600 bg-indigo-50/50 ring-2 ring-indigo-600/20"
+                    : "border-border hover:border-slate-300 hover:bg-slate-50/50"
+                )}
+              >
+                <div className={cn(
+                  "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                  workspaceMode === 'storefront' ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600"
+                )}>
+                  <Store className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">In-Store Storefront</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    Optimized for cafes, salons, clinics. Shows digital menus, Google review booster, and table standees.
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setLocalWorkspaceMode('marketing')}
+                className={cn(
+                  "flex items-start gap-3 rounded-xl border p-4 text-left transition-all",
+                  workspaceMode === 'marketing'
+                    ? "border-indigo-600 bg-indigo-50/50 ring-2 ring-indigo-600/20"
+                    : "border-border hover:border-slate-300 hover:bg-slate-50/50"
+                )}
+              >
+                <div className={cn(
+                  "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                  workspaceMode === 'marketing' ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600"
+                )}>
+                  <Package className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Marketing & D2C</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    Full CRM experience with UTM campaign tags, Folders, and deep scan analytics.
+                  </p>
+                </div>
+              </button>
             </div>
           </div>
         </div>

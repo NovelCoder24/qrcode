@@ -126,6 +126,8 @@ function LoadingDashboard() {
 export default function DashboardOverview() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  const workspaceMode = user?.workspaceMode || 'marketing';
+  const isStorefront = workspaceMode === 'storefront';
   const [qrCodes, setQrCodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [checkingLinks, setCheckingLinks] = useState(false);
@@ -557,7 +559,8 @@ export default function DashboardOverview() {
         </div>
 
         <div className="space-y-6">
-          {/* Print Safety Score */}
+          {/* Print Safety Score (Marketing Only) */}
+          {!isStorefront && (
           <Card className="shadow-none border-slate-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 p-5 pb-3">
               <CardTitle className="text-base font-bold text-slate-800">Print Safety Score</CardTitle>
@@ -599,6 +602,7 @@ export default function DashboardOverview() {
               />
             </CardContent>
           </Card>
+          )}
 
           {/* Recent Scans */}
           <Card className="shadow-none border-slate-200">
@@ -657,7 +661,7 @@ export default function DashboardOverview() {
                   {/* Dynamic QRs Progress */}
                   <div>
                     <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-                      <span>Dynamic QRs</span>
+                      <span>{isStorefront ? 'Table QRs' : 'Dynamic QRs'}</span>
                       <span className="text-slate-800">{activeQrCount}/{maxQrs}</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
@@ -677,15 +681,17 @@ export default function DashboardOverview() {
                   </div>
 
                   {/* Team Seats Progress */}
-                  <div>
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-                      <span>Team Seats</span>
-                      <span className="text-slate-800">{seatsUsed}/{maxSeats}</span>
+                  {!isStorefront && (
+                    <div>
+                      <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                        <span>Team Seats</span>
+                        <span className="text-slate-800">{seatsUsed}/{maxSeats}</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
+                        <div className="bg-slate-900 h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(100, Math.max(0, seatsPercentage))}%` }}></div>
+                      </div>
                     </div>
-                    <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
-                      <div className="bg-slate-900 h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(100, Math.max(0, seatsPercentage))}%` }}></div>
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             );

@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/UI/dropdown-menu';
 import UpgradeModal from '@/components/UpgradeModal';
+import WorkspaceModeModal from '@/components/WorkspaceModeModal';
 import Sidebar from '@/components/Sidebar';
 
 const pageLabels = [
@@ -285,8 +286,11 @@ function Topbar({ onToggleSidebar }) {
 }
 
 export default function DashboardLayout({ children }) {
+  const { user } = useSelector((state) => state.auth);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
+  const showOnboarding = Boolean(user && user.workspaceMode === null && !user.hasCreatedFirstQR);
   const location = useLocation();
 
   // Close mobile sidebar on route change
@@ -315,6 +319,12 @@ export default function DashboardLayout({ children }) {
         />
       )}
       <UpgradeModal isOpen={upgradeModalOpen} onClose={() => setUpgradeModalOpen(false)} type="limit" />
+      {showOnboarding && !onboardingDismissed && (
+        <WorkspaceModeModal
+          open={true}
+          onClose={() => setOnboardingDismissed(true)}
+        />
+      )}
     </div>
   );
 }

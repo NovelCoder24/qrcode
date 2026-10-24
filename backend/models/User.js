@@ -120,6 +120,12 @@ const userSchema = new mongoose.Schema({
     hasCreatedFirstQR: {
         type: Boolean,
         default: false
+    },
+    // Workspace mode: progressive disclosure for storefront vs D2C marketing dashboard
+    workspaceMode: {
+        type: String,
+        enum: ['storefront', 'marketing'],
+        default: null
     }
 }, { timestamps: true })
 
