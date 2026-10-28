@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, ChefHat, Cake, GlassWater, LayoutGrid, Inbox } from 'lucide-react';
 
-const LighthouseTemplate = ({ restaurantName, currency, categories }) => {
+const LighthouseTemplate = ({ restaurantName, currency, categories = [], businessCategory = 'cafe' }) => {
     const [activeCategory, setActiveCategory] = useState("all");
     const [filters, setFilters] = useState({ veg: false, gf: false });
+    const [clientFilter, setClientFilter] = useState('all');
     const scrollContainerRef = useRef(null);
     const topHeaderRef = useRef(null);
 
@@ -44,9 +45,19 @@ const LighthouseTemplate = ({ restaurantName, currency, categories }) => {
     const hasMatchesOverall = categories.some((cat, idx) => {
         if (activeCategory !== "all" && activeCategory !== idx.toString()) return false;
         const filteredItems = (cat.items || []).filter(item => {
-            const tags = item.tags || [];
-            if (filters.veg && !tags.includes("veg")) return false;
-            if (filters.gf && !tags.includes("gf")) return false;
+            if (businessCategory === 'salon') {
+                if (clientFilter === 'for_her') {
+                    if (item.targetGender && item.targetGender !== 'for_her' && item.targetGender !== 'unisex') return false;
+                } else if (clientFilter === 'for_him') {
+                    if (item.targetGender && item.targetGender !== 'for_him' && item.targetGender !== 'unisex') return false;
+                } else if (clientFilter === 'unisex') {
+                    if (item.targetGender && item.targetGender !== 'unisex') return false;
+                }
+            } else {
+                const tags = item.tags || [];
+                if (filters.veg && !tags.includes("veg")) return false;
+                if (filters.gf && !tags.includes("gf")) return false;
+            }
             return true;
         });
         return filteredItems.length > 0;
@@ -97,11 +108,11 @@ const LighthouseTemplate = ({ restaurantName, currency, categories }) => {
                     <div ref={topHeaderRef} className="relative pt-12 pb-6 px-6 text-center border-b border-[#EDE8DF] transition-opacity duration-75">
                         
                         <h1 className="font-['Cinzel'] text-3xl font-light text-[#2C2B29] tracking-[0.12em] leading-none mb-1 uppercase">{restaurantName || "Lighthouse"}</h1>
-                        <p className="font-['Playfair_Display'] italic text-lg text-[#4E6570] font-light tracking-wide">Menu</p>
+                        <p className="font-['Playfair_Display'] italic text-lg text-[#4E6570] font-light tracking-wide">{businessCategory === 'salon' ? 'Rate Card' : 'Menu'}</p>
                         
                         <div className="mt-4 flex items-center justify-center space-x-2.5 bg-[#F6F2EB] py-1 px-3.5 rounded-full inline-flex border border-[#EAE3D8]">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 pulse-dot-gold"></span>
-                            <span className="text-[10px] font-medium tracking-wide text-[#5C5A55]">Serving Brunch & Mains</span>
+                            <span className="text-[10px] font-medium tracking-wide text-[#5C5A55]">{businessCategory === 'salon' ? 'Open for Appointments' : 'Serving Brunch & Mains'}</span>
                         </div>
                     </div>
 
@@ -112,7 +123,7 @@ const LighthouseTemplate = ({ restaurantName, currency, categories }) => {
                                 className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-300 ${activeCategory === "all" ? "bg-[#C5A880] text-white font-semibold shadow-md shadow-[#C5A880]/20" : "bg-[#F3EFE9] text-[#5E5B54] hover:text-[#2C2B29] border border-[#EDE8DF]"}`}
                             >
                                 <LayoutGrid className="w-3.5 h-3.5" />
-                                <span>All Menu</span>
+                                <span>{businessCategory === 'salon' ? 'All Services' : 'All Menu'}</span>
                             </button>
                             {categories.map((cat, idx) => {
                                 const key = idx.toString();
@@ -131,22 +142,45 @@ const LighthouseTemplate = ({ restaurantName, currency, categories }) => {
                         </div>
 
                         {/* Dietary Filter Buttons */}
-                        <div className="flex items-center px-6 space-x-3">
-                            <button 
-                                onClick={() => setFilters(prev => ({ ...prev, veg: !prev.veg }))}
-                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-300 border ${filters.veg ? "bg-emerald-500/10 border-emerald-600/30 text-emerald-800 font-semibold" : "bg-transparent border-[#EDE8DF] text-[#78756E]"}`}
-                            >
-                                <span className={`w-2 h-2 rounded-full ${filters.veg ? "bg-emerald-600" : "bg-[#AFAAA0]"}`}></span>
-                                <span>Vegetarian</span>
-                            </button>
-                            <button 
-                                onClick={() => setFilters(prev => ({ ...prev, gf: !prev.gf }))}
-                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-300 border ${filters.gf ? "bg-amber-500/10 border-amber-600/30 text-amber-800 font-semibold" : "bg-transparent border-[#EDE8DF] text-[#78756E]"}`}
-                            >
-                                <span className={`w-2 h-2 rounded-full ${filters.gf ? "bg-amber-600" : "bg-[#AFAAA0]"}`}></span>
-                                <span>Gluten-Free</span>
-                            </button>
-                        </div>
+                        {businessCategory === 'salon' ? (
+                            <div className="flex items-center px-6 space-x-2 overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                {[
+                                    { id: 'all', label: 'All' },
+                                    { id: 'for_her', label: 'For Her' },
+                                    { id: 'for_him', label: 'For Him' },
+                                    { id: 'unisex', label: 'Unisex' }
+                                ].map((opt) => (
+                                    <button
+                                        key={opt.id}
+                                        onClick={() => setClientFilter(opt.id)}
+                                        className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-300 border whitespace-nowrap ${
+                                            clientFilter === opt.id
+                                                ? "bg-[#C5A880] text-white font-semibold border-[#C5A880]"
+                                                : "bg-transparent border-[#EDE8DF] text-[#78756E]"
+                                        }`}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex items-center px-6 space-x-3">
+                                <button 
+                                    onClick={() => setFilters(prev => ({ ...prev, veg: !prev.veg }))}
+                                    className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-300 border ${filters.veg ? "bg-emerald-500/10 border-emerald-600/30 text-emerald-800 font-semibold" : "bg-transparent border-[#EDE8DF] text-[#78756E]"}`}
+                                >
+                                    <span className={`w-2 h-2 rounded-full ${filters.veg ? "bg-emerald-600" : "bg-[#AFAAA0]"}`}></span>
+                                    <span>Vegetarian</span>
+                                </button>
+                                <button 
+                                    onClick={() => setFilters(prev => ({ ...prev, gf: !prev.gf }))}
+                                    className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-300 border ${filters.gf ? "bg-amber-500/10 border-amber-600/30 text-amber-800 font-semibold" : "bg-transparent border-[#EDE8DF] text-[#78756E]"}`}
+                                >
+                                    <span className={`w-2 h-2 rounded-full ${filters.gf ? "bg-amber-600" : "bg-[#AFAAA0]"}`}></span>
+                                    <span>Gluten-Free</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     <div className="p-6 space-y-8 flex-1">
@@ -154,9 +188,19 @@ const LighthouseTemplate = ({ restaurantName, currency, categories }) => {
                             if (activeCategory !== "all" && activeCategory !== idx.toString()) return null;
 
                             const filteredItems = (cat.items || []).filter(item => {
-                                const tags = item.tags || [];
-                                if (filters.veg && !tags.includes("veg")) return false;
-                                if (filters.gf && !tags.includes("gf")) return false;
+                                if (businessCategory === 'salon') {
+                                    if (clientFilter === 'for_her') {
+                                        if (item.targetGender && item.targetGender !== 'for_her' && item.targetGender !== 'unisex') return false;
+                                    } else if (clientFilter === 'for_him') {
+                                        if (item.targetGender && item.targetGender !== 'for_him' && item.targetGender !== 'unisex') return false;
+                                    } else if (clientFilter === 'unisex') {
+                                        if (item.targetGender && item.targetGender !== 'unisex') return false;
+                                    }
+                                } else {
+                                    const tags = item.tags || [];
+                                    if (filters.veg && !tags.includes("veg")) return false;
+                                    if (filters.gf && !tags.includes("gf")) return false;
+                                }
                                 return true;
                             });
 
@@ -200,6 +244,25 @@ const LighthouseTemplate = ({ restaurantName, currency, categories }) => {
                                                                 </div>
                                                             </div>
                                                             <p className="text-xs text-[#615E58] leading-relaxed font-normal">{item.description}</p>
+                                                            {(item.duration || item.brandUsed || (item.targetGender && item.targetGender !== 'unisex')) && (
+                                                                <div className="flex flex-wrap items-center gap-1.5 mt-2 pt-1.5 border-t border-[#EDE8DF]/60">
+                                                                    {item.duration && (
+                                                                        <span className="text-[10px] text-[#78756E] bg-[#F3EFE9] px-2 py-0.5 rounded font-medium border border-[#EDE8DF]">
+                                                                            ⏱️ {item.duration}
+                                                                        </span>
+                                                                    )}
+                                                                    {item.brandUsed && (
+                                                                        <span className="text-[10px] text-[#8B775B] bg-[#F6F2EB] px-2 py-0.5 rounded font-medium border border-[#EAE3D8]">
+                                                                            🧴 {item.brandUsed}
+                                                                        </span>
+                                                                    )}
+                                                                    {item.targetGender && item.targetGender !== 'unisex' && (
+                                                                        <span className="text-[10px] text-purple-800 bg-purple-50 px-2 py-0.5 rounded font-medium border border-purple-200">
+                                                                            {item.targetGender === 'for_her' ? 'For Her' : 'For Him'}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            )}
                                                         </div>
 
                                                         <div className="flex items-center justify-between gap-3 pt-2 border-t border-[#EDE8DF]/60 mt-auto">

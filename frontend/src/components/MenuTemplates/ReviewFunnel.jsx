@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { getVocabulary } from '../../config/vocabulary';
 import { 
     Star, 
     X, 
@@ -32,6 +33,7 @@ const ReviewFunnel = ({
     const [hoverRating, setHoverRating] = useState(0);
     const [copiedIndex, setCopiedIndex] = useState(null);
     const [isPillDismissed, setIsPillDismissed] = useState(false);
+    const v = getVocabulary(businessCategory);
     
     // Low rating (1-3 stars) shield state
     const [selectedIssues, setSelectedIssues] = useState([]);
@@ -47,8 +49,8 @@ const ReviewFunnel = ({
     }, [shieldPhone]);
 
     // Extract bestseller / top dishes from menu categories for AI synthesis
-    const featuredDishes = useMemo(() => {
-        const dishList = [];
+    const featuredItems = useMemo(() => {
+        const itemList = [];
         if (Array.isArray(categories)) {
             categories.forEach(cat => {
                 if (Array.isArray(cat?.items)) {
@@ -66,30 +68,21 @@ const ReviewFunnel = ({
         return dishList.slice(0, 5);
     }, [categories]);
 
-    // Synthesize 3 natural AI review drafts
+    // Synthesize 3 natural AI review drafts using vertical vocabulary
     const reviewDrafts = useMemo(() => {
-        const dish1 = featuredDishes[0] || 'Cold Coffee';
-        const dish2 = featuredDishes[1] || 'food';
-        const dish3 = featuredDishes[2] || 'specialties';
+        const item1 = featuredItems[0];
+        const item2 = featuredItems[1];
+        const drafts = typeof v.reviewFunnel?.templateDrafts === 'function'
+            ? v.reviewFunnel.templateDrafts(restaurantName, item1, item2)
+            : [];
+        const tags = v.reviewFunnel?.draftTags || ['✨ Quality & Care', '⭐ Experience', '🔥 Must Visit'];
 
-        return [
-            {
-                id: 'draft-1',
-                tag: '✨ Food & Ambience',
-                text: `Loved the food and aesthetic ambience at ${restaurantName}! The ${dish1} was absolutely delicious and freshly made. Super warm staff and quick service. 10/10 recommendation! ⭐⭐⭐⭐⭐`
-            },
-            {
-                id: 'draft-2',
-                tag: '☕ Quality & Vibe',
-                text: `Had an amazing dining experience at ${restaurantName}. The ${dish2} and hospitality were top notch! Great music, cozy seating, and wonderful presentation. Definitely coming back!`
-            },
-            {
-                id: 'draft-3',
-                tag: '🔥 Must Visit',
-                text: `One of the best dining spots in town! Tried their ${dish1} and ${dish3}—everything tasted incredible. Quick service and pocket-friendly pricing. Highly recommend everyone to visit!`
-            }
-        ];
-    }, [restaurantName, featuredDishes]);
+        return drafts.map((text, idx) => ({
+            id: `draft-${idx + 1}`,
+            tag: tags[idx] || `Draft #${idx + 1}`,
+            text
+        }));
+    }, [restaurantName, featuredItems, v]);
 
     // Rating descriptor text
     const getRatingDescriptor = (stars) => {
@@ -173,9 +166,8 @@ const ReviewFunnel = ({
                                 ★
                             </span>
                             <span className="flex items-center gap-1.5 whitespace-nowrap text-xs font-bold">
-                                <span className="text-slate-200 hidden min-[390px]:inline">Loved our food?</span>
                                 <span className="text-amber-300 underline underline-offset-2 hover:text-amber-200 transition-colors">
-                                    Leave a 10s Review
+                                    {v.bottomCta?.pill?.replace(/^⭐\s*/, '') || 'Leave a 10s Review'}
                                 </span>
                             </span>
                         </button>
@@ -250,10 +242,10 @@ const ReviewFunnel = ({
                                     <Sparkles className="w-3.5 h-3.5 text-amber-500" /> 10-Second Feedback
                                 </span>
                                 <h2 className="text-xl font-black text-slate-900 tracking-tight">
-                                    How was your visit today?
+                                    {v.reviewFunnel?.heading || 'How was your visit today?'}
                                 </h2>
                                 <p className="text-xs text-slate-500 max-w-xs mx-auto">
-                                    {currentDescriptor.sub}
+                                    {v.reviewFunnel?.subheading || currentDescriptor.sub}
                                 </p>
 
                                 {/* 5 Big Stars */}
@@ -381,7 +373,7 @@ const ReviewFunnel = ({
                                             What can we improve? (Tap all that apply)
                                         </label>
                                         <div className="flex flex-wrap gap-1.5">
-                                            {['Food Taste', 'Slow Service', 'Cleanliness', 'Order Accuracy', 'Staff Behavior', 'Pricing'].map((tag) => {
+                                            {(v.reviewFunnel?.complaintTags || ['Service Quality', 'Wait Time', 'Cleanliness', 'Staff Behavior', 'Pricing']).map((tag) => {
                                                 const isSelected = selectedIssues.includes(tag);
                                                 return (
                                                     <button

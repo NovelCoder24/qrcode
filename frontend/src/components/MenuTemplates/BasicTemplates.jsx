@@ -1,7 +1,7 @@
 import React from 'react';
-import { Utensils } from 'lucide-react';
+import { Utensils, Sparkles } from 'lucide-react';
 
-export const ModernTemplate = ({ restaurantName, currency, categories }) => (
+export const ModernTemplate = ({ restaurantName, currency, categories = [], businessCategory = 'cafe' }) => (
     <div className="bg-slate-50 min-h-screen text-slate-900 font-sans antialiased overflow-x-hidden">
         {/* Header */}
         <header className="sticky top-0 z-30 py-6 px-4 bg-white/80 backdrop-blur-md text-center border-b border-slate-100 shadow-sm w-full">
@@ -20,7 +20,11 @@ export const ModernTemplate = ({ restaurantName, currency, categories }) => (
                         <div key={idx} className="mb-10 sm:mb-12 w-full">
                             {/* Category Title */}
                             <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-slate-800 mb-5 sm:mb-6 pb-2 border-b border-slate-200 flex items-center gap-2 break-words">
-                                <Utensils className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600 flex-shrink-0" />
+                                {businessCategory === 'salon' ? (
+                                    <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600 flex-shrink-0" />
+                                ) : (
+                                    <Utensils className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600 flex-shrink-0" />
+                                )}
                                 <span className="break-words min-w-0">{cat.name}</span>
                             </h2>
 
@@ -47,6 +51,25 @@ export const ModernTemplate = ({ restaurantName, currency, categories }) => (
                                                 <p className="text-sm text-slate-500 font-light leading-relaxed mt-1 w-full break-words flex-1">
                                                     {item.description || 'No description available.'}
                                                 </p>
+                                                {(item.duration || item.brandUsed || (item.targetGender && item.targetGender !== 'unisex')) && (
+                                                    <div className="flex flex-wrap items-center gap-1.5 mt-2.5 pt-2 border-t border-slate-100">
+                                                        {item.duration && (
+                                                            <span className="inline-flex items-center text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+                                                                ⏱️ {item.duration}
+                                                            </span>
+                                                        )}
+                                                        {item.brandUsed && (
+                                                            <span className="inline-flex items-center text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">
+                                                                🧴 {item.brandUsed}
+                                                            </span>
+                                                        )}
+                                                        {item.targetGender && item.targetGender !== 'unisex' && (
+                                                            <span className="inline-flex items-center text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md">
+                                                                {item.targetGender === 'for_her' ? 'For Her' : 'For Him'}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     );
@@ -65,7 +88,7 @@ export const ModernTemplate = ({ restaurantName, currency, categories }) => (
     </div>
 );
 
-export const PlayfulTemplate = ({ restaurantName, currency, categories }) => (
+export const PlayfulTemplate = ({ restaurantName, currency, categories = [], businessCategory = 'cafe' }) => (
     <div className="bg-rose-50/60 min-h-screen text-slate-800 font-sans antialiased overflow-x-hidden">
         {/* Header */}
         <header className="sticky top-0 z-30 py-6 sm:py-8 px-4 bg-white text-center rounded-b-[2rem] sm:rounded-b-[3rem] shadow-sm mb-6 sm:mb-10 border-b border-rose-100/50 w-full mx-auto max-w-full">
@@ -110,8 +133,27 @@ export const PlayfulTemplate = ({ restaurantName, currency, categories }) => (
                                                     </span>
                                                 </div>
                                                 <p className="text-sm sm:text-base text-slate-500 font-medium leading-relaxed w-full break-words flex-1">
-                                                    {item.description || 'Tasty preparation prepared fresh.'}
+                                                    {item.description || (businessCategory === 'salon' ? 'Professional service & premium care.' : 'Tasty preparation prepared fresh.')}
                                                 </p>
+                                                {(item.duration || item.brandUsed || (item.targetGender && item.targetGender !== 'unisex')) && (
+                                                    <div className="flex flex-wrap items-center gap-1.5 mt-2.5 pt-2 border-t border-rose-100/60">
+                                                        {item.duration && (
+                                                            <span className="inline-flex items-center text-[10px] font-bold text-slate-700 bg-rose-50 px-2 py-0.5 rounded-md">
+                                                                ⏱️ {item.duration}
+                                                            </span>
+                                                        )}
+                                                        {item.brandUsed && (
+                                                            <span className="inline-flex items-center text-[10px] font-bold text-rose-700 bg-rose-100/70 px-2 py-0.5 rounded-md">
+                                                                🧴 {item.brandUsed}
+                                                            </span>
+                                                        )}
+                                                        {item.targetGender && item.targetGender !== 'unisex' && (
+                                                            <span className="inline-flex items-center text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md">
+                                                                {item.targetGender === 'for_her' ? 'For Her' : 'For Him'}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     );

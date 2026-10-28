@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, MessageCircle } from 'lucide-react';
 import axios from 'axios';
 import { ModernTemplate, PlayfulTemplate } from '../components/MenuTemplates/BasicTemplates';
 import ImmersiveTemplate from '../components/MenuTemplates/ImmersiveTemplate';
@@ -81,6 +81,7 @@ const MenuViewPage = () => {
                     restaurantName={restaurantName}
                     currency={currency}
                     categories={categories}
+                    businessCategory={businessCategory}
                 />
             );
         }
@@ -90,6 +91,7 @@ const MenuViewPage = () => {
                     restaurantName={restaurantName}
                     currency={currency}
                     categories={categories}
+                    businessCategory={businessCategory}
                 />
             );
         }
@@ -99,6 +101,7 @@ const MenuViewPage = () => {
                     restaurantName={restaurantName}
                     currency={currency}
                     categories={categories}
+                    businessCategory={businessCategory}
                 />
             );
         }
@@ -107,16 +110,37 @@ const MenuViewPage = () => {
                 restaurantName={restaurantName}
                 currency={currency}
                 categories={categories}
+                businessCategory={businessCategory}
             />
         );
     };
+
+    const cleanPhone = shieldPhone ? String(shieldPhone).replace(/\D/g, '') : '';
+    const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    const bookingMsg = `Hi, I'm browsing your rate card at ${restaurantName} and would like to book an appointment.`;
+    const waBookingUrl = waPhone ? `https://wa.me/${waPhone}?text=${encodeURIComponent(bookingMsg)}` : '';
 
     return (
         <div className="relative min-h-screen">
             {renderTemplate()}
 
+            {businessCategory === 'salon' && waBookingUrl && (
+                <div className="fixed bottom-16 sm:bottom-18 left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-1.5rem)] w-max pointer-events-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <a
+                        href={waBookingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl backdrop-blur-md text-xs font-bold tracking-tight transition-all active:scale-95 border border-emerald-400/40"
+                    >
+                        <MessageCircle className="w-3.5 h-3.5 fill-white text-emerald-600" />
+                        <span>Book Next Visit on WhatsApp</span>
+                    </a>
+                </div>
+            )}
+
             {enableReviewBooster && (
                 <ReviewFunnel
+                    businessCategory={businessCategory}
                     restaurantName={restaurantName}
                     googleReviewUrl={googleReviewUrl}
                     shieldPhone={shieldPhone}

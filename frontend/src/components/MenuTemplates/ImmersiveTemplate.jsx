@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ChefHat, Cake, Wine, Sparkles, X, Search, Compass } from 'lucide-react';
 
-const ImmersiveTemplate = ({ restaurantName, currency, categories = [] }) => {
+const ImmersiveTemplate = ({ restaurantName, currency, categories = [], businessCategory = 'cafe' }) => {
     // Determine initial category
     const initialCat = categories && categories.length > 0 ? categories[0].name : '';
     const [currentCategoryName, setCurrentCategoryName] = useState(initialCat);
     const [filters, setFilters] = useState({ veg: false, gf: false, search: '' });
+    const [clientFilter, setClientFilter] = useState('all');
     const [isSearchActive, setIsSearchActive] = useState(false);
     const scrollContainerRef = useRef(null);
     const heroBgRef = useRef(null);
@@ -88,9 +89,19 @@ const ImmersiveTemplate = ({ restaurantName, currency, categories = [] }) => {
         }
 
         return sourceItems.filter(item => {
-            const tags = item.tags || [];
-            if (filters.veg && !tags.includes('veg')) return false;
-            if (filters.gf && !tags.includes('gf')) return false;
+            if (businessCategory === 'salon') {
+                if (clientFilter === 'for_her') {
+                    if (item.targetGender && item.targetGender !== 'for_her' && item.targetGender !== 'unisex') return false;
+                } else if (clientFilter === 'for_him') {
+                    if (item.targetGender && item.targetGender !== 'for_him' && item.targetGender !== 'unisex') return false;
+                } else if (clientFilter === 'unisex') {
+                    if (item.targetGender && item.targetGender !== 'unisex') return false;
+                }
+            } else {
+                const tags = item.tags || [];
+                if (filters.veg && !tags.includes('veg')) return false;
+                if (filters.gf && !tags.includes('gf')) return false;
+            }
 
             if (query) {
                 const matchName = (item.name || '').toLowerCase().includes(query);
@@ -100,7 +111,7 @@ const ImmersiveTemplate = ({ restaurantName, currency, categories = [] }) => {
 
             return true;
         });
-    }, [categories, activeCategory, filters]);
+    }, [categories, activeCategory, filters, clientFilter, businessCategory]);
 
     return (
         <div className="font-['Plus_Jakarta_Sans',sans-serif] bg-[#0b090a] text-[#f5f3f4] min-h-screen flex items-center justify-center p-0 sm:p-4 md:p-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1d1516] via-[#0d0a0b] to-[#070506]">
@@ -141,19 +152,19 @@ const ImmersiveTemplate = ({ restaurantName, currency, categories = [] }) => {
                         <div className="relative z-10 space-y-1">
                             <div className="flex items-center space-x-2">
                                 <span className="h-[1px] w-6 bg-[#d4af37]"></span>
-                                <p className="text-[10px] uppercase tracking-[0.25em] text-[#d4af37] font-semibold">Fine Experience</p>
+                                <p className="text-[10px] uppercase tracking-[0.25em] text-[#d4af37] font-semibold">{businessCategory === 'salon' ? 'Salon & Aesthetics' : 'Fine Experience'}</p>
                             </div>
                             <h1 className="font-['Playfair_Display',serif] text-3xl sm:text-4xl font-light text-white leading-tight tracking-wide">
                                 {restaurantName || "Our Menu"}
                             </h1>
                             <p className="text-xs text-[#a39e9e] font-light max-w-[90%] line-clamp-2">
-                                Curated artisanal ingredients prepared for an exquisite dining experience.
+                                {businessCategory === 'salon' ? 'Bespoke beauty, hair styling & aesthetic treatments.' : 'Curated artisanal ingredients prepared for an exquisite dining experience.'}
                             </p>
                         </div>
 
                         <div className="absolute top-5 left-6 z-10 flex items-center space-x-2 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-xs">
                             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-[pulse_2s_infinite]"></span>
-                            <span className="text-[10px] font-medium tracking-wide text-white/90">Serving Now</span>
+                            <span className="text-[10px] font-medium tracking-wide text-white/90">{businessCategory === 'salon' ? 'Open Today' : 'Serving Now'}</span>
                         </div>
                     </div>
 
@@ -201,7 +212,7 @@ const ImmersiveTemplate = ({ restaurantName, currency, categories = [] }) => {
                                         type="text" 
                                         value={filters.search}
                                         onChange={(e) => setFilters(f => ({ ...f, search: e.target.value }))}
-                                        placeholder="Search dishes..." 
+                                        placeholder={businessCategory === 'salon' ? 'Search services...' : 'Search dishes...'} 
                                         className="w-full bg-[#161314] text-xs pl-8 pr-8 py-1.5 rounded-full border border-[#d4af37]/50 text-white placeholder-white/40 outline-none focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/50"
                                     />
                                     <button 
@@ -218,32 +229,56 @@ const ImmersiveTemplate = ({ restaurantName, currency, categories = [] }) => {
                                 </div>
                             ) : (
                                 <>
-                                    <div className="flex space-x-2">
-                                        <button 
-                                            type="button"
-                                            onClick={() => setFilters(f => ({ ...f, veg: !f.veg }))} 
-                                            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full border transition-all duration-200 text-xs font-medium cursor-pointer ${
-                                                filters.veg 
-                                                    ? 'bg-emerald-950/60 border-emerald-500/60 text-emerald-300' 
-                                                    : 'bg-transparent border-[#221b1c] text-[#a39e9e] hover:border-white/20'
-                                            }`}
-                                        >
-                                            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
-                                            <span>Vegetarian</span>
-                                        </button>
-                                        <button 
-                                            type="button"
-                                            onClick={() => setFilters(f => ({ ...f, gf: !f.gf }))} 
-                                            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full border transition-all duration-200 text-xs font-medium cursor-pointer ${
-                                                filters.gf 
-                                                    ? 'bg-amber-950/60 border-amber-500/60 text-amber-300' 
-                                                    : 'bg-transparent border-[#221b1c] text-[#a39e9e] hover:border-white/20'
-                                            }`}
-                                        >
-                                            <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
-                                            <span>Gluten-Free</span>
-                                        </button>
-                                    </div>
+                                    {businessCategory === 'salon' ? (
+                                        <div className="flex space-x-1.5 overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                            {[
+                                                { id: 'all', label: 'All' },
+                                                { id: 'for_her', label: 'For Her' },
+                                                { id: 'for_him', label: 'For Him' },
+                                                { id: 'unisex', label: 'Unisex' }
+                                            ].map((opt) => (
+                                                <button
+                                                    key={opt.id}
+                                                    type="button"
+                                                    onClick={() => setClientFilter(opt.id)}
+                                                    className={`px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                                                        clientFilter === opt.id
+                                                            ? 'bg-[#d4af37]/20 border-[#d4af37] text-[#d4af37]'
+                                                            : 'bg-transparent border-[#221b1c] text-white/60 hover:border-white/20'
+                                                    }`}
+                                                >
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="flex space-x-2">
+                                            <button 
+                                                type="button"
+                                                onClick={() => setFilters(f => ({ ...f, veg: !f.veg }))} 
+                                                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full border transition-all duration-200 text-xs font-medium cursor-pointer ${
+                                                    filters.veg 
+                                                        ? 'bg-emerald-950/60 border-emerald-500/60 text-emerald-300' 
+                                                        : 'bg-transparent border-[#221b1c] text-[#a39e9e] hover:border-white/20'
+                                                }`}
+                                            >
+                                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                                                <span>Vegetarian</span>
+                                            </button>
+                                            <button 
+                                                type="button"
+                                                onClick={() => setFilters(f => ({ ...f, gf: !f.gf }))} 
+                                                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full border transition-all duration-200 text-xs font-medium cursor-pointer ${
+                                                    filters.gf 
+                                                        ? 'bg-amber-950/60 border-amber-500/60 text-amber-300' 
+                                                        : 'bg-transparent border-[#221b1c] text-[#a39e9e] hover:border-white/20'
+                                                }`}
+                                            >
+                                                <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                                                <span>Gluten-Free</span>
+                                            </button>
+                                        </div>
+                                    )}
                                     
                                     <button 
                                         type="button"
@@ -311,6 +346,25 @@ const ImmersiveTemplate = ({ restaurantName, currency, categories = [] }) => {
                                             <p className="text-[11px] sm:text-[12px] text-[#a39e9e] leading-relaxed line-clamp-2 font-light">
                                                 {item.description}
                                             </p>
+                                        )}
+                                        {(item.duration || item.brandUsed || (item.targetGender && item.targetGender !== 'unisex')) && (
+                                            <div className="flex flex-wrap items-center gap-1.5 mt-1.5 pt-1 border-t border-white/5">
+                                                {item.duration && (
+                                                    <span className="text-[10px] text-[#d4af37]/90 bg-[#d4af37]/10 px-1.5 py-0.5 rounded border border-[#d4af37]/20 font-medium">
+                                                        ⏱️ {item.duration}
+                                                    </span>
+                                                )}
+                                                {item.brandUsed && (
+                                                    <span className="text-[10px] text-white/80 bg-white/5 px-1.5 py-0.5 rounded border border-white/10 font-medium">
+                                                        🧴 {item.brandUsed}
+                                                    </span>
+                                                )}
+                                                {item.targetGender && item.targetGender !== 'unisex' && (
+                                                    <span className="text-[10px] text-pink-300 bg-pink-950/40 px-1.5 py-0.5 rounded border border-pink-500/20 font-medium">
+                                                        {item.targetGender === 'for_her' ? 'For Her' : 'For Him'}
+                                                    </span>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                 </div>
