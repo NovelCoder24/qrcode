@@ -125,6 +125,12 @@ const userSchema = new mongoose.Schema({
     workspaceMode: {
         type: String,
         enum: ['storefront', 'marketing'],
+        default: 'storefront'
+    },
+    // Business category vertical: salon vs cafe/restaurant (null = onboarding pending)
+    businessCategory: {
+        type: String,
+        enum: ['salon', 'cafe'],
         default: null
     }
 }, { timestamps: true })

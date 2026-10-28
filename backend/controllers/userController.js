@@ -62,6 +62,8 @@ const sendTokens = async (res, user, statusCode = 200) => {
         analyticsOptIn: user.analyticsOptIn ?? true,
         hasCreatedFirstQR: user.hasCreatedFirstQR,
         workspaceMode: user.workspaceMode ?? null,
+                businessCategory: user.businessCategory || null,
+        businessCategory: user.businessCategory || null,
         activeQrCount,
     });
 };
@@ -297,6 +299,12 @@ export const updateProfile = async (req, res) => {
                     user.workspaceMode = req.body.workspaceMode;
                 }
             }
+            if (req.body.businessCategory !== undefined) {
+                const validCats = ['salon', 'cafe'];
+                if (validCats.includes(req.body.businessCategory)) {
+                    user.businessCategory = req.body.businessCategory;
+                }
+            }
             
             const updatedUser = await user.save();
             res.json({
@@ -304,7 +312,8 @@ export const updateProfile = async (req, res) => {
                 name: updatedUser.name,
                 email: updatedUser.email,
                 whatsappNumber: updatedUser.whatsappNumber,
-                workspaceMode: updatedUser.workspaceMode ?? null
+                workspaceMode: updatedUser.workspaceMode ?? null,
+                businessCategory: updatedUser.businessCategory || null
             });
         } else {
             res.status(404).json({ message: "User not found" });

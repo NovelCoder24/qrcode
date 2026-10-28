@@ -45,6 +45,7 @@ export const createQR = async (req, res) => {
             metadata: {
                 ...metadata,
                 title: metadata?.title || title || "Untitled QR",
+                businessCategory: metadata?.businessCategory || req.user?.businessCategory || 'cafe'
             },
         });
 
@@ -170,6 +171,15 @@ export const updateQR = async (req, res) => {
         }
 
         const urlChanged = req.body.target_url && req.body.target_url !== qr.target_url;
+
+        // Ensure metadata preserves or defaults businessCategory
+        if (req.body.metadata) {
+            req.body.metadata = {
+                ...(qr.metadata || {}),
+                ...req.body.metadata,
+                businessCategory: req.body.metadata.businessCategory || qr.metadata?.businessCategory || 'cafe'
+            };
+        }
 
         // Update fields
         const updatedQR = await QRCode.findByIdAndUpdate(
