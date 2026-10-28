@@ -13,6 +13,8 @@ import {
   ExternalLink,
   Store,
   Package,
+  Scissors,
+  Coffee,
 } from "lucide-react"
 import { useDispatch, useSelector } from "react-redux"
 
@@ -22,7 +24,7 @@ import { Badge } from "@/components/UI/badge"
 import { cn } from "@/lib/utils"
 
 import api from "../api/axios"
-import { loadUser, setWorkspaceMode } from "../redux/authSlice"
+import { loadUser, setWorkspaceMode, setBusinessCategory } from "../redux/authSlice"
 
 // ==========================================
 // MOCK DATA FOR DUMMY FEATURES
@@ -155,15 +157,17 @@ function ProfileSettings({ user, dispatch }) {
   const [email, setEmail] = React.useState(user?.email || "")
   const [company, setCompany] = React.useState("")
   const [whatsapp, setWhatsapp] = React.useState(user?.whatsappNumber || "")
-  const [workspaceMode, setLocalWorkspaceMode] = React.useState(user?.workspaceMode || "marketing")
+  const [workspaceMode, setLocalWorkspaceMode] = React.useState(user?.workspaceMode || "storefront")
+  const [businessCategory, setLocalBusinessCategory] = React.useState(user?.businessCategory || "salon")
   const [isSaving, setIsSaving] = React.useState(false)
 
   const handleSave = async () => {
     setIsSaving(true)
     try {
       // Pushing everything to profile endpoint. Backend will handle what it supports.
-      await api.put('/users/profile', { whatsappNumber: whatsapp, name, company, workspaceMode });
+      await api.put('/users/profile', { whatsappNumber: whatsapp, name, company, workspaceMode, businessCategory });
       dispatch(setWorkspaceMode(workspaceMode));
+      dispatch(setBusinessCategory(businessCategory));
       await dispatch(loadUser());
       alert("Profile updated successfully!");
     } catch (e) {
@@ -245,6 +249,65 @@ function ProfileSettings({ user, dispatch }) {
                 onChange={(e) => setWhatsapp(e.target.value)}
               />
               <p className="text-[10px] text-muted-foreground mt-1">Used for broken link alerts if opted in via Privacy page.</p>
+            </div>
+          </div>
+
+          {/* Business Vertical Selection (Chameleon Skinning) */}
+          <div className="space-y-3 pt-3 border-t">
+            <div>
+              <Label className="text-sm font-semibold">Business Industry & Vertical</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Adapts QR creator wizard, menu/rate card templates, and review booster to your business.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setLocalBusinessCategory('salon')}
+                className={cn(
+                  "flex items-start gap-3 rounded-xl border p-4 text-left transition-all cursor-pointer",
+                  businessCategory === 'salon'
+                    ? "border-indigo-600 bg-indigo-50/50 ring-2 ring-indigo-600/20"
+                    : "border-border hover:border-slate-300 hover:bg-slate-50/50"
+                )}
+              >
+                <div className={cn(
+                  "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                  businessCategory === 'salon' ? "bg-pink-600 text-white" : "bg-slate-100 text-slate-600"
+                )}>
+                  <Scissors className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Salon, Spa & Beauty</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    Service rate cards, bridal lookbooks, duration badges, and salon-tailored review drafts.
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setLocalBusinessCategory('cafe')}
+                className={cn(
+                  "flex items-start gap-3 rounded-xl border p-4 text-left transition-all cursor-pointer",
+                  businessCategory === 'cafe'
+                    ? "border-indigo-600 bg-indigo-50/50 ring-2 ring-indigo-600/20"
+                    : "border-border hover:border-slate-300 hover:bg-slate-50/50"
+                )}
+              >
+                <div className={cn(
+                  "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                  businessCategory === 'cafe' ? "bg-amber-600 text-white" : "bg-slate-100 text-slate-600"
+                )}>
+                  <Coffee className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Cafe, Bakery & Dining</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    Digital menus, dietary tags (Veg/Non-Veg), dish photos, and food-tailored review drafts.
+                  </p>
+                </div>
+              </button>
             </div>
           </div>
 

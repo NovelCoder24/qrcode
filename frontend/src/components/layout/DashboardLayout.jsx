@@ -28,6 +28,7 @@ import {
 } from '@/components/UI/dropdown-menu';
 import UpgradeModal from '@/components/UpgradeModal';
 import WorkspaceModeModal from '@/components/WorkspaceModeModal';
+import BusinessCategoryModal from '@/components/BusinessCategoryModal';
 import Sidebar from '@/components/Sidebar';
 
 const pageLabels = [
@@ -290,7 +291,9 @@ export default function DashboardLayout({ children }) {
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
-  const showOnboarding = Boolean(user && user.workspaceMode === null && !user.hasCreatedFirstQR);
+  // Launch Strategy: Go 100% all-in on Storefront mode without modal friction
+  const showOnboarding = false;
+  const showCategoryModal = Boolean(user && !user.businessCategory && !user.hasCreatedFirstQR);
   const location = useLocation();
 
   // Close mobile sidebar on route change
@@ -319,6 +322,7 @@ export default function DashboardLayout({ children }) {
         />
       )}
       <UpgradeModal isOpen={upgradeModalOpen} onClose={() => setUpgradeModalOpen(false)} type="limit" />
+      <BusinessCategoryModal isOpen={showCategoryModal} />
       {showOnboarding && !onboardingDismissed && (
         <WorkspaceModeModal
           open={true}
