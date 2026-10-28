@@ -85,6 +85,11 @@ const authSlice = createSlice({
             if (state.user) {
                 state.user.workspaceMode = action.payload;
             }
+        },
+        setBusinessCategory: (state, action) => {
+            if (state.user) {
+                state.user.businessCategory = action.payload;
+            }
         }
     },
     // Handle the Thunk lifecycles (Pending, Fulfilled, Rejected)
@@ -156,5 +161,5 @@ const authSlice = createSlice({
     }
 });
 
-export const { clearError, setAuthError, updateSubscriptionStatus, setActiveQrCount, setWorkspaceMode } = authSlice.actions;
+export const { clearError, setAuthError, updateSubscriptionStatus, setActiveQrCount, setWorkspaceMode, setBusinessCategory } = authSlice.actions;
 export default authSlice.reducer;
