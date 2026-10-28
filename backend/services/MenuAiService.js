@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { env } from '../config/env.js';
 import { findCatalogDishImage } from '../data/dishImageCatalog.js';
+import { findCatalogServiceImage } from '../data/serviceImageCatalog.js';
 
 /**
  * Validates uploaded files (max 8 files, <= 10MB each, images or PDF)
@@ -167,6 +168,9 @@ export function parseGeminiMenuJson(rawText = '') {
           itemName: item.name || item.itemName || 'Dish',
           price: item.price,
           variants: item.variants || [],
+          duration: item.duration || '',
+          brandUsed: item.brandUsed || '',
+          targetGender: item.targetGender || 'unisex',
           is_veg: item.is_veg || (item.veg ? 'veg' : 'nonveg'),
           description: item.description || '',
           description_source: item.description_source || (item.description ? 'menu' : 'ai'),
@@ -208,6 +212,9 @@ export function parseGeminiMenuJson(rawText = '') {
       itemName: name,
       price: priceInfo.price,
       variants: Array.isArray(item.variants) && item.variants.length > 0 ? item.variants : priceInfo.variants,
+      duration: String(item.duration || '').trim(),
+      brandUsed: String(item.brandUsed || '').trim(),
+      targetGender: ['for_her', 'for_him', 'unisex'].includes(item.targetGender) ? item.targetGender : 'unisex',
       is_veg: isVeg,
       description,
       description_source: descriptionSource,
@@ -231,7 +238,8 @@ export function groupExtractedItemsIntoCategories(
   flatItems = [],
   existingCategories = [],
   mode = 'replace',
-  autoFillPhotos = true
+  autoFillPhotos = true,
+  businessCategory = 'cafe'
 ) {
   const categoryMap = new Map();
 
@@ -262,7 +270,7 @@ export function groupExtractedItemsIntoCategories(
 
     const currentCat = categoryMap.get(catKey);
     const matchedImg = autoFillPhotos
-      ? findCatalogDishImage(item.itemName, item.imageQuery)
+      ? (businessCategory === 'salon' ? findCatalogServiceImage(item.itemName, item.imageQuery) : findCatalogDishImage(item.itemName, item.imageQuery))
       : null;
 
     currentCat.items.push({
@@ -270,6 +278,9 @@ export function groupExtractedItemsIntoCategories(
       name: item.itemName,
       description: item.description || '',
       price: String(item.price || '0'),
+      duration: item.duration || '',
+      brandUsed: item.brandUsed || '',
+      targetGender: item.targetGender || 'unisex',
       img: matchedImg || undefined,
       variants: item.variants || [],
       is_veg: item.is_veg || 'veg',
@@ -286,31 +297,62 @@ export function groupExtractedItemsIntoCategories(
  * Single Gemini Flash Multimodal Call
  * Sends base64 image buffers directly to Gemini 2.5 Flash / 2.0 Flash REST API.
  */
-export async function extractMenuFromPhoto({
-  files = [],
-  apiKey = env.GEMINI_API_KEY,
-  model = env.GEMINI_MODEL || 'gemini-2.5-flash',
-  httpClient = axios,
-  mode = 'replace',
-  autoFillPhotos = true,
-  existingCategories = [],
-}) {
-  const validation = validateMenuUploadFiles(files);
-  if (!validation.valid) {
-    const error = new Error(validation.message);
-    error.status = validation.status;
-    throw error;
+/**
+ * Builds vertical-specific Gemini Flash extraction prompt
+ */
+export function buildExtractionPrompt(businessCategory = 'cafe') {
+  if (businessCategory === 'salon') {
+    return `You are an expert Salon, Spa & Beauty Parlour Rate Card digitizer.
+Analyze the provided salon rate card or price list image(s) or PDF page(s). Extract all beauty, hair, skin, bridal, nail, and grooming services into structured JSON.
+
+CRITICAL EXTRACTION RULES:
+1. Category Detection: Group every service into logical categories (e.g., Hair & Styling, Hair Treatments, Skin & Facials, Waxing & Threading, Bridal & Makeup, Nails, Men's Grooming, Spa & Massage). Preserve category order.
+2. Service Names & Prices:
+   - Extract exact service name and numeric price.
+   - If multi-tier prices appear (e.g., "Short 1500 / Medium 2500 / Long 3500"), set "price" to highest and record other lengths in "variants": [{"label": "Short", "price": 1500}, {"label": "Medium", "price": 2500}].
+   - Strip currency symbols (₹, Rs, $) so "price" is numeric.
+3. Beauty & Wellness Attributes:
+   - "duration": Estimated session duration if noted on card (e.g. "45 mins", "60 mins", "2 hrs"). If absent, infer reasonable duration or leave empty string.
+   - "brandUsed": Professional product brand if mentioned (e.g. "L'Oréal", "Matrix", "Olaplex", "Dyson", "O3+", "Rica", "Lotus"). If not mentioned, leave empty string.
+   - "targetGender": "for_her", "for_him", or "unisex". Default to "unisex" unless clearly female/male specific.
+4. AI Descriptions (SKIN & HAIR SAFETY GUARDRAIL):
+   - If the rate card has a description, use it and set "description_source": "menu".
+   - If no description, generate a concise 8-12 word description focused on service benefits, technique, and finish (e.g., "Deep nourishing scalp therapy for silky frizz-free texture and shine").
+   - NEVER invent chemical percentages or medical claims.
+   - For generated descriptions, set "description_source": "ai".
+5. imageQuery:
+   - Provide a clean 2-3 word generic English search slug for matching salon photos (e.g., "balayage", "hydrafacial", "haircut", "bridal makeup", "manicure", "beard trim").
+6. Confidence Score:
+   - Assign 0.0 to 1.0. If text is blurry or handwritten, assign < 0.85.
+7. Output Format:
+   Return valid JSON strictly adhering to this schema:
+   {
+     "currency": "INR",
+     "restaurantName": "Salon or business name if visible, else empty",
+     "categories": [
+       {
+         "name": "Hair & Styling",
+         "items": [
+           {
+             "name": "Balayage & Gloss",
+             "price": 3500,
+             "duration": "90 mins",
+             "brandUsed": "L'Oréal",
+             "targetGender": "for_her",
+             "variants": [{"label": "Shoulder Length", "price": 2800}],
+             "description": "Custom hand-painted highlights with high-shine gloss toner",
+             "description_source": "menu",
+             "imageQuery": "balayage",
+             "confidence": 0.98,
+             "page": 1
+           }
+         ]
+       }
+     ]
+   }`;
   }
 
-  if (!apiKey) {
-    const error = new Error('AI Menu Scanner requires GEMINI_API_KEY configured in backend/.env');
-    error.status = 503;
-    throw error;
-  }
-
-  const fileList = Array.isArray(files) ? files : [files];
-
-  const systemPrompt = `You are an expert restaurant digital menu digitizer.
+  return `You are an expert restaurant digital menu digitizer.
 Analyze the provided restaurant menu image(s) or PDF page(s). Extract all food & drink items into structured JSON.
 
 CRITICAL EXTRACTION RULES:
@@ -354,6 +396,34 @@ CRITICAL EXTRACTION RULES:
        }
      ]
    }`;
+}
+
+export async function extractMenuFromPhoto({
+  files = [],
+  apiKey = env.GEMINI_API_KEY,
+  model = env.GEMINI_MODEL || 'gemini-2.5-flash',
+  httpClient = axios,
+  mode = 'replace',
+  autoFillPhotos = true,
+  existingCategories = [],
+  businessCategory = 'cafe',
+}) {
+  const validation = validateMenuUploadFiles(files);
+  if (!validation.valid) {
+    const error = new Error(validation.message);
+    error.status = validation.status;
+    throw error;
+  }
+
+  if (!apiKey) {
+    const error = new Error('AI Menu Scanner requires GEMINI_API_KEY configured in backend/.env');
+    error.status = 503;
+    throw error;
+  }
+
+  const fileList = Array.isArray(files) ? files : [files];
+
+  const systemPrompt = buildExtractionPrompt(businessCategory);
 
   // Assemble multimodal parts for Gemini Flash
   const contentsParts = [
@@ -438,7 +508,8 @@ CRITICAL EXTRACTION RULES:
     parsedData.items,
     existingCategories,
     mode,
-    autoFillPhotos
+    autoFillPhotos,
+    businessCategory
   );
 
   const lowConfidenceCount = parsedData.items.filter(i => (i.confidence ?? 1) < 0.85).length;

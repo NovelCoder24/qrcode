@@ -255,12 +255,14 @@ export const parseMenuPhoto = async (req, res) => {
             }
         }
 
+        const businessCategory = req.body.businessCategory || req.user?.businessCategory || 'cafe';
         const { extractMenuFromPhoto } = await import("../services/MenuAiService.js");
         const result = await extractMenuFromPhoto({
             files: rawFiles,
             mode,
             autoFillPhotos,
             existingCategories,
+            businessCategory,
         });
 
         res.status(200).json({

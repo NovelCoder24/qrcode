@@ -6,7 +6,9 @@ import {
   parseGeminiMenuJson,
   groupExtractedItemsIntoCategories,
   extractMenuFromPhoto,
+  buildExtractionPrompt,
 } from '../services/MenuAiService.js';
+import { findCatalogServiceImage } from '../data/serviceImageCatalog.js';
 import { findCatalogDishImage } from '../data/dishImageCatalog.js';
 
 test('findCatalogDishImage matches staples like paneer tikka, cold coffee, and garlic bread to Unsplash CDN URLs', () => {
@@ -245,3 +247,46 @@ test('parseMenuPhoto controller rejects empty files with 400', async () => {
   assert.match(jsonPayload.message, /at least one menu photo/);
 });
 
+
+
+test('buildExtractionPrompt produces salon-specific prompt with beauty attributes', () => {
+  const prompt = buildExtractionPrompt('salon');
+  assert.ok(prompt.includes('Salon, Spa & Beauty Parlour'));
+  assert.ok(prompt.includes('duration'));
+  assert.ok(prompt.includes('brandUsed'));
+  assert.ok(prompt.includes('targetGender'));
+});
+
+test('findCatalogServiceImage matches salon staples and does not match food dishes', () => {
+  const haircutImg = findCatalogServiceImage('Signature Haircut');
+  const facialImg = findCatalogServiceImage('HydraFacial Glow');
+  const foodImg = findCatalogServiceImage('Paneer Tikka');
+
+  assert.ok(haircutImg && haircutImg.includes('images.unsplash.com'));
+  assert.ok(facialImg && facialImg.includes('images.unsplash.com'));
+  assert.equal(foodImg, null, 'Food should not match in salon image catalog');
+});
+
+test('groupExtractedItemsIntoCategories preserves beauty attributes and assigns salon images', () => {
+  const flatItems = [
+    {
+      category: 'Hair and Styling',
+      itemName: 'Balayage Glow',
+      price: '3500',
+      duration: '90 mins',
+      brandUsed: "L'Oreal",
+      targetGender: 'for_her',
+      imageQuery: 'balayage'
+    }
+  ];
+
+  const categories = groupExtractedItemsIntoCategories(flatItems, [], 'replace', true, 'salon');
+  assert.equal(categories.length, 1);
+  assert.equal(categories[0].name, 'Hair and Styling');
+  const item = categories[0].items[0];
+  assert.equal(item.name, 'Balayage Glow');
+  assert.equal(item.duration, '90 mins');
+  assert.equal(item.brandUsed, "L'Oreal");
+  assert.equal(item.targetGender, 'for_her');
+  assert.ok(item.img && item.img.includes('images.unsplash.com'));
+});
