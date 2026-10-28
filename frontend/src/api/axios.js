@@ -108,12 +108,13 @@ export const uploadFile = async (file) => {
     return response.data;
 };
 
-export const parseMenuPhotos = async ({ files, mode = 'replace', autoFillPhotos = true, existingCategories = [] }) => {
+export const parseMenuPhotos = async ({ files, mode = 'replace', autoFillPhotos = true, existingCategories = [], businessCategory = 'cafe' }) => {
     const formData = new FormData();
     const fileList = Array.isArray(files) ? files : [files];
     fileList.forEach((f) => formData.append('files', f));
     formData.append('mode', mode);
     formData.append('autoFillPhotos', String(autoFillPhotos));
+    formData.append('businessCategory', businessCategory);
     if (existingCategories && existingCategories.length > 0) {
         formData.append('existingCategories', JSON.stringify(existingCategories));
     }

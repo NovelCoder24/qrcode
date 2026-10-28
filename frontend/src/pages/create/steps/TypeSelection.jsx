@@ -7,12 +7,16 @@ import {
     MessageCircle,
     Share2,
     Film,
-    Coffee
+    Coffee,
+    Scissors
 } from 'lucide-react';
+import { getVocabulary } from '../../../config/vocabulary';
 
 const TypeSelection = ({ selectedType, onSelect, onProceed }) => {
     const { user } = useSelector((state) => state.auth);
-    const workspaceMode = user?.workspaceMode || 'marketing';
+    const workspaceMode = user?.workspaceMode || 'storefront';
+    const businessCategory = user?.businessCategory || 'cafe';
+    const v = getVocabulary(businessCategory);
 
     const types = [
         {
@@ -33,11 +37,11 @@ const TypeSelection = ({ selectedType, onSelect, onProceed }) => {
         },
         {
             id: 'MENU',
-            label: 'Menu',
+            label: v.assetNameShort,
             modes: ['storefront', 'marketing'],
-            icon: <Coffee size={24} />,
-            desc: 'Restaurant or Cafe Menu',
-            color: 'orange'
+            icon: businessCategory === 'salon' ? <Scissors size={24} /> : <Coffee size={24} />,
+            desc: v.assetDesc,
+            color: businessCategory === 'salon' ? 'pink' : 'orange'
         },
         {
             id: 'VCARD',
