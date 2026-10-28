@@ -68,6 +68,13 @@ Rather than competing as a generic "dynamic QR code utility" (a commoditized mar
 * ❌ **One-Off Events & Weddings:** High churn (~80% within 60 days) as soon as the weekend event concludes.
 * ❌ **Full-Stack Restaurant POS / KDS:** Never compete head-on against Petpooja or DineOpen on kitchen ticket printing and raw inventory ERP.
 
+### 2.4 Vertical Chameleon Skinning Architecture
+QRVibe operates on a single unified codebase, database, and brand while adapting dynamically to the merchant's vertical via `businessCategory` (`'salon'` | `'cafe'`):
+* **Centralized Vocabulary Engine (`frontend/src/config/vocabulary.js`):** Instantly translates UI semantics (`Service Rate Card & Lookbook` vs `Digital Menu`, `Service` vs `Dish`, `Transformation Photos` vs `Dish Photos`).
+* **AI Multimodal Rate Card OCR:** Branches Gemini Vision prompts to extract beauty-specific properties (`duration`, `brandUsed`, `targetGender`) and matches salon services to curated HD beauty visuals.
+* **Vertical Reputation Funnels:** Adapts 5-star Google Review drafts and 1-to-3 star complaint tags to vertical contexts (hair styling, facial glow, salon hygiene vs food taste, ambience).
+* **Target Client Filtering:** Inverts food dietary filters (`Veg`/`Non-Veg`) into client filters (`For Her`, `For Him`, `Unisex`) with inclusive matching.
+
 ---
 
 ## 3. Business Model & Pricing Architecture
@@ -169,6 +176,9 @@ flowchart TD
 
 ### Strictly OUT-OF-SCOPE (Explicitly Rejected / Deprecated)
 * **Forced Dine-In WhatsApp Table Ordering:** Demoted; Indian diners value waiter service. Table ordering remains an optional toggle for cloud kitchens/takeaway, not the primary headline.
+* **"1-Tap Call Waiter / Ask for Bill" Alerts Without Hardware:** Excluded from active menu UI; without integrated POS counter sound alerts or physical buzzers, unacknowledged calls cause customer frustration.
+* **Enterprise CSV/PDF Pivot Table Analytics:** Dropped from immediate roadmap; storefront owners review Monday morning WhatsApp digests, not Sunday spreadsheet downloads.
+* **Reverse Geocoding on In-Store Standees:** Bypassed for storefront scans; table location is already known to be the merchant's store.
 * **Stable Diffusion "AI QR Art":** 2023 gimmick; expensive GPU cost, high scan failure rate on budget phones, zero merchant ROI.
 * **Full-Stack Restaurant POS / KDS:** Never compete head-on against Petpooja or DineOpen on kitchen ticket printing and raw inventory ERP.
 * **Native Mobile Apps (iOS/Android):** Responsive mobile web is 100% sufficient for scanners and merchants.

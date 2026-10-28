@@ -126,7 +126,7 @@ function LoadingDashboard() {
 export default function DashboardOverview() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const workspaceMode = user?.workspaceMode || 'marketing';
+  const workspaceMode = user?.workspaceMode || 'storefront';
   const isStorefront = workspaceMode === 'storefront';
   const [qrCodes, setQrCodes] = useState([]);
   const [loading, setLoading] = useState(true);

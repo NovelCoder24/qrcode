@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { User } from '../models/User.js';
 
-test('User.workspaceMode defaults to null', () => {
+test('User.workspaceMode defaults to storefront', () => {
     const user = new User({ name: 'Test User', email: 'test@example.com', password: 'password123' });
-    assert.equal(user.workspaceMode, null);
+    assert.equal(user.workspaceMode, 'storefront');
 });
 
 test('User.workspaceMode accepts storefront and marketing as valid values', () => {
@@ -25,7 +25,7 @@ test('User.workspaceMode rejects invalid enum values', () => {
 
 test('User.workspaceMode can be updated between storefront and marketing', () => {
     const user = new User({ name: 'Switch User', email: 'switch@example.com', password: 'password123' });
-    assert.equal(user.workspaceMode, null);
+    assert.equal(user.workspaceMode, 'storefront');
 
     const validModes = ['storefront', 'marketing'];
     const updateMode = (targetMode) => {

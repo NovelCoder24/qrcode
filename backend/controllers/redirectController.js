@@ -548,7 +548,9 @@ export const redirectQR = async (req, res) => {
         }
 
         // Determine whether GPS interstitial should be served (skip bots and in-app webviews)
+        // Storefront menus must NEVER be interrupted by GPS permission interstitials
         const isGpsRequested =
+            qr.qr_type !== 'MENU' &&
             (qr.gpsLocationEnabled || req.query.gps === "1") &&
             req.query.skip_gps !== "1" &&
             !isBot &&
@@ -562,7 +564,8 @@ export const redirectQR = async (req, res) => {
                 : undefined;
 
         // Generate telemetryToken if GPS is requested OR if micro-bridge telemetry will fire (confidence !== HIGH)
-        const effectiveConfidence = qr.placement?.city ? "HIGH" : geo.confidence;
+        // Storefront mode: Physical table QR location is the shop itself. Bypass reverse geocoding network lookups.
+        const effectiveConfidence = (qr.qr_type === 'MENU' || qr.placement?.city) ? "HIGH" : geo.confidence;
         const needsTelemetry = isGpsRequested || (effectiveConfidence !== "HIGH");
 
         const telemetryToken = needsTelemetry

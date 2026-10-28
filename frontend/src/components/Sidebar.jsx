@@ -38,7 +38,7 @@ const Sidebar = ({ isOpen, overlay = false, onClose }) => {
     ];
 
     const { user } = useSelector((state) => state.auth);
-    const workspaceMode = user?.workspaceMode || 'marketing';
+    const workspaceMode = user?.workspaceMode || 'storefront';
     const filteredNav = primaryNav.filter(item => item.modes.includes(workspaceMode));
     const subscription = user?.subscription;
 

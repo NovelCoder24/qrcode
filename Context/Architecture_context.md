@@ -124,6 +124,7 @@ erDiagram
         string whatsappNumber
         boolean whatsappOptIn
         string workspaceMode
+        string businessCategory
         object subscription
         object billing
     }
@@ -179,10 +180,12 @@ erDiagram
    * Indexes: `{ email: 1 }` (unique).
    * Password hashing: Bcrypt pre-save hook (salt rounds: 5).
    * JWT methods: `generateAccessToken()` (15m), `generateRefreshToken()` (7d).
-   * Workspace Mode: `workspaceMode` enum (`'storefront'`, `'marketing'`, default: `null`). Governs progressive disclosure across dashboard navigation, overview cards, and creation options.
+   * Workspace Mode: `workspaceMode` enum (`'storefront'`, `'marketing'`, default: `'storefront'`). Launch strategy defaults 100% of new signups to Storefront Mode (5-item sidebar, localized Table QR metrics, and zero-friction direct dashboard access). Studio/Marketing switcher remains in Settings.
+   * Business Vertical: `businessCategory` enum (`'salon'`, `'cafe'`, default: `null`). Directs Vertical Chameleon Skinning. Newly registered users without a set category see the onboarding questionnaire modal (`BusinessCategoryModal.jsx`). Runtime fallback defaults to `'cafe'`.
 2. **`QRCode.js`:**
    * Indexes: `{ short_id: 1 }` (unique), `{ user_id: 1, accessMode: 1 }`, `{ folder_id: 1 }`.
    * Access modes: `'dynamic_active'`, `'static_locked'`, `'disabled'`.
+   * Metadata: Stores `metadata.businessCategory` inherited from creator `User.businessCategory` or specified at creation, ensuring public mobile lookbooks render vertical skinning even for incognito scanners.
    * Pre-save hook: Sanitizes URL prefixes for real HTTP types.
 3. **`DailyScanStats.js`:**
    * Compound Unique Index: `{ qr_id: 1, date: -1 }` (guarantees atomic upsert per QR per calendar date).
