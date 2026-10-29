@@ -1,5 +1,47 @@
 import mongoose from "mongoose";
 
+// Explicit Subschemas for Metadata & Menu/Rate Card Items (Mongoose Strict Mode Fix)
+const menuItemSchema = new mongoose.Schema({
+  id: { type: String },
+  name: { type: String },
+  price: { type: mongoose.Schema.Types.Mixed },
+  description: { type: String },
+  img: { type: String },
+  tags: [{ type: String }],
+  isSpecial: { type: Boolean, default: false },
+  // Salon / Beauty rate card attributes
+  duration: { type: String, default: "" },
+  brandUsed: { type: String, default: "" },
+  targetGender: {
+    type: String,
+    enum: ['for_her', 'for_him', 'unisex', 'all'],
+    default: 'unisex'
+  }
+}, { _id: false, strict: false });
+
+const menuCategorySchema = new mongoose.Schema({
+  id: { type: String },
+  name: { type: String },
+  items: [menuItemSchema]
+}, { _id: false, strict: false });
+
+const qrMetadataSchema = new mongoose.Schema({
+  businessCategory: {
+    type: String,
+    enum: ['salon', 'cafe'],
+    default: 'salon'
+  },
+  title: { type: String },
+  restaurantName: { type: String },
+  currency: { type: String },
+  categories: [menuCategorySchema],
+  menuTemplate: { type: String },
+  googleReviewUrl: { type: String },
+  shieldPhone: { type: String },
+  resolutionOffer: { type: String },
+  enableReviewBooster: { type: Boolean }
+}, { _id: false, strict: false });
+
 const qrCodeSchema = new mongoose.Schema({
   user_id: {
     type: mongoose.Schema.Types.ObjectId,
@@ -74,8 +116,8 @@ const qrCodeSchema = new mongoose.Schema({
     last_scanned_at: { type: Date }
   },
   metadata: {
-    type: Object,
-    default: {}
+    type: qrMetadataSchema,
+    default: () => ({ businessCategory: 'salon' })
   },
   folder_id: {
     type: mongoose.Schema.Types.ObjectId,

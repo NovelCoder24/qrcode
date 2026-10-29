@@ -9,6 +9,7 @@ import {
   buildExtractionPrompt,
 } from '../services/MenuAiService.js';
 import { findCatalogServiceImage } from '../data/serviceImageCatalog.js';
+import { findCatalogServiceImage as findServiceImgFromServices, SERVICE_IMAGE_CATALOG } from '../services/serviceImageCatalog.js';
 import { findCatalogDishImage } from '../data/dishImageCatalog.js';
 
 test('findCatalogDishImage matches staples like paneer tikka, cold coffee, and garlic bread to Unsplash CDN URLs', () => {
@@ -289,4 +290,11 @@ test('groupExtractedItemsIntoCategories preserves beauty attributes and assigns 
   assert.equal(item.brandUsed, "L'Oreal");
   assert.equal(item.targetGender, 'for_her');
   assert.ok(item.img && item.img.includes('images.unsplash.com'));
+});
+
+test('serviceImageCatalog in services re-exports catalog and helper correctly', () => {
+  assert.ok(Array.isArray(SERVICE_IMAGE_CATALOG));
+  assert.ok(SERVICE_IMAGE_CATALOG.length > 10);
+  const img = findServiceImgFromServices('Keratin Hair Treatment');
+  assert.ok(img && img.includes('images.unsplash.com'));
 });
