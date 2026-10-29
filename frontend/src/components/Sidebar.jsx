@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import UpgradeModal from './UpgradeModal';
 import qrvibeLogoPrimary from '../assets/qrvibe-logo-primary.svg';
+import { getVocabulary } from '../config/vocabulary';
 
 const UI_PLAN_LIMITS = {
     free:     { name: 'Free',     maxQrs: 1 },
@@ -39,6 +40,7 @@ const Sidebar = ({ isOpen, overlay = false, onClose }) => {
 
     const { user } = useSelector((state) => state.auth);
     const workspaceMode = user?.workspaceMode || 'storefront';
+    const v = getVocabulary(user?.businessCategory);
     const filteredNav = primaryNav.filter(item => item.modes.includes(workspaceMode));
     const subscription = user?.subscription;
 
@@ -120,7 +122,7 @@ const Sidebar = ({ isOpen, overlay = false, onClose }) => {
                 <NavLink to="/billing" className="block" onClick={() => onClose?.()}>
                     <p className="text-sm font-bold text-slate-800">{planName}</p>
                     <p className="text-xs text-slate-500 mt-0.5">
-                        {used}/{dynamicLimit === Infinity ? '∞' : dynamicLimit} {workspaceMode === 'storefront' ? 'Table QR codes used' : 'QR codes used'}
+                        {used}/{dynamicLimit === Infinity ? '∞' : dynamicLimit} {workspaceMode === 'storefront' ? v.quotaLabel : 'QR codes used'}
                     </p>
                     <div className="mt-2.5 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <div

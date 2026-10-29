@@ -65,7 +65,8 @@ const MenuViewPage = () => {
     }
 
     const meta = qrData.metadata || {};
-    const restaurantName = meta.restaurantName || qrData.title || 'Our Menu';
+    const businessCategory = meta.businessCategory || qrData.businessCategory || 'salon';
+    const restaurantName = meta.restaurantName || qrData.title || (businessCategory === 'salon' ? 'Our Salon & Studio' : 'Our Menu');
     const currency = meta.currency || '₹';
     const categories = Array.isArray(meta.categories) ? meta.categories : [];
     const template = meta.menuTemplate || 'modern'; // immersive, lighthouse, modern, playful

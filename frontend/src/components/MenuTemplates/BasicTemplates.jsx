@@ -1,7 +1,7 @@
 import React from 'react';
 import { Utensils, Sparkles } from 'lucide-react';
 
-export const ModernTemplate = ({ restaurantName, currency, categories = [], businessCategory = 'cafe' }) => (
+export const ModernTemplate = ({ restaurantName, currency, categories = [], businessCategory = 'salon' }) => (
     <div className="bg-slate-50 min-h-screen text-slate-900 font-sans antialiased overflow-x-hidden">
         {/* Header */}
         <header className="sticky top-0 z-30 py-6 px-4 bg-white/80 backdrop-blur-md text-center border-b border-slate-100 shadow-sm w-full">
@@ -88,7 +88,7 @@ export const ModernTemplate = ({ restaurantName, currency, categories = [], busi
     </div>
 );
 
-export const PlayfulTemplate = ({ restaurantName, currency, categories = [], businessCategory = 'cafe' }) => (
+export const PlayfulTemplate = ({ restaurantName, currency, categories = [], businessCategory = 'salon' }) => (
     <div className="bg-rose-50/60 min-h-screen text-slate-800 font-sans antialiased overflow-x-hidden">
         {/* Header */}
         <header className="sticky top-0 z-30 py-6 sm:py-8 px-4 bg-white text-center rounded-b-[2rem] sm:rounded-b-[3rem] shadow-sm mb-6 sm:mb-10 border-b border-rose-100/50 w-full mx-auto max-w-full">

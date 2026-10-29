@@ -45,7 +45,7 @@ export const createQR = async (req, res) => {
             metadata: {
                 ...metadata,
                 title: metadata?.title || title || "Untitled QR",
-                businessCategory: metadata?.businessCategory || req.user?.businessCategory || 'cafe'
+                businessCategory: metadata?.businessCategory || req.user?.businessCategory || 'salon'
             },
         });
 
@@ -177,7 +177,7 @@ export const updateQR = async (req, res) => {
             req.body.metadata = {
                 ...(qr.metadata || {}),
                 ...req.body.metadata,
-                businessCategory: req.body.metadata.businessCategory || qr.metadata?.businessCategory || 'cafe'
+                businessCategory: req.body.metadata.businessCategory || qr.metadata?.businessCategory || 'salon'
             };
         }
 
@@ -255,7 +255,7 @@ export const parseMenuPhoto = async (req, res) => {
             }
         }
 
-        const businessCategory = req.body.businessCategory || req.user?.businessCategory || 'cafe';
+        const businessCategory = req.body.businessCategory || req.user?.businessCategory || 'salon';
         const { extractMenuFromPhoto } = await import("../services/MenuAiService.js");
         const result = await extractMenuFromPhoto({
             files: rawFiles,

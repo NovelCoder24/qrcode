@@ -108,7 +108,7 @@ export const uploadFile = async (file) => {
     return response.data;
 };
 
-export const parseMenuPhotos = async ({ files, mode = 'replace', autoFillPhotos = true, existingCategories = [], businessCategory = 'cafe' }) => {
+export const parseMenuPhotos = async ({ files, mode = 'replace', autoFillPhotos = true, existingCategories = [], businessCategory = 'salon' }) => {
     const formData = new FormData();
     const fileList = Array.isArray(files) ? files : [files];
     fileList.forEach((f) => formData.append('files', f));

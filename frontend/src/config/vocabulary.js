@@ -24,6 +24,9 @@ export const VOCABULARY = {
       gender: { label: 'Target Client', field: 'targetGender' }
     },
     badges: ['Signature Treatment', 'Bridal Combo', 'Trending Look', 'Bestseller'],
+    quotaLabel: 'mirror standees used',
+    quotaUnit: 'Mirror Standees',
+    quotaName: 'Mirror / Station Standees',
     ocr: {
       title: 'Snap a Photo of Your Salon Rate Card',
       subtitle: 'Upload a price list or photo of your printed rate card. AI will extract services & pricing in seconds.',
@@ -69,6 +72,9 @@ export const VOCABULARY = {
       secondary: { label: 'Spice Level / Portions', placeholder: 'e.g., Mild, Serves 2', field: 'spiceLevel' }
     },
     badges: ['Chef\'s Special', 'Bestseller', 'Must Try', 'Seasonal'],
+    quotaLabel: 'table standees used',
+    quotaUnit: 'Table Standees',
+    quotaName: 'Table QR Standees',
     ocr: {
       title: 'Snap a Photo of Your Paper Menu',
       subtitle: 'Upload photos of your printed menu or PDF. AI will extract dishes, categories & prices in seconds.',
@@ -97,6 +103,6 @@ VOCABULARY.salon.reviewFunnel.defaultDrafts = VOCABULARY.salon.reviewFunnel.temp
 VOCABULARY.cafe.reviewFunnel.defaultDrafts = VOCABULARY.cafe.reviewFunnel.templateDrafts;
 
 export function getVocabulary(category) {
-  const cat = category || 'cafe'; // backward-compatible fallback
-  return VOCABULARY[cat] || VOCABULARY.cafe;
+  const cat = category || 'salon'; // Salon P0 beachhead default
+  return VOCABULARY[cat] || VOCABULARY.salon;
 }

@@ -17,10 +17,10 @@ test('User.businessCategory accepts salon and cafe, rejects invalid categories',
     assert.ok(invalidUser.validateSync()?.errors?.businessCategory, 'Should reject invalid category');
 });
 
-test('resolveEffectiveCategory helper defaults null to cafe for backward compatibility', () => {
-    const resolveEffectiveCategory = (cat) => cat || 'cafe';
-    assert.equal(resolveEffectiveCategory(null), 'cafe');
-    assert.equal(resolveEffectiveCategory(undefined), 'cafe');
+test('resolveEffectiveCategory helper defaults null to salon for P0 salon focus', () => {
+    const resolveEffectiveCategory = (cat) => cat || 'salon';
+    assert.equal(resolveEffectiveCategory(null), 'salon');
+    assert.equal(resolveEffectiveCategory(undefined), 'salon');
     assert.equal(resolveEffectiveCategory('salon'), 'salon');
     assert.equal(resolveEffectiveCategory('cafe'), 'cafe');
 });

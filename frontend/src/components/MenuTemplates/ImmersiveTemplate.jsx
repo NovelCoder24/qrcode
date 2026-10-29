@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ChefHat, Cake, Wine, Sparkles, X, Search, Compass } from 'lucide-react';
 
-const ImmersiveTemplate = ({ restaurantName, currency, categories = [], businessCategory = 'cafe' }) => {
+const ImmersiveTemplate = ({ restaurantName, currency, categories = [], businessCategory = 'salon' }) => {
     // Determine initial category
     const initialCat = categories && categories.length > 0 ? categories[0].name : '';
     const [currentCategoryName, setCurrentCategoryName] = useState(initialCat);

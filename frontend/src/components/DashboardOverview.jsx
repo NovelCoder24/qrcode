@@ -26,6 +26,7 @@ import { Badge } from '@/components/UI/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/UI/card';
 import { Progress } from '@/components/UI/progress';
 import { Skeleton } from '@/components/UI/skeleton';
+import { getVocabulary } from '@/config/vocabulary';
 
 function formatNumber(value) {
   if (value === Infinity) return '∞';
@@ -128,6 +129,7 @@ export default function DashboardOverview() {
   const { user } = useSelector((state) => state.auth);
   const workspaceMode = user?.workspaceMode || 'storefront';
   const isStorefront = workspaceMode === 'storefront';
+  const v = getVocabulary(user?.businessCategory);
   const [qrCodes, setQrCodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [checkingLinks, setCheckingLinks] = useState(false);
@@ -249,24 +251,28 @@ export default function DashboardOverview() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-slate-500">Monitor your QR codes and keep them safe for printing.</p>
+          <p className="mt-1 text-sm text-slate-500">{isStorefront ? `Monitor your ${v.itemsName.toLowerCase()} and physical QR standees.` : 'Monitor your QR codes and keep them safe for printing.'}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCheckLinks}
-            disabled={checkingLinks}
-            className="font-bold border-slate-200 text-slate-600 hover:text-slate-900"
-          >
-            <RefreshCw className={cn("h-4 w-4 mr-1.5", checkingLinks && "animate-spin")} />
-            {checkingLinks ? 'Checking...' : 'Check Links'}
-          </Button>
-          <Button variant="outline" size="sm" asChild className="font-bold border-slate-200 text-slate-600 hover:text-slate-900">
-            <Link to="/analytics"><Download className="h-4 w-4" />Export Report</Link>
-          </Button>
+          {!isStorefront && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCheckLinks}
+                disabled={checkingLinks}
+                className="font-bold border-slate-200 text-slate-600 hover:text-slate-900"
+              >
+                <RefreshCw className={cn("h-4 w-4 mr-1.5", checkingLinks && "animate-spin")} />
+                {checkingLinks ? 'Checking...' : 'Check Links'}
+              </Button>
+              <Button variant="outline" size="sm" asChild className="font-bold border-slate-200 text-slate-600 hover:text-slate-900">
+                <Link to="/analytics"><Download className="h-4 w-4" />Export Report</Link>
+              </Button>
+            </>
+          )}
           <Button size="sm" asChild className="font-bold bg-slate-900 text-white hover:bg-slate-800">
-            <Link to="/create"><Plus className="h-4 w-4 mr-1.5" />Create QR</Link>
+            <Link to="/create"><Plus className="h-4 w-4 mr-1.5" />{isStorefront ? (v.addItem ? `${v.addItem} / Standee` : 'Create Standee') : 'Create QR'}</Link>
           </Button>
         </div>
       </div>
@@ -344,9 +350,9 @@ export default function DashboardOverview() {
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-              <span className="text-xs text-slate-500 font-medium">Live scan redirects</span>
-              <Link to="/analytics" className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
-                <span>View Analytics</span>
+              <span className="text-xs text-slate-500 font-medium">{isStorefront ? 'Customer in-store scans' : 'Live scan redirects'}</span>
+              <Link to={isStorefront ? "/qrcodes" : "/analytics"} className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
+                <span>{isStorefront ? 'View Standees' : 'View Analytics'}</span>
                 <ArrowUpRight className="h-3.5 w-3.5" />
               </Link>
             </div>
@@ -362,7 +368,7 @@ export default function DashboardOverview() {
                   <QrCode className="h-5 w-5" />
                 </div>
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Active vs Limit</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{isStorefront ? (v.quotaName || 'Active Standees') : 'Active vs Limit'}</span>
                   <p className="text-[11px] font-medium text-slate-400">{planName}</p>
                 </div>
               </div>
@@ -379,7 +385,7 @@ export default function DashboardOverview() {
 
             <div className="my-2.5">
               <p className="text-3xl font-extrabold tracking-tight text-slate-900">
-                {activeQrCount} <span className="text-xl font-semibold text-slate-400">/ {dynamicLimit === Infinity ? '∞' : dynamicLimit} Used</span>
+                {activeQrCount} <span className="text-xl font-semibold text-slate-400">/ {dynamicLimit === Infinity ? '∞' : dynamicLimit} {isStorefront ? v.quotaLabel : 'Used'}</span>
               </p>
               <div className="mt-2.5">
                 <Progress 
@@ -491,7 +497,7 @@ export default function DashboardOverview() {
           {/* Top Performing QR Codes */}
           <Card className="shadow-none border-slate-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 p-5">
-              <CardTitle className="text-base font-bold text-slate-800">Top Performing QR Codes</CardTitle>
+              <CardTitle className="text-base font-bold text-slate-800">{isStorefront ? `Top Performing ${v.itemsName} / Standees` : 'Top Performing QR Codes'}</CardTitle>
               <Button variant="ghost" size="sm" asChild className="text-xs font-bold text-slate-500 hover:text-slate-800"><Link to="/qrcodes">View all</Link></Button>
             </CardHeader>
             <CardContent className="p-0">
@@ -661,7 +667,7 @@ export default function DashboardOverview() {
                   {/* Dynamic QRs Progress */}
                   <div>
                     <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-                      <span>{isStorefront ? 'Table QRs' : 'Dynamic QRs'}</span>
+                      <span>{isStorefront ? (v.quotaUnit || 'Mirror Standees') : 'Dynamic QRs'}</span>
                       <span className="text-slate-800">{activeQrCount}/{maxQrs}</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2">

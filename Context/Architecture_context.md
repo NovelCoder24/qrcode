@@ -181,7 +181,7 @@ erDiagram
    * Password hashing: Bcrypt pre-save hook (salt rounds: 5).
    * JWT methods: `generateAccessToken()` (15m), `generateRefreshToken()` (7d).
    * Workspace Mode: `workspaceMode` enum (`'storefront'`, `'marketing'`, default: `'storefront'`). Launch strategy defaults 100% of new signups to Storefront Mode (5-item sidebar, localized Table QR metrics, and zero-friction direct dashboard access). Studio/Marketing switcher remains in Settings.
-   * Business Vertical: `businessCategory` enum (`'salon'`, `'cafe'`, default: `null`). Directs Vertical Chameleon Skinning. Newly registered users without a set category see the onboarding questionnaire modal (`BusinessCategoryModal.jsx`). Runtime fallback defaults to `'cafe'`.
+   * Business Vertical: `businessCategory` enum (`'salon'`, `'cafe'`, default: `null`). Directs Vertical Chameleon Skinning. Newly registered users without a set category see the onboarding questionnaire modal (`BusinessCategoryModal.jsx`). Runtime fallback defaults to `'salon'` (P0 salon focus).
 2. **`QRCode.js`:**
    * Indexes: `{ short_id: 1 }` (unique), `{ user_id: 1, accessMode: 1 }`, `{ folder_id: 1 }`.
    * Access modes: `'dynamic_active'`, `'static_locked'`, `'disabled'`.

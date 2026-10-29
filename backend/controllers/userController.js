@@ -62,7 +62,6 @@ const sendTokens = async (res, user, statusCode = 200) => {
         analyticsOptIn: user.analyticsOptIn ?? true,
         hasCreatedFirstQR: user.hasCreatedFirstQR,
         workspaceMode: user.workspaceMode ?? null,
-                businessCategory: user.businessCategory || null,
         businessCategory: user.businessCategory || null,
         activeQrCount,
     });
@@ -269,6 +268,7 @@ export const getMe = async (req, res) => {
                 analyticsOptIn: user.analyticsOptIn ?? true,
                 hasCreatedFirstQR: user.hasCreatedFirstQR,
                 workspaceMode: user.workspaceMode ?? null,
+                businessCategory: user.businessCategory || null,
                 activeQrCount,
             });
         } else {

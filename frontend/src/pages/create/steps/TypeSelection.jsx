@@ -15,7 +15,7 @@ import { getVocabulary } from '../../../config/vocabulary';
 const TypeSelection = ({ selectedType, onSelect, onProceed }) => {
     const { user } = useSelector((state) => state.auth);
     const workspaceMode = user?.workspaceMode || 'storefront';
-    const businessCategory = user?.businessCategory || 'cafe';
+    const businessCategory = user?.businessCategory || 'salon';
     const v = getVocabulary(businessCategory);
 
     const types = [
@@ -100,7 +100,7 @@ const TypeSelection = ({ selectedType, onSelect, onProceed }) => {
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full">
-                {types.filter(t => t.modes.includes(workspaceMode)).map((type) => {
+                {types.filter(t => t.modes.includes(workspaceMode)).sort((a, b) => (workspaceMode === 'storefront' ? (a.id === 'MENU' ? -1 : b.id === 'MENU' ? 1 : 0) : 0)).map((type) => {
                     const isActive = selectedType === type.id;
                     return (
                         <div

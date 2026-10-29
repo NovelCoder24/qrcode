@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { getVocabulary } from '../../config/vocabulary';
 import {
   X,
@@ -20,6 +21,9 @@ export default function MenuImportModal({
   uploadedThumbnails = [],
   onApply,
 }) {
+  const { user } = useSelector((state) => state.auth);
+  const businessCategory = user?.businessCategory || 'salon';
+  const v = getVocabulary(businessCategory);
   if (!isOpen || !extractedData) return null;
 
   const [mode, setMode] = useState('replace'); // 'replace' | 'append'
@@ -114,7 +118,7 @@ export default function MenuImportModal({
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Review and audit your menu items before applying to your digital QR menu.
+                Review and audit your {v.itemsName.toLowerCase()} before applying to your digital QR {v.assetNameShort.toLowerCase()}.
               </p>
             </div>
           </div>
@@ -148,7 +152,7 @@ export default function MenuImportModal({
                 onChange={(e) => setAutoFillPhotos(e.target.checked)}
                 className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 cursor-pointer"
               />
-              <span>Auto-fill dish photos (Unsplash Catalog)</span>
+              <span>Auto-fill {v.itemPhoto.toLowerCase()}s (Unsplash Catalog)</span>
             </label>
 
             <label className="flex items-center gap-2 font-medium text-slate-700 cursor-pointer select-none">
@@ -280,7 +284,7 @@ export default function MenuImportModal({
                                     type="button"
                                     onClick={() => handleRemoveItem(cIdx, iIdx)}
                                     className="p-1 text-slate-400 hover:text-rose-500 transition-colors cursor-pointer shrink-0"
-                                    title="Remove dish"
+                                    title={`Remove ${v.itemName.toLowerCase()}`}
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, ChefHat, Cake, GlassWater, LayoutGrid, Inbox } from 'lucide-react';
 
-const LighthouseTemplate = ({ restaurantName, currency, categories = [], businessCategory = 'cafe' }) => {
+const LighthouseTemplate = ({ restaurantName, currency, categories = [], businessCategory = 'salon' }) => {
     const [activeCategory, setActiveCategory] = useState("all");
     const [filters, setFilters] = useState({ veg: false, gf: false });
     const [clientFilter, setClientFilter] = useState('all');

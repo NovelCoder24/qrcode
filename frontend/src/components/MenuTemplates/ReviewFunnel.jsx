@@ -22,6 +22,7 @@ import {
  *    - 1-3 Stars: Private WhatsApp Shield routing dissatisfied guests directly to owner with voucher/resolution.
  */
 const ReviewFunnel = ({
+    businessCategory = 'salon',
     restaurantName = 'Our Cafe',
     googleReviewUrl = '',
     shieldPhone = '',
@@ -57,15 +58,15 @@ const ReviewFunnel = ({
                     cat.items.forEach(item => {
                         if (item?.name && typeof item.name === 'string') {
                             const trimmed = item.name.trim();
-                            if (trimmed && !dishList.includes(trimmed)) {
-                                dishList.push(trimmed);
+                            if (trimmed && !itemList.includes(trimmed)) {
+                                itemList.push(trimmed);
                             }
                         }
                     });
                 }
             });
         }
-        return dishList.slice(0, 5);
+        return itemList.slice(0, 5);
     }, [categories]);
 
     // Synthesize 3 natural AI review drafts using vertical vocabulary
