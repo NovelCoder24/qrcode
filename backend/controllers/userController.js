@@ -300,7 +300,7 @@ export const updateProfile = async (req, res) => {
                 }
             }
             if (req.body.businessCategory !== undefined) {
-                const validCats = ['salon', 'cafe'];
+                const validCats = ['salon', 'cafe', 'clinic'];
                 if (validCats.includes(req.body.businessCategory)) {
                     user.businessCategory = req.body.businessCategory;
                 }

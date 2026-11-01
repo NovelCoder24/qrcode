@@ -21,9 +21,7 @@ Rather than competing as a generic "dynamic QR code utility" (a commoditized mar
    * **4–5 Stars:** AI drafts natural, keyword-rich review options for Google Maps with 1-tap copy & submit (overcoming guest typing inertia).
    * **1–3 Stars (The Shield):** Routes unhappy customers directly into a private WhatsApp complaint channel to the owner, resolving dissatisfaction on-site before public Google ratings are damaged.
 4. **"Snap-to-Page" AI Onboarding:** Zero typing friction. Merchants upload photos of their paper menu or rate card; Gemini 2.5 Flash Vision automatically extracts and categorizes dishes, services, and prices into a live page in under 60 seconds.
-5. **Physical Hardware Trojan Horse:** 2-Sided heavy-duty acrylic/wooden countertop standees:
-   * **Side A (Customer Facing):** Clear "Scan with Phone Camera" framing + food/scissors center icon for digital menu/rate card and Google reviews.
-   * **Side B (Merchant Payment):** Merchant's existing UPI QR (PhonePe/GPay/Paytm) for clean table bill settlement, eliminating table clutter and UPI muscle-memory confusion.
+5. **Physical Hardware (Dedicated Countertop Standees & Mirror Tags):** Heavy-duty acrylic countertop standees and mirror tags dedicated exclusively to your digital rate card/menu and 5-star Google Review Booster with Private WhatsApp Shield. (UPI payment QR codes are deliberately avoided to eliminate scanner confusion and leave payment settlement to the merchant's existing soundbox/UPI devices).
 6. **Monday Morning WhatsApp Push Digest:** Automated weekly delivery of scan counts, review clicks, and top-viewed items directly to the owner's WhatsApp, proving software value weekly without requiring desktop dashboard logins.
 7. **Data Privacy by Design (DPDP):** Full compliance with India's Digital Personal Data Protection Act using salted SHA-256 session context hashing instead of storing raw PII or IP addresses.
 8. **Storefront vs. Studio Workspace Mode (Progressive Disclosure):** Automatically adapts dashboard complexity to merchant needs. Local store owners (cafes, salons, clinics) get a focused, clutter-free 5-item sidebar (Dashboard, QR Codes, Create, Billing, Settings) and streamlined metrics, while agency/D2C marketers retain the full CRM dashboard with UTM builders, campaign folders, and deep multi-QR breakdowns. Switchable anytime from profile settings.
@@ -151,7 +149,7 @@ flowchart TD
 | **Visual Menus & Catalogs** | Production | 4 designer mobile templates (Modern, Playful, Immersive, Lighthouse) with dish photos & special tags |
 | **AI Google Review Booster** | In Development | 5★ AI draft generator + 1–3★ Private WhatsApp Owner Shield |
 | **Workspace Mode (Storefront vs. Studio)** | Production | Progressive disclosure adapting dashboard complexity between local store owners and D2C brands |
-| **2-Sided Standee Hardware** | Specified | Heavy-duty acrylic countertop standee (Side A: Menu/Reviews; Side B: Merchant UPI QR) |
+| **Physical Countertop Standees & Mirror Tags** | Specified | Premium acrylic countertop standees & mirror tags focused exclusively on Rate Card/Menu & Google Reviews |
 | **Monday WhatsApp Digest** | Specified | Automated weekly scan & review summary pushed directly to merchant WhatsApp |
 | **Hybrid Geolocation Engine** | Production | CDN headers -> MaxMind GeoLite2 -> FreeIPAPI with LRU caching |
 | **GPS Reverse Geocoding** | Production | High-accuracy coordinate reverse geocoding via BigDataCloud with OSM fallback |
@@ -169,12 +167,13 @@ flowchart TD
 * Visual in-store storefronts (menus, service rate cards, lookbooks, clinic care sheets).
 * AI Snap-to-Page menu/catalog extraction from photos.
 * AI Google Review acceleration with private 1-to-3 star customer resolution firewall.
-* 2-Sided countertop standee fulfillment and vinyl sticker conquest overlays.
+* Dedicated countertop acrylic standee and mirror tag fulfillment.
 * Monday morning push analytics via WhatsApp.
 * Sub-50ms instant redirection with DPDP-compliant unique scanner hashing.
 * India-first billing via Razorpay with automated webhook lifecycle and GST compliance.
 
 ### Strictly OUT-OF-SCOPE (Explicitly Rejected / Deprecated)
+* **UPI Payment QRs & 2-Sided Payment Standees:** Strictly excluded. Merchants already have dedicated UPI soundboxes/standees (Paytm/PhonePe/GPay). Adding payment QRs creates scan confusion ("Am I paying or reading the menu?") and unnecessary payment liability.
 * **Forced Dine-In WhatsApp Table Ordering:** Demoted; Indian diners value waiter service. Table ordering remains an optional toggle for cloud kitchens/takeaway, not the primary headline.
 * **"1-Tap Call Waiter / Ask for Bill" Alerts Without Hardware:** Excluded from active menu UI; without integrated POS counter sound alerts or physical buzzers, unacknowledged calls cause customer frustration.
 * **Enterprise CSV/PDF Pivot Table Analytics:** Dropped from immediate roadmap; storefront owners review Monday morning WhatsApp digests, not Sunday spreadsheet downloads.

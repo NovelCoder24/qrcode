@@ -35,10 +35,23 @@ Use these semantic token names in your Tailwind classes (e.g., `bg-primary`, `te
 * **Destructive:** `#EF4444` (Tailwind: `bg-destructive`)
 * **Success:** `#10B981` (Tailwind: `bg-success`)
 
-### 2.2 Typography
-* **Headings Font:** `Inter`, sans-serif (Title Case for H1/H2, Sentence case for H3+)
-* **Body Font:** `Roboto`, sans-serif
-* **Weights:** Normal (`400`), Bold (`700`)
+### 2.2 Typography & Font Families
+QRVibe uses a distinct editorial three-tier typographic hierarchy:
+* **Headings & Display Font:** `"Instrument Serif", Georgia, serif`
+  * Weight: Normal (`400`), Italic (`italic`)
+  * Letter-spacing: `-0.01em`
+  * Line-height: `1.04` to `1.1`
+  * Application: Main headlines (`h1`, `h2`, `h3`), section display numbers (`01`, `02`, `03`), brand title, large pricing (`₹ —`), and physical standee titles.
+* **Body & Interface Font:** `"Instrument Sans", system-ui, sans-serif`
+  * Weights: Normal (`400`), Medium (`500`), Semi-bold (`600`)
+  * Line-height: `1.55`
+  * Application: Primary body text, UI actions, pill buttons (`.btn`), navigation links, forms, and cards.
+* **Monospace / Micro-Labels Font:** `"IBM Plex Mono", monospace`
+  * Weight: Medium (`500`)
+  * Size: Typically `12px`
+  * Letter-spacing: `0.08em`
+  * Case: `uppercase`
+  * Application: Eyebrow tags (`.lbl`), category badges, camera/scan instructions (`Phone camera, not GPay`), system metadata, and table codes.
 
 ### 2.3 UI & Spacing
 * **Border Radius:** Default (`0.5rem`), Small (`0.25rem`)

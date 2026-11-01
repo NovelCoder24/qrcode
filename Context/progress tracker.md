@@ -11,7 +11,7 @@ Build out QRVibe as the **In-Store Digital Front-Desk & Google Review Engine for
   - Repositioned from generic "QR generator" to In-Store Front-Desk & Review Engine in `Context/Project_overview.md`.
   - Defined P0 Beachhead Verticals: Salons/Spas & Boutique Cafes/QSRs; P1: Dental Clinics & Academies.
   - Specified "Warm Professional" brand identity & "Scan with Phone Camera (Not GPay)" in `Context/Ui_Context.md`.
-  - Specified 2-Sided Standee (Side A: Menu/Reviews, Side B: Merchant UPI QR) & 5cm vinyl sticker-swap kit.
+  - Specified dedicated countertop acrylic standees & mirror tags (Side B / UPI payment QRs and 2-sided standees strictly avoided to eliminate scanner confusion and payment liabilities).
   - Demoted forced dine-in WhatsApp order taking in favor of visual browsing, high-res photos, Veg/Non-Veg filters, and "Call Waiter / Ask for Bill".
 - **Backend & Core Engine:**
   - Decoupled `app.js`, `index.js`, and `worker.js`.
@@ -48,6 +48,11 @@ Build out QRVibe as the **In-Store Digital Front-Desk & Google Review Engine for
     - **Salon Review Booster & Private Shield:** Adapted `ReviewFunnel.jsx` to dynamically generate beauty-specific 5-star review drafts (styling, facials, hygiene, precision) and salon complaint tags for private owner WhatsApp resolution.
     - **Verification & Builds:** 100% test pass (68/68 automated tests) and Vite production build passed with 0 errors on branch `product`.
 - **Menu Templates & Review Funnel Optimization:**
+  - **Editorial Brand Design System & Landing Page Overhaul:**
+    - Implemented official 60-30-10 palette: Primary (60%) Rich Cream / Alabaster (`#FBF9F6`), Secondary (30%) Deep Espresso Brown (`#2B1E19`), Accent (10%) Warm Honey Yellow (`#E5A93C`).
+    - Standardized three-tier typography: Headings in `Instrument Serif`, Body & UI in `Instrument Sans`, Eyebrows & micro-labels in `IBM Plex Mono`.
+    - Fully updated `LandingPage.jsx` into the editorial storefront & review engine presentation with the dedicated countertop standee and mirror tag preview, mobile review mockup, and zero-reprint guarantee.
+    - Synchronized tokens across `Context/Ui_Context.md`, `design-tokens.json`, `index.html`, and `frontend/src/index.css`.
   - **Storefront Dashboard Reshaping & Chameleon Pulse (`DashboardOverview.jsx`):** Refactored Storefront Dashboard with Impeccable standards and 4 senior product principles:
     1. Rendered 2/3 **"🌟 Active Lookbook & Rate Card Items"** directly from primary MENU QR categories (no fake per-service scan numbers) with live thumbnails, duration, brand, and pricing tags.
     2. Real, honest review metrics (Google reviews and WhatsApp shield defusal counts) with proactive connection/test prompts when 0.

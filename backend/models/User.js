@@ -130,7 +130,7 @@ const userSchema = new mongoose.Schema({
     // Business category vertical: salon vs cafe/restaurant (null = onboarding pending)
     businessCategory: {
         type: String,
-        enum: ['salon', 'cafe'],
+        enum: ['salon', 'cafe', 'clinic'],
         default: null
     }
 }, { timestamps: true })
