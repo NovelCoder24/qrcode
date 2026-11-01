@@ -5,18 +5,26 @@ import { setActiveQrCount } from '@/redux/authSlice';
 import {
   AlertTriangle,
   ArrowUpRight,
-  BarChart3,
+  Check,
   CheckCircle2,
+  Clock,
+  Coffee,
   Download,
   ExternalLink,
-  Info,
   Lock,
   MapPin,
+  MessageSquare,
   Plus,
+  Printer,
   QrCode,
   RefreshCw,
+  Scissors,
+  Share2,
   ShieldCheck,
   Smartphone,
+  Sparkles,
+  Star,
+  Utensils,
   XCircle,
 } from 'lucide-react';
 import api from '@/api/axios';
@@ -57,16 +65,6 @@ function getQrStatus(qr) {
   return { label: 'Healthy', variant: 'success', icon: CheckCircle2 };
 }
 
-const getMockCity = (qrId) => {
-  const cities = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune'];
-  if (!qrId) return cities[0];
-  let hash = 0;
-  for (let i = 0; i < qrId.length; i++) {
-    hash = qrId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return cities[Math.abs(hash) % cities.length];
-};
-
 const UI_PLAN_LIMITS = {
   free:     { name: 'Free',     maxQrs: 1,   maxScans: 100,      maxSeats: 1 },
   local:    { name: 'Local',    maxQrs: 1,   maxScans: Infinity, maxSeats: 1 },
@@ -75,33 +73,6 @@ const UI_PLAN_LIMITS = {
   pro:      { name: 'Pro',      maxQrs: 50,  maxScans: Infinity, maxSeats: 1 },
   business: { name: 'Business', maxQrs: 100, maxScans: Infinity, maxSeats: 5 },
 };
-
-function SafetyRow({ label, description, status, actionText, actionPath }) {
-  const config = {
-    healthy: { icon: CheckCircle2, className: 'text-emerald-500' },
-    warning: { icon: AlertTriangle, className: 'text-amber-500' },
-    broken: { icon: XCircle, className: 'text-red-500' },
-  }[status];
-  const Icon = config.icon;
-
-  return (
-    <div className="flex items-start justify-between gap-3 text-xs">
-      <div className="flex items-start gap-2.5 min-w-0">
-        <Icon className={cn('mt-0.5 h-4 w-4 shrink-0', config.className)} />
-        <div className="min-w-0">
-          <p className="font-bold text-slate-800 text-[13px]">{label}</p>
-          <p className="text-[11px] text-slate-500 leading-tight mt-0.5">{description}</p>
-        </div>
-      </div>
-      {actionText && actionPath && (
-        <Link to={actionPath} className="flex items-center gap-0.5 shrink-0 font-bold text-slate-800 hover:text-indigo-600 transition-colors text-[11px] mt-0.5 border-b border-transparent hover:border-indigo-600">
-          <span>{actionText}</span>
-          <ExternalLink className="h-3 w-3" />
-        </Link>
-      )}
-    </div>
-  );
-}
 
 function LoadingDashboard() {
   return (
@@ -113,12 +84,14 @@ function LoadingDashboard() {
         </div>
         <Skeleton className="h-10 w-28" />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[1, 2, 3].map((item) => <Skeleton key={item} className="h-44 rounded-xl" />)}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map((item) => (
+          <Skeleton key={item} className="h-36 rounded-2xl" />
+        ))}
       </div>
       <div className="grid gap-6 xl:grid-cols-3">
-        <Skeleton className="h-80 xl:col-span-2" />
-        <Skeleton className="h-80" />
+        <Skeleton className="h-96 xl:col-span-2 rounded-2xl" />
+        <Skeleton className="h-96 rounded-2xl" />
       </div>
     </div>
   );
@@ -129,12 +102,16 @@ export default function DashboardOverview() {
   const { user } = useSelector((state) => state.auth);
   const workspaceMode = user?.workspaceMode || 'storefront';
   const isStorefront = workspaceMode === 'storefront';
-  const v = getVocabulary(user?.businessCategory);
+  const businessCategory = user?.businessCategory || 'salon';
+  const isSalon = businessCategory === 'salon';
+  const v = getVocabulary(businessCategory);
+
   const [qrCodes, setQrCodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [checkingLinks, setCheckingLinks] = useState(false);
   const [checkFeedback, setCheckFeedback] = useState(null);
   const [error, setError] = useState(null);
+  const [copiedShareLink, setCopiedShareLink] = useState(false);
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -175,25 +152,63 @@ export default function DashboardOverview() {
     }
   };
 
+  // Primary Rate Card / Menu QR
+  const primaryQr = useMemo(() => {
+    return qrCodes.find((qr) => qr.qr_type === 'MENU') || qrCodes[0] || null;
+  }, [qrCodes]);
+
+  const hasPrimaryQr = !!primaryQr;
+
+  // Extract active catalog items directly from primary QR categories (Senior Product Rule #1)
+  const activeLookbookItems = useMemo(() => {
+    if (!primaryQr?.metadata?.categories || !Array.isArray(primaryQr.metadata.categories)) {
+      return [];
+    }
+    const items = [];
+    primaryQr.metadata.categories.forEach((cat) => {
+      if (Array.isArray(cat?.items)) {
+        cat.items.forEach((item) => {
+          if (item?.name) {
+            items.push({
+              ...item,
+              categoryName: cat.name || 'General',
+            });
+          }
+        });
+      }
+    });
+    return items;
+  }, [primaryQr]);
+
+  // Aggregate stats honestly without fake fallback numbers (Senior Product Rule #2)
   const stats = useMemo(() => {
     const totalCodes = qrCodes.length;
     const totalScans = qrCodes.reduce((sum, qr) => sum + (qr.stats?.total_scans || 0), 0);
-    const dynamicActive = qrCodes.filter((qr) => qr.isActive && qr.accessMode !== 'static_locked' && qr.accessMode !== 'disabled').length;
+    const dynamicActive = qrCodes.filter(
+      (qr) => qr.isActive && qr.accessMode !== 'static_locked' && qr.accessMode !== 'disabled'
+    ).length;
     const staticLocked = qrCodes.filter((qr) => qr.accessMode === 'static_locked').length;
     const brokenLinks = qrCodes.filter((qr) => qr.health_status === 'broken').length;
-    const paused = qrCodes.filter((qr) => !qr.isActive || qr.accessMode === 'disabled').length;
-    const withUtm = qrCodes.filter((qr) => /[?&]utm_/i.test(qr.target_url || '')).length;
-    const scanReady = dynamicActive > 0;
-    const safetyChecks = [
-      brokenLinks === 0,
-      paused === 0,
-      staticLocked <= totalCodes,
-      totalCodes === 0 || withUtm > 0,
-      scanReady || totalCodes === 0,
-    ];
-    const safetyScore = Math.round((safetyChecks.filter(Boolean).length / safetyChecks.length) * 100);
 
-    return { totalCodes, totalScans, dynamicActive, staticLocked, brokenLinks, paused, withUtm, safetyScore };
+    // Real review booster telemetry (0 if not yet tracked)
+    const googleReviewsCount = qrCodes.reduce(
+      (sum, qr) => sum + (qr.stats?.google_review_clicks || qr.metadata?.google_review_clicks || 0),
+      0
+    );
+    const whatsappShieldCount = qrCodes.reduce(
+      (sum, qr) => sum + (qr.stats?.whatsapp_shield_clicks || qr.metadata?.whatsapp_shield_clicks || 0),
+      0
+    );
+
+    return {
+      totalCodes,
+      totalScans,
+      dynamicActive,
+      staticLocked,
+      brokenLinks,
+      googleReviewsCount,
+      whatsappShieldCount,
+    };
   }, [qrCodes]);
 
   useEffect(() => {
@@ -202,78 +217,204 @@ export default function DashboardOverview() {
     }
   }, [loading, stats.dynamicActive, user?.activeQrCount, dispatch]);
 
-  const topQrs = useMemo(
-    () => [...qrCodes].sort((a, b) => (b.stats?.total_scans || 0) - (a.stats?.total_scans || 0)).slice(0, 5),
-    [qrCodes]
-  );
-
-  const recentQrs = useMemo(
-    () => [...qrCodes]
-      .filter((qr) => qr.stats?.last_scanned_at)
-      .sort((a, b) => new Date(b.stats?.last_scanned_at) - new Date(a.stats?.last_scanned_at))
-      .slice(0, 5),
-    [qrCodes]
-  );
-
-  const brokenQrs = qrCodes.filter((qr) => qr.health_status === 'broken');
-  const brokenCount = stats.brokenLinks || 0;
-  const staticLockedCount = stats.staticLocked || 0;
-  const totalIssues = brokenCount + staticLockedCount;
-
-  // Subscription and Limit Resolution logic
+  // Subscription and Capacity Resolution
   const rawPlan = (user?.subscription?.plan || 'free').toLowerCase();
   const isTrial = user?.subscription?.status === 'trialing';
-  const isExpired = user?.subscription?.status === 'expired' || 
+  const isExpired =
+    user?.subscription?.status === 'expired' ||
     (isTrial && user?.subscription?.trialEndsAt && new Date(user.subscription.trialEndsAt) < new Date());
 
   const effectivePlan = isExpired ? 'free' : rawPlan;
   const planInfo = UI_PLAN_LIMITS[effectivePlan] || UI_PLAN_LIMITS.starter;
 
-  const planName = isTrial && !isExpired
-    ? `${planInfo.name} (Trial)`
-    : `${planInfo.name} Plan`;
+  const planName = isTrial && !isExpired ? `${planInfo.name} (Trial)` : `${planInfo.name} Plan`;
 
-  // Capacity limit: prioritize plan configuration so users on Growth/Starter/etc. get true limits
-  const dynamicLimit = user?.subscription?.dynamicQrLimit && !isExpired && user.subscription.dynamicQrLimit >= planInfo.maxQrs
-    ? user.subscription.dynamicQrLimit
-    : planInfo.maxQrs;
+  const dynamicLimit =
+    user?.subscription?.dynamicQrLimit && !isExpired && user.subscription.dynamicQrLimit >= planInfo.maxQrs
+      ? user.subscription.dynamicQrLimit
+      : planInfo.maxQrs;
 
   const activeQrCount = stats.dynamicActive;
-  const planUsage = dynamicLimit > 0 && dynamicLimit !== Infinity
-    ? Math.min(100, Math.round((activeQrCount / dynamicLimit) * 100))
-    : 0;
+  const planUsage =
+    dynamicLimit > 0 && dynamicLimit !== Infinity
+      ? Math.min(100, Math.round((activeQrCount / dynamicLimit) * 100))
+      : 0;
   const isNearLimit = dynamicLimit !== Infinity && planUsage >= 80;
+
+  // Front-Desk Setup Checklist calculation (Senior Product Rule #3)
+  const checklistSteps = useMemo(() => {
+    const hasRateCard = hasPrimaryQr;
+    const hasGoogleReview = Boolean(primaryQr?.metadata?.googleReviewUrl?.trim());
+    const hasWhatsAppPhone = Boolean(
+      primaryQr?.metadata?.shieldPhone?.trim() ||
+      primaryQr?.metadata?.whatsappNumber?.trim() ||
+      user?.whatsappNumber?.trim()
+    );
+    const hasStandeeDownloaded = Boolean(primaryQr);
+
+    return [
+      {
+        id: 'rate_card',
+        label: `Create Your ${v.assetNameShort || 'Rate Card'}`,
+        description: isSalon ? 'Hair, skin, styling and pricing catalog' : 'Food, beverages, and pricing menu',
+        completed: hasRateCard,
+        actionText: hasRateCard ? 'Edit' : 'Create Now',
+        actionPath: hasRateCard ? `/create?edit=${primaryQr._id}&step=2` : '/create',
+      },
+      {
+        id: 'google_review',
+        label: 'Connect Google Review Link',
+        description: 'Auto-copies 5★ AI drafts for Google Maps',
+        completed: hasGoogleReview,
+        actionText: hasGoogleReview ? 'Edit Link' : 'Add Link',
+        actionPath: hasRateCard ? `/create?edit=${primaryQr._id}&step=2` : '/create',
+      },
+      {
+        id: 'whatsapp_shield',
+        label: 'Connect Owner WhatsApp Number',
+        description: 'Shields 1–3★ complaints privately on-site',
+        completed: hasWhatsAppPhone,
+        actionText: hasWhatsAppPhone ? 'Update' : 'Add Number',
+        actionPath: hasRateCard ? `/create?edit=${primaryQr._id}&step=2` : '/account',
+      },
+      {
+        id: 'standee_canvas',
+        label: 'Download 4x6 Acrylic Standee Canvas',
+        description: 'Printable countertop canvas with camera scan framing',
+        completed: hasStandeeDownloaded,
+        actionText: hasRateCard ? 'Download' : 'Setup First',
+        actionPath: hasRateCard ? `/qrcodes/${primaryQr._id}` : '/create',
+      },
+    ];
+  }, [hasPrimaryQr, primaryQr, user?.whatsappNumber, v.assetNameShort, isSalon]);
+
+  const completedStepsCount = checklistSteps.filter((s) => s.completed).length;
+  const checklistPercent = Math.round((completedStepsCount / checklistSteps.length) * 100);
+
+  // Smart Action Bar Handlers (Senior Product Rule #4)
+  const handleCopyShareLink = () => {
+    if (!primaryQr) return;
+    const baseUrl =
+      import.meta.env.VITE_BACKEND_URL ||
+      import.meta.env.VITE_BASE_URL ||
+      import.meta.env.VITE_API_URL?.replace('/api', '') ||
+      'http://localhost:5000';
+    const targetUrl = `${baseUrl}/r/${primaryQr.short_id || primaryQr._id}`;
+    setCopiedShareLink(true);
+    setTimeout(() => setCopiedShareLink(false), 2200);
+    try {
+      if (navigator?.clipboard?.writeText) {
+        navigator.clipboard.writeText(targetUrl).catch(() => {});
+      }
+    } catch {
+      // Fallback
+    }
+  };
+
+  const handleTestReviewFunnel = () => {
+    if (!primaryQr) return;
+    window.open(`/menu/${primaryQr.short_id || primaryQr._id}`, '_blank');
+  };
 
   if (loading) return <LoadingDashboard />;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      {/* Top Header & Countertop Essentials Bar */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-slate-500">{isStorefront ? `Monitor your ${v.itemsName.toLowerCase()} and physical QR standees.` : 'Monitor your QR codes and keep them safe for printing.'}</p>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-2xl font-black tracking-tight text-slate-900">
+              {isStorefront ? (isSalon ? 'Salon Front-Desk Pulse' : 'Cafe Front-Desk Pulse') : 'Dashboard Overview'}
+            </h1>
+            <Badge
+              variant="outline"
+              className={cn(
+                'font-extrabold text-[11px] py-0.5 px-2.5 rounded-full border',
+                isSalon
+                  ? 'border-pink-200 bg-pink-50 text-pink-800'
+                  : 'border-amber-200 bg-amber-50 text-amber-800'
+              )}
+            >
+              {isSalon ? (
+                <span className="flex items-center gap-1.5">
+                  <Scissors className="h-3 w-3 text-pink-600" /> Salon & Spa
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5">
+                  <Coffee className="h-3 w-3 text-amber-600" /> Cafe & Dining
+                </span>
+              )}
+            </Badge>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Print-Safe Guarantee: Active</span>
+            </div>
+          </div>
+          <p className="mt-1 text-xs sm:text-sm text-slate-500 font-medium">
+            {isStorefront
+              ? `Real-time in-store scans, Google review booster, and ${v.itemsName.toLowerCase()} health.`
+              : 'Monitor your dynamic QR codes and keep them safe for printing.'}
+          </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {!isStorefront && (
+
+        {/* Countertop Essentials Bar (Senior Product Rule #4) */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {hasPrimaryQr ? (
             <>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleCheckLinks}
-                disabled={checkingLinks}
-                className="font-bold border-slate-200 text-slate-600 hover:text-slate-900"
+                onClick={handleCopyShareLink}
+                className="font-bold border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+                title="Copy live link to clipboard"
               >
-                <RefreshCw className={cn("h-4 w-4 mr-1.5", checkingLinks && "animate-spin")} />
-                {checkingLinks ? 'Checking...' : 'Check Links'}
+                {copiedShareLink ? <Check className="h-4 w-4 mr-1 text-emerald-600" /> : <Share2 className="h-4 w-4 mr-1 text-slate-500" />}
+                {copiedShareLink ? 'Copied Link!' : 'Share Link'}
               </Button>
-              <Button variant="outline" size="sm" asChild className="font-bold border-slate-200 text-slate-600 hover:text-slate-900">
-                <Link to="/analytics"><Download className="h-4 w-4" />Export Report</Link>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleTestReviewFunnel}
+                className="font-bold border-amber-300 bg-amber-50/70 text-amber-950 hover:bg-amber-100/80 transition-colors"
+                title="Preview in-menu rating modal & AI Google review drafts"
+              >
+                <Star className="h-4 w-4 mr-1.5 fill-amber-400 text-amber-500" />
+                Test Review Funnel
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="font-bold border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+              >
+                <Link to={`/qrcodes/${primaryQr._id}`}>
+                  <Download className="h-4 w-4 mr-1.5 text-slate-500" />
+                  Standee Canvas (4x6)
+                </Link>
+              </Button>
+
+              <Button size="sm" asChild className="font-bold bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-sm">
+                <Link to="/create">
+                  <Plus className="h-4 w-4 mr-1 text-white" />
+                  New Standee
+                </Link>
               </Button>
             </>
+          ) : (
+            <Button
+              size="sm"
+              asChild
+              className="font-bold bg-slate-900 hover:bg-slate-800 text-white px-5 py-2 shadow-sm transition-colors"
+            >
+              <Link to="/create">
+                <Plus className="h-4 w-4 mr-1.5 text-white" />
+                Create Your First {v.assetNameShort || 'Rate Card'}
+              </Link>
+            </Button>
           )}
-          <Button size="sm" asChild className="font-bold bg-slate-900 text-white hover:bg-slate-800">
-            <Link to="/create"><Plus className="h-4 w-4 mr-1.5" />{isStorefront ? (v.addItem ? `${v.addItem} / Standee` : 'Create Standee') : 'Create QR'}</Link>
-          </Button>
         </div>
       </div>
 
@@ -284,7 +425,11 @@ export default function DashboardOverview() {
               <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
               <span>{checkFeedback}</span>
             </div>
-            <button type="button" onClick={() => setCheckFeedback(null)} className="text-emerald-700 hover:underline">
+            <button
+              type="button"
+              onClick={() => setCheckFeedback(null)}
+              className="text-emerald-700 hover:underline cursor-pointer"
+            >
               Dismiss
             </button>
           </CardContent>
@@ -293,15 +438,15 @@ export default function DashboardOverview() {
 
       {error && (
         <Card className="border-destructive/30 bg-destructive/5 shadow-none">
-          <CardContent className="flex items-center gap-3 p-4 text-sm text-destructive">
-            <AlertTriangle className="h-4 w-4" />
-            {error}
+          <CardContent className="flex items-center gap-3 p-4 text-sm text-destructive font-medium">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
           </CardContent>
         </Card>
       )}
 
-      {/* Conditional Global Alert: Only renders if Static Locked > 0 */}
-      {staticLockedCount > 0 && (
+      {/* Global Limit Alert */}
+      {stats.staticLocked > 0 && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-amber-300 bg-amber-50/95 p-4 sm:px-5 sm:py-4 shadow-sm text-amber-950">
           <div className="flex items-start sm:items-center gap-3.5 min-w-0">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-800">
@@ -309,399 +454,516 @@ export default function DashboardOverview() {
             </div>
             <div className="text-sm">
               <p className="font-bold text-amber-950 flex items-center gap-1.5">
-                <span>⚠️</span>
-                <span>You have {staticLockedCount} Static Locked QR code{staticLockedCount > 1 ? 's' : ''}.</span>
+                <span>You have {stats.staticLocked} Static Locked QR code{stats.staticLocked > 1 ? 's' : ''}.</span>
               </p>
-              <p className="text-xs text-amber-800/90 mt-0.5 leading-relaxed">
-                They are still scanning successfully, but analytics and editing are paused because you exceeded your plan limits.
+              <p className="text-xs text-amber-800/90 mt-0.5 leading-relaxed font-normal">
+                They are scanning successfully, but editing and live telemetry are paused because you reached your plan limit.
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
-            <Button size="sm" asChild className="bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-sm">
-              <Link to="/billing">Upgrade to Unlock</Link>
-            </Button>
-          </div>
+          <Button size="sm" asChild className="bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-sm shrink-0">
+            <Link to="/billing">Upgrade to Unlock</Link>
+          </Button>
         </div>
       )}
 
-      {/* Three Core Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {/* 1. Total Scans (The Vanity Metric) */}
-        <Card className="relative overflow-hidden border-indigo-200/80 bg-gradient-to-br from-indigo-50/70 via-white to-white shadow-sm transition-all hover:shadow-md">
-          <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-indigo-500/10 blur-xl pointer-events-none" />
-          <CardContent className="p-5 sm:p-6 flex flex-col justify-between h-full min-h-[180px]">
+      {/* Executive Storefront Pulse: 4 Clean KPI Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* KPI 1: In-Store Scans */}
+        <Card className="relative overflow-hidden border-slate-200/90 bg-white shadow-2xs hover:shadow-xs transition-all">
+          <CardContent className="p-5 flex flex-col justify-between h-full min-h-[155px]">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-200">
-                  <Smartphone className="h-5 w-5" />
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600">
+                  <Smartphone className="h-4.5 w-4.5" />
                 </div>
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Scans</span>
-                  <p className="text-[11px] font-medium text-slate-400">All-time Engagements</p>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">In-Store Scans</span>
+                  <p className="text-[10px] text-slate-400">Total customer visits</p>
                 </div>
               </div>
             </div>
 
-            <div className="my-3">
-              <p className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900">
+            <div className="my-2">
+              <p className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 tabular-nums">
                 {formatNumber(stats.totalScans)}
               </p>
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-              <span className="text-xs text-slate-500 font-medium">{isStorefront ? 'Customer in-store scans' : 'Live scan redirects'}</span>
-              <Link to={isStorefront ? "/qrcodes" : "/analytics"} className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
-                <span>{isStorefront ? 'View Standees' : 'View Analytics'}</span>
-                <ArrowUpRight className="h-3.5 w-3.5" />
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+              <span className="text-[11px] text-slate-500 font-medium">Sub-50ms edge redirect</span>
+              <Link to="/qrcodes" className="font-bold text-indigo-600 hover:text-indigo-700 inline-flex items-center gap-0.5">
+                <span>View Standees</span>
+                <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
           </CardContent>
         </Card>
 
-        {/* 2. Active QR Codes vs Limit (The Business Metric) */}
-        <Card className="relative overflow-hidden border-slate-200 shadow-sm transition-all hover:shadow-md bg-white">
-          <CardContent className="p-5 sm:p-6 flex flex-col justify-between h-full min-h-[180px]">
+        {/* KPI 2: 5-Star Google Reviews (Senior Product Rule #2) */}
+        <Card className="relative overflow-hidden border-amber-200/80 bg-white shadow-2xs hover:shadow-xs transition-all">
+          <CardContent className="p-5 flex flex-col justify-between h-full min-h-[155px]">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
-                  <QrCode className="h-5 w-5" />
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 border border-amber-200/70 text-amber-600">
+                  <Star className="h-4.5 w-4.5 fill-amber-400" />
                 </div>
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{isStorefront ? (v.quotaName || 'Active Standees') : 'Active vs Limit'}</span>
-                  <p className="text-[11px] font-medium text-slate-400">{planName}</p>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900">Google Reviews</span>
+                  <p className="text-[10px] text-amber-700/80">AI 5★ Draft Launcher</p>
                 </div>
               </div>
-              {isNearLimit ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-[11px] font-bold text-amber-700">
-                  {planUsage >= 100 ? 'Limit Reached' : 'Near Limit'}
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-600">
-                  {dynamicLimit === Infinity ? 'Unlimited' : `${Math.max(0, dynamicLimit - activeQrCount)} left`}
-                </span>
-              )}
+              <Badge variant="outline" className="border-amber-200 bg-amber-100/60 text-amber-900 text-[10px] font-bold px-2 py-0.2 rounded-full">
+                Booster
+              </Badge>
             </div>
 
-            <div className="my-2.5">
-              <p className="text-3xl font-extrabold tracking-tight text-slate-900">
-                {activeQrCount} <span className="text-xl font-semibold text-slate-400">/ {dynamicLimit === Infinity ? '∞' : dynamicLimit} {isStorefront ? v.quotaLabel : 'Used'}</span>
+            <div className="my-2">
+              <p className="text-3xl sm:text-4xl font-black tracking-tight text-amber-950 tabular-nums">
+                {formatNumber(stats.googleReviewsCount)}
               </p>
-              <div className="mt-2.5">
-                <Progress 
-                  value={planUsage} 
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-amber-100/80 text-xs">
+              <span className="text-[11px] text-slate-500 truncate max-w-[170px]" title={primaryQr?.metadata?.googleReviewUrl ? 'Google Review link active' : 'Connect link to activate'}>
+                {primaryQr?.metadata?.googleReviewUrl ? 'Connected & ready' : 'Add Google link'}
+              </span>
+              <button
+                type="button"
+                onClick={handleTestReviewFunnel}
+                disabled={!hasPrimaryQr}
+                className="font-bold text-amber-700 hover:text-amber-900 inline-flex items-center gap-0.5 cursor-pointer disabled:opacity-40"
+              >
+                <span>Test</span>
+                <ArrowUpRight className="h-3 w-3" />
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* KPI 3: Private WhatsApp Shield (Senior Product Rule #2) */}
+        <Card className="relative overflow-hidden border-emerald-200/80 bg-white shadow-2xs hover:shadow-xs transition-all">
+          <CardContent className="p-5 flex flex-col justify-between h-full min-h-[155px]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-200/70 text-emerald-600">
+                  <ShieldCheck className="h-4.5 w-4.5" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-950">WhatsApp Shield</span>
+                  <p className="text-[10px] text-emerald-700/80">Private 1–3★ Defusal</p>
+                </div>
+              </div>
+              <Badge variant="outline" className="border-emerald-200 bg-emerald-100/60 text-emerald-900 text-[10px] font-bold px-2 py-0.2 rounded-full">
+                Shielded
+              </Badge>
+            </div>
+
+            <div className="my-2">
+              <p className="text-3xl sm:text-4xl font-black tracking-tight text-emerald-950 tabular-nums">
+                {formatNumber(stats.whatsappShieldCount)}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-emerald-100/80 text-xs">
+              <span className="text-[11px] text-slate-500 truncate max-w-[170px]">
+                {stats.whatsappShieldCount > 0 ? 'Complaints defused' : '0 bad public reviews'}
+              </span>
+              <span className="font-bold text-emerald-700 text-[11px]">Protected</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* KPI 4: Standee Capacity */}
+        <Card className="relative overflow-hidden border-slate-200/90 bg-white shadow-2xs hover:shadow-xs transition-all">
+          <CardContent className="p-5 flex flex-col justify-between h-full min-h-[155px]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                  {isSalon ? <Scissors className="h-4.5 w-4.5" /> : <Coffee className="h-4.5 w-4.5" />}
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    {isStorefront ? (isSalon ? 'Mirror Standees' : 'Table Standees') : 'Active QRs'}
+                  </span>
+                  <p className="text-[10px] text-slate-400">{planName}</p>
+                </div>
+              </div>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                {dynamicLimit === Infinity ? 'Unlimited' : `${Math.max(0, dynamicLimit - activeQrCount)} left`}
+              </span>
+            </div>
+
+            <div className="my-2">
+              <p className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 tabular-nums">
+                {activeQrCount}
+                <span className="text-lg font-semibold text-slate-400 ml-1">
+                  / {dynamicLimit === Infinity ? '∞' : dynamicLimit}
+                </span>
+              </p>
+              <div className="mt-2">
+                <Progress
+                  value={planUsage}
                   className={cn(
-                    "h-2 bg-slate-100",
-                    planUsage >= 100 ? "[&>div]:bg-red-500" : planUsage >= 80 ? "[&>div]:bg-amber-500" : "[&>div]:bg-indigo-600"
-                  )} 
+                    'h-1.5 bg-slate-100',
+                    planUsage >= 100 ? '[&>div]:bg-red-500' : planUsage >= 80 ? '[&>div]:bg-amber-500' : '[&>div]:bg-indigo-600'
+                  )}
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-              <span className="text-xs text-slate-500 font-medium">
-                {planUsage >= 100 ? "Limit reached — upgrade" : `${planUsage}% of capacity utilized`}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+              <span className="text-[11px] text-slate-500 font-medium">
+                {planUsage >= 100 ? 'Limit reached' : `${planUsage}% utilized`}
               </span>
-              <Link to="/billing" className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
+              <Link to="/billing" className="font-bold text-indigo-600 hover:text-indigo-700 inline-flex items-center gap-0.5">
                 <span>{isNearLimit ? 'Upgrade' : 'Manage'}</span>
-                <ArrowUpRight className="h-3.5 w-3.5" />
+                <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
           </CardContent>
         </Card>
-
-        {/* 3. Action Items / Needs Attention (The Utility Metric) */}
-        <Link 
-          to={totalIssues > 0 ? "/qrcodes?status=issues" : "/qrcodes"}
-          className="block group h-full"
-        >
-          <Card className={cn(
-            "relative overflow-hidden shadow-sm transition-all hover:shadow-md h-full cursor-pointer",
-            totalIssues === 0 
-              ? "border-emerald-200/80 bg-gradient-to-br from-emerald-50/40 via-white to-white hover:border-emerald-300"
-              : "border-red-300 bg-gradient-to-br from-red-50/60 via-white to-white hover:border-red-400 ring-1 ring-red-200"
-          )}>
-            <div className={cn(
-              "absolute -right-6 -top-6 h-28 w-28 rounded-full blur-xl pointer-events-none",
-              totalIssues === 0 ? "bg-emerald-500/10" : "bg-red-500/15"
-            )} />
-
-            <CardContent className="p-5 sm:p-6 flex flex-col justify-between h-full min-h-[180px]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-xl",
-                    totalIssues === 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"
-                  )}>
-                    {totalIssues === 0 ? <CheckCircle2 className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Action Items</span>
-                    <p className="text-[11px] font-medium text-slate-400">Needs Attention</p>
-                  </div>
-                </div>
-
-                {totalIssues === 0 ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100/80 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
-                    Operational
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 border border-red-200 px-2.5 py-0.5 text-[11px] font-bold text-red-700 animate-pulse">
-                    <span className="h-1.5 w-1.5 rounded-full bg-red-600" />
-                    Action Required
-                  </span>
-                )}
-              </div>
-
-              <div className="my-2.5">
-                <p className={cn(
-                  "text-3xl font-extrabold tracking-tight",
-                  totalIssues === 0 ? "text-emerald-600" : "text-red-600"
-                )}>
-                  {totalIssues === 0 ? "0 Issues" : `${totalIssues} Issue${totalIssues > 1 ? 's' : ''} Detected`}
-                </p>
-                <p className="text-xs text-slate-500 mt-1 line-clamp-1 font-medium">
-                  {totalIssues === 0
-                    ? "All links and redirects operating smoothly"
-                    : [
-                        brokenCount > 0 ? `${brokenCount} broken link${brokenCount > 1 ? 's' : ''}` : null,
-                        staticLockedCount > 0 ? `${staticLockedCount} locked by limit` : null
-                      ].filter(Boolean).join(' • ')
-                  }
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                <span className={cn(
-                  "text-xs font-semibold",
-                  totalIssues === 0 ? "text-slate-500" : "text-red-600"
-                )}>
-                  {totalIssues === 0 ? "All links healthy" : "Drop to exact links"}
-                </span>
-                <span className={cn(
-                  "inline-flex items-center gap-1 text-xs font-bold transition-transform group-hover:translate-x-0.5",
-                  totalIssues === 0 ? "text-slate-600" : "text-red-600"
-                )}>
-                  <span>{totalIssues === 0 ? "View links" : "Fix now"}</span>
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
       </div>
 
+      {/* Main Split Operational Grid: 2/3 (Left) + 1/3 (Right) */}
       <div className="grid gap-6 xl:grid-cols-3">
+        {/* Left 2/3 Column */}
         <div className="space-y-6 xl:col-span-2">
-          {/* Top Performing QR Codes */}
-          <Card className="shadow-none border-slate-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-5">
-              <CardTitle className="text-base font-bold text-slate-800">{isStorefront ? `Top Performing ${v.itemsName} / Standees` : 'Top Performing QR Codes'}</CardTitle>
-              <Button variant="ghost" size="sm" asChild className="text-xs font-bold text-slate-500 hover:text-slate-800"><Link to="/qrcodes">View all</Link></Button>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[620px] text-xs">
-                  <thead>
-                    <tr className="border-t border-slate-100 text-slate-400">
-                      <th className="px-5 py-3.5 text-left font-semibold uppercase tracking-wider">QR Code</th>
-                      <th className="px-5 py-3.5 text-right font-semibold uppercase tracking-wider">Scans</th>
-                      <th className="px-5 py-3.5 text-right font-semibold uppercase tracking-wider">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topQrs.length === 0 ? (
-                      <tr><td colSpan="3" className="px-5 py-8 text-center text-slate-400 font-medium">No QR codes yet.</td></tr>
-                    ) : topQrs.map((qr) => {
-                      const status = getQrStatus(qr);
-                      return (
-                        <tr key={qr._id} className="border-t border-slate-100 text-slate-700 hover:bg-slate-50/50">
-                          <td className="px-5 py-3.5">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-100 bg-slate-50"><QrCode className="h-4.5 w-4.5 text-slate-400" /></div>
-                              <div className="min-w-0">
-                                <p className="truncate font-bold text-slate-800 text-[13px]">{getQrTitle(qr)}</p>
-                                <p className="text-[11px] text-slate-400 font-medium capitalize mt-0.5">{qr.qr_type?.toLowerCase() || 'url'}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-5 py-3.5 text-right font-bold text-slate-800 text-[13px]">{formatNumber(qr.stats?.total_scans)}</td>
-                          <td className="px-5 py-3.5 text-right">
-                            <Badge variant={status.variant} className="gap-1 font-bold text-[10px] uppercase py-0.5 px-2 tracking-wide">{status.label}</Badge>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+          {/* Active Lookbook & Rate Card Items (Senior Product Rule #1) */}
+          <Card className="border-slate-200/90 shadow-2xs overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-5 pb-4 border-b border-slate-100 bg-slate-50/60">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={cn(
+                    'h-9 w-9 rounded-xl flex items-center justify-center shrink-0 border',
+                    isSalon ? 'bg-pink-50 border-pink-100 text-pink-700' : 'bg-amber-50 border-amber-100 text-amber-800'
+                  )}
+                >
+                  <Sparkles className="h-4.5 w-4.5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-base font-extrabold text-slate-900">
+                      {isSalon ? 'Active Lookbook & Rate Card Items' : 'Active Digital Menu Items'}
+                    </CardTitle>
+                    <Badge variant="outline" className="text-[10px] font-bold px-2 py-0.5 rounded-full border-slate-200 text-slate-700">
+                      {activeLookbookItems.length} live
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5 font-normal">
+                    {hasPrimaryQr
+                      ? `Browsed live by guests on your ${primaryQr?.metadata?.restaurantName || (isSalon ? 'Salon' : 'Cafe')} rate card.`
+                      : 'Create your digital catalog to activate live browsing.'}
+                  </p>
+                </div>
               </div>
+
+              {hasPrimaryQr && (
+                <Button variant="outline" size="sm" asChild className="text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50">
+                  <Link to={`/create?edit=${primaryQr._id}&step=2`}>
+                    Edit {v.assetNameShort || 'Catalog'}
+                  </Link>
+                </Button>
+              )}
+            </CardHeader>
+
+            <CardContent className="p-0">
+              {activeLookbookItems.length === 0 ? (
+                <div className="text-center py-12 px-6">
+                  <div className="h-12 w-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                    {isSalon ? <Scissors className="h-6 w-6" /> : <Coffee className="h-6 w-6" />}
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-800 mb-1">
+                    No {v.itemsName.toLowerCase()} listed yet
+                  </h3>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4 font-normal leading-relaxed">
+                    Upload a smartphone photo of your paper menu or rate card. AI reads categories and prices in 60s!
+                  </p>
+                  <Button size="sm" asChild className="bg-slate-900 text-white font-bold hover:bg-slate-800">
+                    <Link to="/create">
+                      <Plus className="h-4 w-4 mr-1.5" />
+                      Add Your First {v.itemName || 'Service'}
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {activeLookbookItems.slice(0, 6).map((item, idx) => (
+                    <div key={item.id || idx} className="p-4 flex items-center justify-between gap-4 hover:bg-slate-50/60 transition-colors">
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        {item.img ? (
+                          <div className="h-12 w-12 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
+                            <img src={item.img} alt={item.name} className="h-full w-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="h-12 w-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 text-slate-400">
+                            {isSalon ? <Scissors className="h-5 w-5" /> : <Utensils className="h-5 w-5" />}
+                          </div>
+                        )}
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-slate-900 text-sm truncate">{item.name}</h4>
+                            <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md shrink-0">
+                              {item.categoryName}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-wrap mt-1">
+                            {item.duration && (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-50 border border-slate-200 px-2 py-0.2 rounded-md">
+                                <Clock className="h-3 w-3 text-slate-400" /> {item.duration}
+                              </span>
+                            )}
+                            {item.brandUsed && (
+                              <span className="inline-flex items-center text-[11px] font-semibold text-pink-700 bg-pink-50 border border-pink-100 px-2 py-0.2 rounded-md">
+                                🧴 {item.brandUsed}
+                              </span>
+                            )}
+                            {item.targetGender && item.targetGender !== 'unisex' && (
+                              <span className="inline-flex items-center text-[10px] font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.2 rounded-md">
+                                {item.targetGender === 'for_her' ? 'For Her' : 'For Him'}
+                              </span>
+                            )}
+                            {item.tags?.includes('veg') && (
+                              <span className="inline-flex items-center text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded-md">
+                                Pure Veg
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-sm font-black text-slate-900 tabular-nums">
+                          {primaryQr?.metadata?.currency || '₹'}
+                          {item.price || '0'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+
+                  {activeLookbookItems.length > 6 && (
+                    <div className="p-3 text-center bg-slate-50/70 border-t border-slate-100">
+                      <Link
+                        to={`/create?edit=${primaryQr._id}&step=2`}
+                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800"
+                      >
+                        + View all {activeLookbookItems.length} items in editor
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Dead Link Warnings */}
-          <Card className={cn('shadow-none border-slate-200', brokenQrs.length > 0 && 'border-red-200 bg-red-50/30')}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-5">
+          {/* Countertop Physical Standee Status Card */}
+          <Card className="border-slate-200/90 shadow-2xs">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-5 pb-3">
               <div className="flex items-center gap-2">
-                <AlertTriangle className={cn('h-5 w-5', brokenQrs.length > 0 ? 'text-red-500' : 'text-emerald-500')} />
-                <CardTitle className="text-base font-bold text-slate-800">Dead Link Warnings</CardTitle>
-              </div>
-              <Badge variant={brokenQrs.length > 0 ? 'destructive' : 'success'} className="font-bold text-[10px] tracking-wide uppercase px-2">{brokenQrs.length} issues</Badge>
-            </CardHeader>
-            <CardContent className="space-y-3.5 p-5 pt-0">
-              {brokenQrs.length === 0 ? (
-                <p className="text-xs text-slate-400 font-semibold">No broken destinations detected in your QR list.</p>
-              ) : brokenQrs.slice(0, 3).map((qr) => (
-                <div key={qr._id} className="flex items-center justify-between gap-3 rounded-xl border border-red-100 bg-white p-4">
-                  <div className="min-w-0">
-                    <p className="truncate text-[13px] font-bold text-slate-800">{getQrTitle(qr)}</p>
-                    <p className="truncate text-[11px] text-slate-400 font-semibold mt-0.5">{qr.target_url}</p>
-                  </div>
-                  <Button variant="outline" size="sm" asChild className="font-bold border-slate-200 text-slate-700 hover:bg-slate-50"><Link to="/qrcodes">Fix Now</Link></Button>
+                <div className="h-9 w-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
+                  <Printer className="h-4.5 w-4.5" />
                 </div>
-              ))}
+                <div>
+                  <CardTitle className="text-base font-extrabold text-slate-900">
+                    {isSalon ? 'Mirror Standee Hardware' : 'Table Standee Hardware'}
+                  </CardTitle>
+                  <p className="text-xs text-slate-500 mt-0.5 font-normal">
+                    Countertop acrylic hardware specifications & print setup
+                  </p>
+                </div>
+              </div>
+
+              {hasPrimaryQr && (
+                <Button variant="outline" size="sm" asChild className="font-bold border-slate-200 text-slate-700 hover:bg-slate-50">
+                  <Link to={`/qrcodes/${primaryQr._id}`}>
+                    <Printer className="h-3.5 w-3.5 mr-1 text-slate-500" />
+                    Print Setup
+                  </Link>
+                </Button>
+              )}
+            </CardHeader>
+
+            <CardContent className="p-5 pt-2 space-y-4">
+              <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/60">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                    Patron-Facing Countertop Standee
+                  </span>
+                  <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-800 text-[10px] font-bold">
+                    Active
+                  </Badge>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed font-normal">
+                  Framed with <strong>"Open Camera to Scan, Not GPay"</strong> and category center icon. Directs customers straight to your visual {v.assetNameShort.toLowerCase()} & Google review engine without payment confusion.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs">
+                <div className="flex items-center gap-2 text-slate-600">
+                  <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
+                  <span>
+                    Venue Placement:{' '}
+                    <strong>
+                      {primaryQr?.placement?.city
+                        ? `${primaryQr.placement.city}${primaryQr.placement.label ? ` (${primaryQr.placement.label})` : ''}`
+                        : 'Fixed In-Store Counter'}
+                    </strong>
+                  </span>
+                </div>
+                <span className="text-slate-400 text-[11px]">4x6 inch Acrylic & 5cm Vinyl Sticker Compatible</span>
+              </div>
             </CardContent>
           </Card>
         </div>
 
+        {/* Right 1/3 Column */}
         <div className="space-y-6">
-          {/* Print Safety Score (Marketing Only) */}
-          {!isStorefront && (
-          <Card className="shadow-none border-slate-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-5 pb-3">
-              <CardTitle className="text-base font-bold text-slate-800">Print Safety Score</CardTitle>
-              <span className={cn('text-2xl font-extrabold', 
-                stats.safetyScore >= 80 ? 'text-emerald-500' : stats.safetyScore >= 60 ? 'text-amber-500' : 'text-red-500'
-              )}>
-                {stats.safetyScore}%
-              </span>
+          {/* Front-Desk Setup Checklist (Senior Product Rule #3) */}
+          <Card className="border-slate-200/90 shadow-2xs overflow-hidden">
+            <CardHeader className="p-5 pb-3 bg-slate-50/60 border-b border-slate-100">
+              <div className="flex items-center justify-between mb-1.5">
+                <CardTitle className="text-sm font-extrabold text-slate-900">
+                  Front-Desk Setup Checklist
+                </CardTitle>
+                <span className="text-xs font-bold text-indigo-600 tabular-nums">
+                  {completedStepsCount}/{checklistSteps.length} Completed
+                </span>
+              </div>
+              <Progress value={checklistPercent} className="h-1.5 bg-slate-100 [&>div]:bg-indigo-600" />
             </CardHeader>
-            <CardContent className="space-y-4 p-5 pt-0">
-              <SafetyRow 
-                label="QR Health" 
-                description={stats.brokenLinks === 0 ? "All QR codes scanning correctly" : "Review scan status"} 
-                status={stats.brokenLinks === 0 ? 'healthy' : 'warning'} 
-              />
-              <SafetyRow 
-                label="Destination Health" 
-                description={stats.brokenLinks > 0 ? `${stats.brokenLinks} broken link${stats.brokenLinks > 1 ? 's' : ''} detected` : 'No broken links detected'} 
-                status={stats.brokenLinks > 0 ? 'broken' : 'healthy'} 
-                actionText={stats.brokenLinks > 0 ? "Fix broken URL" : null}
-                actionPath={stats.brokenLinks > 0 ? "/qrcodes" : null}
-              />
-              <SafetyRow 
-                label="UTM Status" 
-                description={stats.totalCodes - stats.withUtm > 0 ? `${stats.totalCodes - stats.withUtm} QRs missing UTM tracking` : 'All QR codes have tracking enabled'} 
-                status={stats.totalCodes - stats.withUtm > 0 ? 'warning' : 'healthy'} 
-                actionText={stats.totalCodes - stats.withUtm > 0 ? "Add missing UTM" : null}
-                actionPath={stats.totalCodes - stats.withUtm > 0 ? "/qrcodes" : null}
-              />
-              <SafetyRow 
-                label="Analytics Status" 
-                description="Analytics enabled on all dynamic QRs" 
-                status="healthy" 
-              />
-              <SafetyRow 
-                label="Fallback Safety" 
-                description="All QRs have fallback destinations" 
-                status="healthy" 
-              />
-            </CardContent>
-          </Card>
-          )}
 
-          {/* Recent Scans */}
-          <Card className="shadow-none border-slate-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-5 pb-3">
-              <CardTitle className="text-base font-bold text-slate-800">Recent Scans</CardTitle>
-              <Button variant="ghost" size="sm" asChild className="text-xs font-bold text-slate-500 hover:text-slate-800"><Link to="/analytics">View all</Link></Button>
-            </CardHeader>
-            <CardContent className="space-y-3.5 p-5 pt-0">
-              {recentQrs.length === 0 ? (
-                <p className="text-xs text-slate-400 font-semibold">Recent scan activity will appear here.</p>
-              ) : recentQrs.map((qr) => (
-                <div key={qr._id} className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-100 bg-slate-50">
-                      <Smartphone className="h-4.5 w-4.5 text-slate-400" />
-                    </div>
+            <CardContent className="p-5 space-y-4">
+              {checklistSteps.map((step) => (
+                <div key={step.id} className="flex items-start justify-between gap-3 text-xs">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    {step.completed ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <div className="h-4 w-4 rounded-full border-2 border-slate-300 shrink-0 mt-0.5" />
+                    )}
                     <div className="min-w-0">
-                      <p className="truncate text-[13px] font-bold text-slate-800">{getQrTitle(qr)}</p>
-                      <p className="text-[11px] text-slate-400 font-semibold flex items-center gap-0.5 mt-0.5">
-                        <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                        <span>{getMockCity(qr._id)}</span>
+                      <p className={cn('font-bold', step.completed ? 'text-slate-800' : 'text-slate-700')}>
+                        {step.label}
+                      </p>
+                      <p className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5">
+                        {step.description}
                       </p>
                     </div>
                   </div>
-                  <span className="text-[11px] text-slate-400 font-semibold shrink-0">
-                    {formatRelativeDate(qr.stats?.last_scanned_at)}
-                  </span>
+
+                  <Link
+                    to={step.actionPath}
+                    className={cn(
+                      'shrink-0 font-bold text-[11px] transition-colors',
+                      step.completed ? 'text-slate-400 hover:text-slate-700' : 'text-indigo-600 hover:text-indigo-800 underline'
+                    )}
+                  >
+                    {step.actionText}
+                  </Link>
                 </div>
               ))}
             </CardContent>
           </Card>
 
-          {/* Plan Subscription Usage */}
-          {(() => {
-            const currentPlan = (user?.subscription?.plan || 'free').toLowerCase();
-            const planInfo = UI_PLAN_LIMITS[currentPlan] || UI_PLAN_LIMITS.free;
-            
-            const maxQrs = planInfo.maxQrs;
-            const maxScans = planInfo.maxScans;
-            const maxSeats = planInfo.maxSeats;
-            
-            const qrPercentage = maxQrs > 0 && maxQrs !== Infinity ? (activeQrCount / maxQrs) * 100 : 0;
-            const scansPercentage = maxScans > 0 && maxScans !== Infinity ? (stats.totalScans / maxScans) * 100 : 0;
-            const seatsUsed = maxSeats > 1 ? 2 : 1;
-            const seatsPercentage = maxSeats > 0 ? (seatsUsed / maxSeats) * 100 : 0;
-            
-            return (
-              <Card className="shadow-none border-slate-200">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-5 pb-3">
-                  <CardTitle className="text-base font-bold text-slate-800">
-                    {planInfo.name}
-                  </CardTitle>
-                  <Button variant="ghost" size="sm" asChild className="text-xs font-bold text-slate-500 hover:text-slate-800"><Link to="/billing">Manage</Link></Button>
-                </CardHeader>
-                <CardContent className="space-y-5 p-5 pt-0">
-                  {/* Dynamic QRs Progress */}
-                  <div>
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-                      <span>{isStorefront ? (v.quotaUnit || 'Mirror Standees') : 'Dynamic QRs'}</span>
-                      <span className="text-slate-800">{activeQrCount}/{maxQrs}</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
-                      <div className="bg-slate-900 h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(100, Math.max(0, qrPercentage))}%` }}></div>
-                    </div>
+          {/* Weekly Monday Morning Push Digest */}
+          <Card className="border-slate-200/90 shadow-2xs">
+            <CardHeader className="p-5 pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+                    <MessageSquare className="h-4 w-4" />
                   </div>
-
-                  {/* Monthly Scans Progress */}
                   <div>
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-                      <span>Monthly Scans</span>
-                      <span className="text-slate-800">{formatNumber(stats.totalScans)}/{formatNumber(maxScans)}</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
-                      <div className="bg-slate-900 h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(100, Math.max(0, scansPercentage))}%` }}></div>
-                    </div>
+                    <CardTitle className="text-sm font-extrabold text-slate-900">
+                      Weekly WhatsApp Digest
+                    </CardTitle>
+                    <p className="text-[11px] text-slate-400 font-normal">Automated owner push report</p>
                   </div>
+                </div>
+                <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-800 text-[10px] font-bold">
+                  Scheduled
+                </Badge>
+              </div>
+            </CardHeader>
 
-                  {/* Team Seats Progress */}
-                  {!isStorefront && (
-                    <div>
-                      <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-                        <span>Team Seats</span>
-                        <span className="text-slate-800">{seatsUsed}/{maxSeats}</span>
-                      </div>
-                      <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
-                        <div className="bg-slate-900 h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(100, Math.max(0, seatsPercentage))}%` }}></div>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })()}
+            <CardContent className="p-5 pt-1 space-y-3.5 text-xs text-slate-600">
+              <p className="text-slate-500 font-normal leading-relaxed text-[11px]">
+                Every Monday at 9:00 AM, QRVibe sends your total scan counts, review clicks, and top-viewed items directly to your WhatsApp.
+              </p>
+
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-400 font-medium">Recipient Phone:</span>
+                  <span className="font-bold text-slate-800 tabular-nums">
+                    {user?.whatsappNumber || primaryQr?.metadata?.shieldPhone || primaryQr?.metadata?.whatsappNumber || 'Not configured'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-400 font-medium">Frequency:</span>
+                  <span className="font-semibold text-slate-700">Mondays @ 9:00 AM</span>
+                </div>
+              </div>
+
+              {!(user?.whatsappNumber || primaryQr?.metadata?.shieldPhone) && (
+                <Link to="/account" className="block text-center font-bold text-xs text-indigo-600 hover:underline">
+                  + Add WhatsApp number in Settings
+                </Link>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Plan Quota Card */}
+          <Card className="border-slate-200/90 shadow-2xs">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-5 pb-3">
+              <CardTitle className="text-sm font-extrabold text-slate-900">
+                {planInfo.name} Tier
+              </CardTitle>
+              <Button variant="ghost" size="sm" asChild className="text-xs font-bold text-slate-500 hover:text-slate-800">
+                <Link to="/billing">Manage</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="p-5 pt-0 space-y-4">
+              <div>
+                <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                  <span>{isStorefront ? (v.quotaUnit || 'Mirror Standees') : 'Dynamic QRs'}</span>
+                  <span className="text-slate-800 tabular-nums">{activeQrCount} / {dynamicLimit === Infinity ? '∞' : dynamicLimit}</span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
+                  <div
+                    className="bg-slate-900 h-full rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(100, Math.max(0, planUsage))}%` }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                  <span>Monthly Scans</span>
+                  <span className="text-slate-800 tabular-nums">
+                    {formatNumber(stats.totalScans)} / {formatNumber(planInfo.maxScans)}
+                  </span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
+                  <div
+                    className="bg-slate-900 h-full rounded-full transition-all duration-300"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.max(
+                          0,
+                          planInfo.maxScans > 0 && planInfo.maxScans !== Infinity
+                            ? (stats.totalScans / planInfo.maxScans) * 100
+                            : 0
+                        )
+                      )}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

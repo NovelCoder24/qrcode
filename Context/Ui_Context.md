@@ -27,13 +27,11 @@ When generating code or UI components for QRVibe, the following choices are mand
 
 Use these semantic token names in your Tailwind classes (e.g., `bg-primary`, `text-primary-foreground`). Never hardcode hex values in the JSX.
 
-### 2.1 Colors
-* **Primary (Brand Vibe):** `#5B3FF4` (Tailwind: `bg-primary`, `text-primary-foreground: #FFFFFF`)
-* **Secondary:** `#F4F4F5` (Tailwind: `bg-secondary`, `text-secondary-foreground: #18181B`)
-* **Background:** `#FFFFFF` (Tailwind: `bg-background`)
-* **Foreground:** `#09090B` (Tailwind: `text-foreground`)
-* **Muted:** `#F4F4F5` (Tailwind: `bg-muted`)
-* **Accent:** `#F4F4F5` (Tailwind: `bg-accent`)
+### 2.1 Colors (The 60-30-10 Brand Identity Rule)
+* **Primary (60% — Canvas & Space):** Rich Cream / Alabaster (`#FBF9F6`) — Keeps the platform UI looking clean, spacious, and editorial (Tailwind: `bg-background`, `bg-primary-canvas`, card backgrounds).
+* **Secondary (30% — Structure & Typography):** Deep Espresso Brown (`#2B1E19`) — Used for premium typography, structural borders/cards, headers, dark mode surfaces, and high-end grounding (Tailwind: `text-foreground`, `border-espresso`, `bg-espresso`).
+* **Accent (10% — Focus & CTAs):** Warm Honey Yellow (`#E5A93C`) — Used for active star ratings, review booster buttons, badges, critical CTAs, and interactive highlights (Tailwind: `bg-accent`, `text-accent-foreground: #2B1E19`).
+* **Muted:** `#F2EFE9` (Warm neutral wash for dividers, hover states, muted inputs)
 * **Destructive:** `#EF4444` (Tailwind: `bg-destructive`)
 * **Success:** `#10B981` (Tailwind: `bg-success`)
 
@@ -70,7 +68,7 @@ Use these semantic token names in your Tailwind classes (e.g., `bg-primary`, `te
 
 ### 4.1 Brand Identity: "Warm Professional"
 QRVibe operates in the sweet spot between cold corporate enterprise tools (Scanova/Uniqode) and chaotic meme energy (Linktree/Bento):
-* **Visual Tone:** Warm charcoal (`#1C1C1E`), off-white canvas (`#FAFAF9`), and warm amber/coral accents (`#F59E0B` / `#FF6B4A`). Clean, high-contrast, and trustworthy.
+* **Visual Tone:** Rich Cream / Alabaster canvas (`#FBF9F6`), Deep Espresso Brown typography & structure (`#2B1E19`), and Warm Honey Yellow accents (`#E5A93C`). Clean, editorial, high-contrast, and grounded in hospitality & retail excellence.
 * **Core Personality:** Direct, respectful, business-empowering, and grounded in "Zero-Mehnat" (zero-effort).
 * **The "Invisible AI" Rule:** Never ask merchants to write prompts or debug layout blocks. Use AI solely for seamless automated inputs (upload photo of paper menu -> live digital catalog in 60s).
 

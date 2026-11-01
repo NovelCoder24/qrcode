@@ -51,7 +51,7 @@ const initialState = {
     user: null,
     isAuthenticated: false,
     loading: false,
-    isCheckingSession: false,
+    isCheckingSession: typeof window !== 'undefined' ? !!localStorage.getItem('token') : false,
     error: null
 };
 

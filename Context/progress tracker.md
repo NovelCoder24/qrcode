@@ -48,11 +48,19 @@ Build out QRVibe as the **In-Store Digital Front-Desk & Google Review Engine for
     - **Salon Review Booster & Private Shield:** Adapted `ReviewFunnel.jsx` to dynamically generate beauty-specific 5-star review drafts (styling, facials, hygiene, precision) and salon complaint tags for private owner WhatsApp resolution.
     - **Verification & Builds:** 100% test pass (68/68 automated tests) and Vite production build passed with 0 errors on branch `product`.
 - **Menu Templates & Review Funnel Optimization:**
+  - **Storefront Dashboard Reshaping & Chameleon Pulse (`DashboardOverview.jsx`):** Refactored Storefront Dashboard with Impeccable standards and 4 senior product principles:
+    1. Rendered 2/3 **"🌟 Active Lookbook & Rate Card Items"** directly from primary MENU QR categories (no fake per-service scan numbers) with live thumbnails, duration, brand, and pricing tags.
+    2. Real, honest review metrics (Google reviews and WhatsApp shield defusal counts) with proactive connection/test prompts when 0.
+    3. Replaced developer jargon with reassuring `🟢 Print-Safe Guarantee: Active` badge and a 4-step **"Front-Desk Setup Checklist"** with progress tracking.
+    4. Smart Countertop Essentials Action Bar linking directly to primary Rate Card QR, with graceful zero-state fallback to `[+ Create Your First Rate Card]`.
+    5. Clean mechanical validation: 0 warnings on `impeccable detect` and 100% Vite production build success.
+  - **Impeccable System Initialization (`PRODUCT.md`, `.impeccable/config.json`):** Captured durable product truth, Dual Chameleon architecture, anti-hostageware commitments, and confirmed code-first workflow defaults in `PRODUCT.md` per Impeccable schema 1.
+  - **Fixed Step 2 QR Creator & Chameleon Scope Crash (`MenuForm.jsx`, `MenuImportModal.jsx`, `ReviewFunnel.jsx`, `MenuViewPage.jsx`):** Resolved uncaught `ReferenceError: businessCategory is not defined` and `ReferenceError: v is not defined` when loading Step 2 of the QR creation wizard. Properly bound Redux `user?.businessCategory` state with fallback to `'cafe'`, wired vertical vocabulary `v = getVocabulary(businessCategory)`, and corrected `dishList` reference to `itemList` in `ReviewFunnel.jsx`. Verified live in browser with Playwright MCP automation.
   - **L'Ambroisie Immersive Layout Overhaul (`ImmersiveTemplate.jsx`):** Removed intrusive dish detail drawer popup, fake sommelier/calories/narrative mockups, and confusing chevron buttons. Upgraded typography with Google Fonts (`Playfair Display`, `Plus Jakarta Sans`), streamlined dish cards with baseline title/price alignment and full-width descriptions, added cross-category search, and expanded bottom clearance (`pb-28 sm:pb-32`).
   - **Mobile-Responsive Review Badge (`ReviewFunnel.jsx` & Templates):** Eliminated broken multi-line text wrapping by adding `whitespace-nowrap` and responsive label scaling (compact `Leave a 10s Review` on narrow screens `<390px` and full label on larger screens). Increased bottom padding across all templates (`ImmersiveTemplate`, `LighthouseTemplate`, `BasicTemplates`) to ensure zero content overlap.
 
 ## ⏳ In Progress
-- 2-Sided Acrylic Standee printable canvas generator (4x6 inch export with "Open Phone Camera to Scan, Not GPay").
+- Acrylic Standee printable canvas generator (4x6 inch single-sided export with "Open Phone Camera to Scan, Not GPay").
 
 ## 🔜 Next Up
 1. **Finalize Pricing & Billing Architecture** (evaluate Annual Prepaid bundle vs Monthly UPI AutoPay).
