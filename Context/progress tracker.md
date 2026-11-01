@@ -48,10 +48,19 @@ Build out QRVibe as the **In-Store Digital Front-Desk & Google Review Engine for
     - **Salon Review Booster & Private Shield:** Adapted `ReviewFunnel.jsx` to dynamically generate beauty-specific 5-star review drafts (styling, facials, hygiene, precision) and salon complaint tags for private owner WhatsApp resolution.
     - **Verification & Builds:** 100% test pass (68/68 automated tests) and Vite production build passed with 0 errors on branch `product`.
 - **Menu Templates & Review Funnel Optimization:**
+  - **Single-Screen Viewport Registration & Onboarding (`RegisterPage.jsx` & `index.css`):**
+    - Compacted registration layout to fit completely within standard desktop/laptop viewports without irrelevant scrolling:
+      1. Tuned `.reg-grid` padding from `44px 28px 96px` down to `18px 28px 24px` and set `align-items: center`.
+      2. Scaled display headline (`.reg-h1`) from `clamp(42px, 5.8vw, 76px)` down to a crisp, elegant `clamp(26px, 2.2vw, 34px)`.
+      3. Optimized form elements: reduced input height to `40px`, reduced field row/group vertical margins from `24px` to `10px`, reduced Google button height to `40px`, and tightened divider margins to `10px`.
+      4. Proportionately scaled live standee & mobile preview stage (`.stage`) from `580px` down to `440px` with matching micro-copy and badge scaling.
+      5. Streamlined top navigation (`.reg-nav`) padding to `10px 28px`.
+      6. Verified 0 vertical scrollbars (`hasScrollbar: false`, `scrollHeight == viewportHeight`) across both sign-in and registration modes with 100% Vite production build success.
   - **Editorial Brand Design System & Landing Page Overhaul:**
     - Implemented official 60-30-10 palette: Primary (60%) Rich Cream / Alabaster (`#FBF9F6`), Secondary (30%) Deep Espresso Brown (`#2B1E19`), Accent (10%) Warm Honey Yellow (`#E5A93C`).
     - Standardized three-tier typography: Headings in `Instrument Serif`, Body & UI in `Instrument Sans`, Eyebrows & micro-labels in `IBM Plex Mono`.
     - Fully updated `LandingPage.jsx` into the editorial storefront & review engine presentation with the dedicated countertop standee and mirror tag preview, mobile review mockup, and zero-reprint guarantee.
+    - Upgraded `RegisterPage.jsx` to the unified editorial 2-phase registration and 3-step first-time storefront onboarding flow with live stage preview synchronization and Google OAuth.
     - Synchronized tokens across `Context/Ui_Context.md`, `design-tokens.json`, `index.html`, and `frontend/src/index.css`.
   - **Storefront Dashboard Reshaping & Chameleon Pulse (`DashboardOverview.jsx`):** Refactored Storefront Dashboard with Impeccable standards and 4 senior product principles:
     1. Rendered 2/3 **"🌟 Active Lookbook & Rate Card Items"** directly from primary MENU QR categories (no fake per-service scan numbers) with live thumbnails, duration, brand, and pricing tags.
